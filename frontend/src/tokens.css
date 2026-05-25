@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
+/* ─────────────────────────────────────────
+   LEARNEX — Design Tokens
+   Import this first in index.css
+───────────────────────────────────────── */
+
+:root {
+  /* Brand */
+  --red:          #E8192C;
+  --red-hover:    #FF1F35;
+  --red-dim:      #9B1120;
+  --red-glow:     rgba(232, 25, 44, 0.22);
+  --red-subtle:   rgba(232, 25, 44, 0.08);
+
+  /* Neutrals */
+  --black:        #080808;
+  --bg:           #0E0E0E;
+  --surface:      #141414;
+  --surface2:     #1C1C1C;
+  --surface3:     #242424;
+  --border:       rgba(255, 255, 255, 0.07);
+  --border-hover: rgba(255, 255, 255, 0.14);
+
+  /* Text */
+  --text:         #F0F0F0;
+  --text-muted:   #888;
+  --text-dim:     #444;
+
+  /* Accent */
+  --gold:         #C9A84C;
+  --gold-subtle:  rgba(201, 168, 76, 0.10);
+
+  /* Semantic */
+  --success:      #22c55e;
+  --warning:      #f59e0b;
+  --danger:       var(--red);
+
+  /* Typography */
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+
+  /* Spacing */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Radius */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm:  0 2px 8px rgba(0,0,0,0.4);
+  --shadow-md:  0 4px 20px rgba(0,0,0,0.5);
+  --shadow-red: 0 4px 24px var(--red-glow);
+
+  /* Layout */
+  --sidebar-width:      240px;
+  --right-panel-width:  300px;
+  --topbar-height:      56px;
+  --content-max:        680px;
+
+  /* Transitions */
+  --transition: 0.2s ease;
+}

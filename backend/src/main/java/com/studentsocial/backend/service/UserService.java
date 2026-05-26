@@ -140,6 +140,9 @@ public class UserService {
         if (request.getHeadline()    != null) profile.setHeadline(request.getHeadline());
         if (request.getBio()         != null) profile.setBio(request.getBio());
         if (request.getWebsite()     != null) profile.setWebsite(request.getWebsite());
+        if (request.getAvatarUrl() != null) {
+    profile.setAvatarUrl(request.getAvatarUrl().isBlank() ? null : request.getAvatarUrl().trim());
+}
 
         profileRepository.save(profile);
         return toProfileResponse(user, profile);
@@ -178,6 +181,7 @@ public class UserService {
                 .headline(profile != null ? profile.getHeadline() : null)
                 .bio(profile != null ? profile.getBio() : null)
                 .website(profile != null ? profile.getWebsite() : null)
+                .avatarUrl(profile != null ? profile.getAvatarUrl() : null)
                 .build();
     }
 }

@@ -7,6 +7,7 @@ import com.studentsocial.backend.exception.UnauthorizedException;
 import com.studentsocial.backend.model.Role;
 import com.studentsocial.backend.model.User;
 import com.studentsocial.backend.model.UserRole;
+import com.studentsocial.backend.repository.ProfileRepository;
 import com.studentsocial.backend.repository.RoleRepository;
 import com.studentsocial.backend.repository.UserRepository;
 import com.studentsocial.backend.repository.UserRoleRepository;
@@ -18,6 +19,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.studentsocial.backend.model.Profile;
 
 import java.util.List;
 
@@ -28,6 +30,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
+    private final ProfileRepository profileRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
@@ -44,7 +47,7 @@ public class AuthService {
         }
 
         User user = User.builder()
-                .email(request.getEmail())
+                .email(request.getEmail().toLowerCase())
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .isVerified(false)
                 .isActive(true)
@@ -66,16 +69,34 @@ public class AuthService {
 
         userRoleRepository.save(userRoleMapping);
 
-        String token = jwtService.generateToken(user.getEmail(), List.of(DEFAULT_ROLE));
+// Build displayName from firstName + lastName if provided
+String displayName = buildDisplayName(
+        request.getFirstName(),
+        request.getLastName(),
+        request.getEmail()
+);
 
-        return AuthResponse.builder()
-                .token(token)
-                .userId(user.getId())
-                .email(user.getEmail())
-                .roles(List.of(DEFAULT_ROLE))
-                .build();
+// Create profile immediately after registration
+Profile profile = Profile.builder()
+        .user(user)
+        .displayName(displayName)
+        .build();
+
+profileRepository.save(profile);
+
+String token = jwtService.generateToken(
+        user.getEmail(),
+        List.of(DEFAULT_ROLE)
+);
+
+return AuthResponse.builder()
+        .token(token)
+        .userId(user.getId())
+        .email(user.getEmail())
+        .displayName(displayName)
+        .roles(List.of(DEFAULT_ROLE))
+        .build();
     }
-
     @Transactional
     public AuthResponse login(LoginRequest request) {
         // BUG-2 FIX: AuthenticationException was uncaught → Spring returned 500.
@@ -109,4 +130,33 @@ public class AuthService {
                 .roles(roles)
                 .build();
     }
+    private String buildDisplayName(
+        String firstName,
+        String lastName,
+        String email
+) {
+
+    String first = firstName != null
+            ? firstName.trim()
+            : "";
+
+    String last = lastName != null
+            ? lastName.trim()
+            : "";
+
+    if (!first.isEmpty() && !last.isEmpty()) {
+        return first + " " + last;
+    }
+
+    if (!first.isEmpty()) {
+        return first;
+    }
+
+    if (!last.isEmpty()) {
+        return last;
+    }
+
+    // fallback to email prefix
+    return email.split("@")[0];
+}
 }

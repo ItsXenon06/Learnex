@@ -33,4 +33,5 @@ public class PostResponse {
     // PostService should set this based on whether the requesting user
     // has a saved_post row for this post.
     private boolean saved;
+    private List<AttachmentResponse> attachments;
 }

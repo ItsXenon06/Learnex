@@ -35,6 +35,10 @@ public class Profile {
     @Column(columnDefinition = "TEXT")
     private String website;
 
+    // Add after website field:
+    @Column(name = "avatar_url", columnDefinition = "TEXT")
+    private String avatarUrl;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "avatar_media_id")
     private MediaFile avatarMedia;

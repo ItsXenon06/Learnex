@@ -53,6 +53,12 @@ export function AuthProvider({ children }) {
     // Unwrap ApiResponse<AuthResponse>
     const data = payload?.data ?? payload;
     const { token: tok, ...userData } = data;
+// displayName comes back from the updated AuthResponse
+// already included in userData spread — nothing extra needed.
+// But store it explicitly so getInitials() works immediately:
+if (userData.displayName && !userData.displayName.trim() === '') {
+  userData.displayName = userData.displayName.trim();
+}
     persist(userData, tok);
     return userData;
   };

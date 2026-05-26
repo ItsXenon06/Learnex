@@ -1,26 +1,22 @@
 import api from './api.js';
 
-// BUG FIX: All userId params removed — backend reads identity from JWT.
-// Only data the backend can't derive itself is sent (recipientId, content, etc.)
-
 // POST /api/conversations   body: { recipientId }
-// Returns existing DM if one already exists (idempotent).
 const startConversation = (recipientId) =>
   api.post('/conversations', { recipientId });
 
+// POST /api/conversations/group   body: { name, memberIds: [uuid, ...] }
+const startGroupConversation = (name, memberIds) =>
+  api.post('/conversations/group', { name, memberIds });
+
 // GET /api/conversations
-// → List<ConversationResponse>
 const getConversations = () =>
   api.get('/conversations');
 
 // GET /api/conversations/{convId}/messages?page=...&size=...
-// → MessagePageResponse { messages (newest first), page, size, totalElements, totalPages, hasNext }
 const getMessages = (convId, page = 0, size = 50) =>
   api.get(`/conversations/${convId}/messages`, { params: { page, size } });
 
 // POST /api/conversations/{convId}/messages
-// body: { content, replyToId? }
-// → MessageResponse
 const sendMessage = (convId, content, replyToId = null) =>
   api.post(`/conversations/${convId}/messages`, {
     content,
@@ -33,6 +29,7 @@ const markMessageAsRead = (convId, msgId) =>
 
 export default {
   startConversation,
+  startGroupConversation,
   getConversations,
   getMessages,
   sendMessage,

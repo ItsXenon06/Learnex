@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, getInitials } from '../contexts/AuthContext';
-import Layout, { sharedCss } from '../components/Layout';
+import Layout from '../components/Layout';
 import groupService from '../services/groupService';
+import conversationService from '../services/conversationService';
 
 /* ─── CSS ────────────────────────────────────────────────────────────────── */
 const css = `
@@ -113,7 +114,7 @@ const TYPE_STYLE = {
 };
 
 /* ─── GroupCard ───────────────────────────────────────────────────────────── */
-function GroupCard({ group, isMember, onJoin, onLeave, joining }) {
+function GroupCard({ group, isMember, onJoin, onLeave, onChat, joining }) {
   const navigate = useNavigate();
   const ts = TYPE_STYLE[group.type] || TYPE_STYLE.general;
 
@@ -137,13 +138,24 @@ function GroupCard({ group, isMember, onJoin, onLeave, joining }) {
         <div className="gc-desc">{group.description || 'No description provided.'}</div>
         <div className="gc-foot">
           <span className="gc-members">👥 {group.memberCount ?? 0} member{group.memberCount !== 1 ? 's' : ''}</span>
-          <button
-            className={`join-btn ${isMember ? 'leave' : 'join'}`}
-            onClick={handleAction}
-            disabled={joining === group.id}
-          >
-            {joining === group.id ? '…' : isMember ? '✓ Joined' : group.isPrivate ? '🔒 Request' : '+ Join'}
-          </button>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {isMember && (
+              <button
+                className="join-btn join"
+                style={{ background: 'rgba(155,89,245,.15)', color: '#9b59f5', borderColor: 'rgba(155,89,245,.3)' }}
+                onClick={e => { e.stopPropagation(); onChat(group); }}
+              >
+                💬
+              </button>
+            )}
+            <button
+              className={`join-btn ${isMember ? 'leave' : 'join'}`}
+              onClick={handleAction}
+              disabled={joining === group.id}
+            >
+              {joining === group.id ? '…' : isMember ? '✓ Joined' : group.isPrivate ? '🔒 Request' : '+ Join'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -254,19 +266,18 @@ function CreateModal({ onClose, onCreate, creating }) {
 /* ─── GroupsPage ──────────────────────────────────────────────────────────── */
 export default function GroupsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const uid = user?.userId ?? user?.id;
 
-  const [tab,       setTab]       = useState('discover');   // 'discover' | 'mine'
-  const [groups,    setGroups]    = useState([]);
-  const [myGroups,  setMyGroups]  = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [joined,    setJoined]    = useState(new Set()); // group IDs I'm in
-  const [joining,   setJoining]   = useState(null);      // ID currently being joined/left
+  const [tab,        setTab]        = useState('discover');
+  const [groups,     setGroups]     = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [joined,     setJoined]     = useState(new Set());
+  const [joining,    setJoining]    = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
-  const [creating,  setCreating]  = useState(false);
-  const [error,     setError]     = useState('');
+  const [creating,   setCreating]   = useState(false);
+  const [error,      setError]      = useState('');
 
-  // Load all groups + my memberships
   useEffect(() => {
     if (!uid) return;
     setLoading(true);
@@ -279,7 +290,6 @@ export default function GroupsPage() {
       const allGroups = Array.isArray(all) ? all : (all?.content ?? []);
       const myList    = Array.isArray(my)  ? my  : (my?.content  ?? []);
       setGroups(allGroups);
-      setMyGroups(myList);
       setJoined(new Set(myList.map(g => g.id)));
     }).finally(() => setLoading(false));
   }, [uid]);
@@ -316,10 +326,30 @@ export default function GroupsPage() {
       const res = await groupService.createGroup(form);
       const created = res?.data ?? res;
       setGroups(prev => [created, ...prev]);
-      setMyGroups(prev => [created, ...prev]);
       setJoined(prev => new Set([...prev, created.id]));
       setCreateOpen(false);
     } finally { setCreating(false); }
+  };
+
+  const openGroupChat = async (group) => {
+    try {
+      const token = localStorage.getItem('learnex_auth')
+        ? JSON.parse(localStorage.getItem('learnex_auth')).token
+        : '';
+      const membersRes = await fetch(`/api/groups/${group.id}/members`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const membersData = await membersRes.json();
+      const members = membersData?.data ?? membersData;
+      const memberIds = (Array.isArray(members) ? members : [])
+        .map(m => m.userId)
+        .filter(id => id !== uid);
+      const res  = await conversationService.startGroupConversation(group.name, memberIds);
+      const conv = res?.data ?? res;
+      navigate(`/messages/${conv.id}`);
+    } catch {
+      navigate('/messages');
+    }
   };
 
   const displayed = tab === 'mine'
@@ -331,7 +361,6 @@ export default function GroupsPage() {
       <style>{css}</style>
       <Layout active="groups">
         <main className="groups-main">
-          {/* Header */}
           <div className="ph">
             <span className="ph-title">Groups</span>
             <button className="btn-fire" onClick={() => setCreateOpen(true)}>
@@ -345,7 +374,6 @@ export default function GroupsPage() {
             </div>
           )}
 
-          {/* Tabs */}
           <div className="gtabs">
             <button className={`gtab ${tab === 'discover' ? 'on' : ''}`} onClick={() => setTab('discover')}>
               Discover
@@ -355,7 +383,6 @@ export default function GroupsPage() {
             </button>
           </div>
 
-          {/* Content */}
           {loading ? <GroupSkeleton /> : displayed.length === 0 ? (
             <div className="lx-empty">
               <div className="lx-empty-ic">{tab === 'mine' ? '👥' : '🔍'}</div>
@@ -375,6 +402,7 @@ export default function GroupsPage() {
                     isMember={joined.has(g.id)}
                     onJoin={handleJoin}
                     onLeave={handleLeave}
+                    onChat={openGroupChat}
                     joining={joining}
                   />
                 </div>

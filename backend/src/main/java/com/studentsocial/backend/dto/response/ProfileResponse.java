@@ -14,4 +14,8 @@ public class ProfileResponse {
     private String headline;
     private String bio;
     private String website;
+    // Add to existing fields:
+    private String avatarUrl;
+    private int followerCount;
+    private int followingCount;
 }

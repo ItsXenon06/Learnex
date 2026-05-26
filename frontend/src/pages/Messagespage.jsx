@@ -570,6 +570,11 @@ export default function MessagesPage() {
   const [dmEmail,     setDmEmail]     = useState('');
   const [dmLoading,   setDmLoading]   = useState(false);
   const [dmErr,       setDmErr]       = useState('');
+  const [dmTab,        setDmTab]        = useState('dm');    // 'dm' | 'group'
+  const [groupName,    setGroupName]    = useState('');
+  const [groupEmails,  setGroupEmails]  = useState('');      // comma-separated
+  const [groupLoading, setGroupLoading] = useState(false);
+  const [groupErr,     setGroupErr]     = useState('');
 
   const scrollRef = useRef(null);
   const inputRef  = useRef(null);
@@ -694,7 +699,37 @@ export default function MessagesPage() {
       setDmLoading(false);
     }
   };
-
+  const startGroupChat = async () => {
+  const name = groupName.trim();
+  if (!name || groupLoading) return;
+  setGroupLoading(true);
+  setGroupErr('');
+  try {
+    // Resolve each email to a userId
+    const emails = groupEmails.split(',').map(e => e.trim()).filter(Boolean);
+    const memberIds = [];
+    for (const email of emails) {
+      const res = await userService.searchByEmail(email);
+      const found = res?.data ?? res;
+      const user  = Array.isArray(found) ? found[0] : found;
+      const id    = user?.userId ?? user?.id;
+      if (!id) { setGroupErr(`No user found: ${email}`); return; }
+      memberIds.push(id);
+    }
+    const res  = await conversationService.startGroupConversation(name, memberIds);
+    const conv = res?.data ?? res;
+    setConvs(prev => [conv, ...prev.filter(c => c.id !== conv.id)]);
+    setDmOpen(false);
+    setGroupName('');
+    setGroupEmails('');
+    setDmTab('dm');
+    selectConv(conv);
+  } catch (e) {
+    setGroupErr(e?.response?.data?.message || e?.displayMessage || 'Could not create group.');
+  } finally {
+    setGroupLoading(false);
+  }
+};
   /* ── Build message groups (consecutive messages from same sender) ── */
   function buildGroups(msgs) {
     const groups = [];
@@ -769,6 +804,15 @@ export default function MessagesPage() {
                       onClick={() => selectConv(conv)}
                     >
                       <div className="cv-av" style={avStyle(conv.otherUserId || conv.id)}>{ini}</div>
+                      {/* Add after <div className="cv-av"...> */}
+{conv.type === 'group' && (
+  <div style={{
+    position:'absolute', top:8, left:8,
+    width:14, height:14, borderRadius:'50%',
+    background:'var(--purple)', fontSize:8,
+    display:'flex', alignItems:'center', justifyContent:'center', color:'#fff',
+  }}>G</div>
+)}
                       <div className="cv-info">
                         <div className="cv-name">{name}</div>
                         <div className="cv-preview">{preview}</div>
@@ -973,42 +1017,99 @@ export default function MessagesPage() {
 
       {/* ── New DM modal ── */}
       {dmOpen && (
-        <div className="modal-bg" onClick={e => e.target === e.currentTarget && setDmOpen(false)}>
-          <div className="modal">
-            <div className="modal-head">
-              <span className="modal-title">New Message</span>
-              <button className="modal-close" onClick={() => setDmOpen(false)}>✕</button>
+  <div className="modal-bg" onClick={e => e.target === e.currentTarget && setDmOpen(false)}>
+    <div className="modal">
+      <div className="modal-head">
+        <span className="modal-title">New Message</span>
+        <button className="modal-close" onClick={() => { setDmOpen(false); setDmTab('dm'); }}>✕</button>
+      </div>
+
+      {/* Tab switcher */}
+      <div style={{ display:'flex', borderBottom:'1px solid var(--b1)' }}>
+        {['dm', 'group'].map(t => (
+          <button
+            key={t}
+            onClick={() => setDmTab(t)}
+            style={{
+              flex:1, padding:'10px 0', border:'none', background:'transparent',
+              color: dmTab === t ? 'var(--t1)' : 'var(--t3)',
+              fontFamily:'var(--fb)', fontSize:12, fontWeight:700,
+              textTransform:'uppercase', letterSpacing:'1px', cursor:'pointer',
+              borderBottom: dmTab === t ? '2px solid var(--red)' : '2px solid transparent',
+              transition:'all .15s',
+            }}
+          >
+            {t === 'dm' ? '💬 Direct' : '👥 Group'}
+          </button>
+        ))}
+      </div>
+
+      {dmTab === 'dm' ? (
+        <>
+          <div className="modal-body">
+            {dmErr && <div className="modal-err">⚠ {dmErr}</div>}
+            <div className="mfield">
+              <label>Student Email or User ID</label>
+              <input
+                autoFocus
+                placeholder="classmate@university.edu"
+                value={dmEmail}
+                onChange={e => { setDmEmail(e.target.value); setDmErr(''); }}
+                onKeyDown={e => e.key === 'Enter' && startDm()}
+              />
             </div>
-            <div className="modal-body">
-              {dmErr && <div className="modal-err">⚠ {dmErr}</div>}
-              <div className="mfield">
-                <label>Student Email or User ID</label>
-                <input
-                  autoFocus
-                  placeholder="classmate@university.edu"
-                  value={dmEmail}
-                  onChange={e => { setDmEmail(e.target.value); setDmErr(''); }}
-                  onKeyDown={e => e.key === 'Enter' && startDm()}
-                />
-              </div>
-              <p className="modal-hint">
-                Enter a student's email address. If an account exists, a conversation will open immediately.
-              </p>
-            </div>
-            <div className="modal-foot">
-              <button className="btn-outline-sm" onClick={() => setDmOpen(false)}>Cancel</button>
-              <button
-                className="btn-fire-sm"
-                onClick={startDm}
-                disabled={!dmEmail.trim() || dmLoading}
-                style={{ letterSpacing: '.6px' }}
-              >
-                {dmLoading ? 'Looking up…' : 'Start Chat →'}
-              </button>
-            </div>
+            <p className="modal-hint">
+              Enter a student's email. If an account exists, a conversation opens immediately.
+            </p>
           </div>
-        </div>
+          <div className="modal-foot">
+            <button className="btn-outline-sm" onClick={() => setDmOpen(false)}>Cancel</button>
+            <button className="btn-fire-sm" onClick={startDm} disabled={!dmEmail.trim() || dmLoading}>
+              {dmLoading ? 'Looking up…' : 'Start Chat →'}
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="modal-body">
+            {groupErr && <div className="modal-err">⚠ {groupErr}</div>}
+            <div className="mfield">
+              <label>Group Name</label>
+              <input
+                autoFocus
+                placeholder="e.g. CS Study Squad"
+                value={groupName}
+                onChange={e => { setGroupName(e.target.value); setGroupErr(''); }}
+              />
+            </div>
+            <div className="mfield">
+              <label>Member Emails (comma-separated)</label>
+              <input
+                placeholder="alice@uni.edu, bob@uni.edu"
+                value={groupEmails}
+                onChange={e => { setGroupEmails(e.target.value); setGroupErr(''); }}
+                onKeyDown={e => e.key === 'Enter' && startGroupChat()}
+              />
+            </div>
+            <p className="modal-hint">
+              You will be added automatically as the group owner.
+            </p>
+          </div>
+          <div className="modal-foot">
+            <button className="btn-outline-sm" onClick={() => setDmOpen(false)}>Cancel</button>
+            <button
+              className="btn-fire-sm"
+              onClick={startGroupChat}
+              disabled={!groupName.trim() || groupLoading}
+            >
+              {groupLoading ? 'Creating…' : 'Create Group Chat →'}
+            </button>
+          </div>
+        </>
       )}
+    </div>
+  </div>
+)}
     </>
   );
 }

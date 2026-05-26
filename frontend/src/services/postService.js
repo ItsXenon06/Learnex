@@ -57,6 +57,13 @@ const savePost = (postId) =>
 const unsavePost = (postId) =>
   api.delete(`/posts/${postId}/save`);
 
+const uploadMedia = (file) => {
+  const form = new FormData();
+  form.append('file', file);
+  return api.post('/media/upload', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
 export default {
   getFeed,
   getDiscover,

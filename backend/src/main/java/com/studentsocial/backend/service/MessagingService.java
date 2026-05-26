@@ -58,7 +58,29 @@ public class MessagingService {
                     return toConversationResponse(conv, initiator.getId());
                 });
     }
+    @Transactional
+public ConversationResponse createGroupChat(UUID creatorId, String name, List<UUID> memberIds) {
+    User creator = userRepository.findById(creatorId)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+    Conversation conv = conversationRepository.save(
+            Conversation.builder().type("group").name(name).build());
+
+    // Add creator as owner
+    memberRepository.save(ConversationMember.builder()
+            .conversation(conv).user(creator).role("owner").build());
+
+    // Add each requested member (skip duplicates and creator)
+    for (UUID memberId : memberIds) {
+        if (memberId.equals(creatorId)) continue;
+        userRepository.findById(memberId).ifPresent(member ->
+            memberRepository.save(ConversationMember.builder()
+                    .conversation(conv).user(member).role("member").build())
+        );
+    }
+
+    return toConversationResponse(conv, creatorId);
+}
     @Transactional(readOnly = true)
     public List<ConversationResponse> getConversations(UUID userId) {
         userRepository.findById(userId)

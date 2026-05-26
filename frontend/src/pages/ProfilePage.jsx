@@ -170,6 +170,7 @@ function EditModal({ profile, onClose, onSave, saving }) {
     headline:    profile.headline    || '',
     bio:         profile.bio         || '',
     website:     profile.website     || '',
+    avatarUrl:   profile.avatarUrl   || '',
   });
   const [err, setErr] = useState('');
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -189,6 +190,38 @@ function EditModal({ profile, onClose, onSave, saving }) {
         </div>
         <div className="modal-body">
           {err && <div className="modal-err">⚠ {err}</div>}
+          <div className="mfield">
+  <label>Avatar</label>
+  <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:8 }}>
+    {/* Live preview */}
+    <div style={{
+      width:56, height:56, borderRadius:12, flexShrink:0,
+      background: form.avatarUrl ? 'transparent' : 'var(--grad-fire)',
+      overflow:'hidden', border:'2px solid var(--b2)',
+      display:'flex', alignItems:'center', justifyContent:'center',
+      fontSize:20, color:'#fff', fontFamily:'var(--fd)',
+    }}>
+      {form.avatarUrl
+        ? <img
+            src={form.avatarUrl}
+            alt="avatar preview"
+            style={{ width:'100%', height:'100%', objectFit:'cover' }}
+            onError={e => { e.currentTarget.style.display='none'; }}
+          />
+        : getInitials(form.displayName, profile.email)
+      }
+    </div>
+    <input
+      style={{ flex:1 }}
+      value={form.avatarUrl}
+      onChange={e => set('avatarUrl', e.target.value)}
+      placeholder="https://example.com/your-photo.jpg"
+    />
+  </div>
+  <div style={{ fontSize:11, color:'var(--t4)', fontFamily:'var(--fm)' }}>
+    Paste any public image URL. Leave blank to use initials.
+  </div>
+</div>
           <div className="mfield">
             <label>Display Name</label>
             <input
@@ -347,7 +380,17 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
                 <div className="hero-banner" />
                 <div className="hero-body">
                   <div className="hero-av-wrap">
-                    <div className="hero-av">{profIni}</div>
+                    <div className="hero-av">
+  {profile.avatarUrl
+    ? <img
+        src={profile.avatarUrl}
+        alt={profile.displayName || 'avatar'}
+        style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:14 }}
+        onError={e => { e.currentTarget.style.display='none'; }}
+      />
+    : profIni
+  }
+</div>
                     <div className="hero-actions">
                       {isOwn ? (
                         <button className="btn btn-outline" onClick={() => setEditOpen(true)}>

@@ -10,8 +10,8 @@ export default defineConfig({
         target: 'http://localhost:1008',
         changeOrigin: true,
         secure: false,
-        // Rewrite: /api/posts → /learnex/api/posts
-        rewrite: (path) => `/learnex${path}`,
+        // Rewrite: /api/posts → /Learnex/api/posts
+        rewrite: (path) => `/Learnex${path}`,
       },
     },
   },

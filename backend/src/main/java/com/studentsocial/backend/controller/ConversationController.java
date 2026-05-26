@@ -17,6 +17,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -102,4 +103,23 @@ public class ConversationController {
         messagingService.markRead(convId, msgId, userId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
+    // ── POST /api/conversations/group ─────────────────────────────────────────
+// Create a named group conversation.
+// Body: { "name": "Study Squad", "memberIds": ["uuid1", "uuid2", ...] }
+// Caller is automatically added as owner.
+@PostMapping("/api/conversations/group")
+public ResponseEntity<ApiResponse<ConversationResponse>> createGroupChat(
+        @AuthenticationPrincipal UserDetails principal,
+        @RequestBody Map<String, Object> body) {
+
+    UUID creatorId = resolveUserId(principal);
+    String name = (String) body.getOrDefault("name", "Group Chat");
+
+    @SuppressWarnings("unchecked")
+    List<String> memberIdStrings = (List<String>) body.getOrDefault("memberIds", List.of());
+    List<UUID> memberIds = memberIdStrings.stream().map(UUID::fromString).toList();
+
+    ConversationResponse response = messagingService.createGroupChat(creatorId, name, memberIds);
+    return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
+}
 }

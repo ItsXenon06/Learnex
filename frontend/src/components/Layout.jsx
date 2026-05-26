@@ -242,13 +242,12 @@ export default function Layout({
           >
             👥 Groups
           </button>
-          <div
-            className="tb-av"
-            title={displayName}
-            onClick={() => navigate(`/profile/${uid}`)}
-          >
-            {ini}
-          </div>
+          <div className="tb-av" title={displayName} onClick={() => navigate(`/profile/${uid}`)}>
+  {profile?.avatarUrl
+    ? <img src={profile.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:7 }} onError={e=>{e.currentTarget.style.display='none'}} />
+    : ini
+  }
+</div>
         </div>
       </div>
 
@@ -275,7 +274,12 @@ export default function Layout({
           {/* Footer: current user */}
           <div className="sb-footer">
             <div className="sb-me" onClick={() => navigate(`/profile/${uid}`)}>
-              <div className="sb-mav">{ini}</div>
+              <div className="sb-mav">
+  {profile?.avatarUrl
+    ? <img src={profile.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:8 }} onError={e=>{e.currentTarget.style.display='none'}} />
+    : ini
+  }
+</div>
               <div className="sb-minfo">
                 <div className="sb-mname">{displayName}</div>
                 <div className="sb-memail">{user?.email}</div>

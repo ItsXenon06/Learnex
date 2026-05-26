@@ -18,4 +18,6 @@ public class UpdateProfileRequest {
 
     @Size(max = 500, message = "Website URL must be 500 characters or fewer")
     private String website;
+    // Add to existing fields:
+private String avatarUrl;   // public image URL for avatar
 }

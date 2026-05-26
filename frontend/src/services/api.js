@@ -42,14 +42,17 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error?.response?.status === 401) {
-      const code    = error.response?.data?.code;
+      const code     = error.response?.data?.code;
       const isExpiry = code === 'TOKEN_EXPIRED';
 
       localStorage.removeItem(AUTH_STORAGE_KEY);
 
       if (!window.location.pathname.includes('/login')) {
+        // Write flag before redirect so SessionExpiredToast reads it on mount
+        sessionStorage.setItem('learnex_session_expired', '1');
         const reason = isExpiry ? 'expired' : 'unauthorized';
-        window.location.href = `/login?session=${reason}`;
+        // Must match BrowserRouter basename="/Learnex" (case-sensitive)
+        window.location.href = `/Learnex/login?session=${reason}`;
       }
     }
 

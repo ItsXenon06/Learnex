@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, getInitials } from '../contexts/AuthContext';
-import Layout, { sharedCss } from '../components/Layout';
+import Layout from '../components/Layout';
 import postService from '../services/postService';
 import commentService from '../services/commentService';
 
@@ -39,6 +39,7 @@ const css = `
 .c-toolbar{display:flex;align-items:center;gap:2px;padding:0 12px 12px;}
 .c-tool{display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:7px;border:none;background:transparent;color:var(--t3);font-size:12px;font-family:var(--fb);font-weight:600;cursor:pointer;transition:all .15s;letter-spacing:.3px;}
 .c-tool:hover{background:var(--s3);color:var(--t1);}
+.c-tool.active{background:var(--red-sub);color:var(--red);}
 .c-gap{flex:1;}
 .c-hint{font-size:10px;color:var(--t4);font-family:var(--fm);margin-right:8px;}
 .c-post{padding:8px 18px;background:var(--grad-fire);border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:800;font-family:var(--fb);letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .2s;box-shadow:0 3px 14px var(--red-glow);}
@@ -50,13 +51,22 @@ const css = `
 }
 .c-vis:hover{border-color:var(--b2);color:var(--t2);}
 
+/* image preview in compose */
+.c-previews{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 10px;}
+.c-prev-item{position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;flex-shrink:0;}
+.c-prev-img{width:100%;height:100%;object-fit:cover;}
+.c-prev-rm{position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.75);border:none;color:#fff;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
+.c-prev-rm:hover{background:var(--red);}
+.c-up-dot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:upload-pulse .8s ease infinite;}
+@keyframes upload-pulse{0%,100%{opacity:.3}50%{opacity:1}}
+
 /* POST CARD */
 .card{
-  background:var(--s1);border:1px solid var(--b1);border-radius:12px;
-  margin-bottom:10px;overflow:hidden;
-  transition:border-color .25s,transform .2s,box-shadow .25s;
-  animation:card-up .35s var(--ease) both;
-  position:relative;
+background:var(--s1);border:1px solid var(--b1);border-radius:12px;
+margin-bottom:10px;overflow:hidden;
+transition:border-color .25s,transform .2s,box-shadow .25s;
+animation:card-up .35s var(--ease) both;
+position:relative;cursor:pointer;
 }
 .card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:transparent;transition:background .25s;border-radius:12px 0 0 12px;}
 .card:hover{border-color:rgba(255,255,255,.09);box-shadow:0 4px 16px rgba(0,0,0,.18);}
@@ -77,7 +87,7 @@ const css = `
 .c-sub{font-size:12px;color:var(--t3);margin-top:3px;display:flex;align-items:center;gap:5px;font-family:var(--fm);}
 .c-dot{color:var(--t4);}
 
-/* ── Post options (⋯) menu ── */
+/* post options menu */
 .c-more-wrap{position:relative;}
 .c-more{width:30px;height:30px;border-radius:7px;border:none;background:transparent;color:var(--t3);font-size:18px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;}
 .c-more:hover{background:var(--s3);color:var(--t1);}
@@ -105,6 +115,16 @@ const css = `
 .c-mention{color:var(--blue);cursor:pointer;font-weight:600;}
 .c-mention:hover{text-decoration:underline;}
 
+/* attachment grid on card */
+.card-media{padding:0 16px 12px 18px;}
+.cm-grid{display:grid;gap:3px;border-radius:10px;overflow:hidden;}
+.cm-grid.n1{grid-template-columns:1fr;}
+.cm-grid.n2{grid-template-columns:1fr 1fr;}
+.cm-grid.n3{grid-template-columns:1fr 1fr;grid-template-rows:auto auto;}
+.cm-grid.n4{grid-template-columns:1fr 1fr;}
+.cm-grid.n3 .cm-att:first-child{grid-column:1/-1;}
+.cm-att{width:100%;border-radius:6px;object-fit:cover;max-height:360px;cursor:pointer;transition:opacity .15s;}
+.cm-att:hover{opacity:.88;}
 .card-tags{display:flex;gap:7px;flex-wrap:wrap;padding:0 16px 13px 18px;}
 .tag-chip{
   padding:4px 12px;background:var(--red-sub);border:1px solid var(--red-border);
@@ -126,12 +146,6 @@ const css = `
 .stat-link{cursor:pointer;transition:color .15s;}
 .stat-link:hover{color:var(--t1);}
 
-/* ── action row ──
-   FIX: removed nested .rx-wrap taking flex:1 which shifted the comment
-   button right and left an empty gap. All 4 actions now sit as direct
-   flex children with equal flex:1. The reaction picker is absolutely
-   positioned above its button, not wrapping it in a flex item.
-*/
 .card-actions{display:flex;align-items:stretch;border-top:1px solid var(--b1);}
 .ca{
   flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
@@ -146,21 +160,19 @@ const css = `
 .ca.saved{color:var(--gold);}
 .ca-i{font-size:16px;line-height:1;}
 
-/* reaction picker — absolute, does NOT affect flex layout */
+/* reaction picker */
 .rx-pick{
-  position:absolute;bottom:calc(100% + 8px);left:50%;
-  transform:translateX(-50%) scale(.85);transform-origin:bottom center;
-  background:var(--s3);border:1px solid var(--b2);
-  border-radius:32px;padding:6px 10px;display:flex;gap:3px;z-index:50;
-  opacity:0;pointer-events:none;
-  transition:opacity .15s,transform .15s var(--ease);
-  box-shadow:0 10px 40px rgba(0,0,0,.7);white-space:nowrap;
+position:absolute;bottom:calc(100% + 8px);left:50%;
+transform:translateX(-50%) scale(.85);transform-origin:bottom center;
+background:var(--s3);border:1px solid var(--b2);border-radius:32px;
+padding:6px 10px;display:flex;gap:3px;z-index:200;
+opacity:0;pointer-events:none;
+transition:opacity .15s,transform .15s var(--ease);
+box-shadow:0 10px 40px rgba(0,0,0,.7);white-space:nowrap;
 }
-/* FIX: show picker on hover of the BUTTON itself (not a wrapper div),
-   and keep it visible when the user moves the cursor into the picker */
-.ca:hover .rx-pick,.rx-pick:hover{
-  opacity:1;pointer-events:all;transform:translateX(-50%) scale(1);
-}
+.ca::after{content:'';position:absolute;bottom:100%;left:0;right:0;height:12px;background:transparent;pointer-events:none;}
+.ca:hover::after{pointer-events:all;}
+.ca:hover .rx-pick,.ca:focus-within .rx-pick,.rx-pick:hover{opacity:1;pointer-events:all;transform:translateX(-50%) scale(1);}
 .rx-e{font-size:22px;cursor:pointer;border:none;background:none;padding:3px 5px;border-radius:50%;transition:transform .12s;line-height:1;}
 .rx-e:hover{transform:scale(1.45) translateY(-4px);}
 
@@ -178,6 +190,18 @@ const css = `
 .cm-who{font-size:11px;font-weight:700;margin-bottom:3px;display:flex;align-items:center;gap:7px;}
 .cm-when{font-size:9px;color:var(--t3);font-family:var(--fm);font-weight:400;}
 .cm-txt{font-size:13px;line-height:1.55;word-break:break-word;}
+/* comment reactions */
+.cm-acts{display:flex;align-items:center;gap:2px;margin-top:4px;}
+.cm-act{background:none;border:none;color:var(--t3);font-size:11px;font-family:var(--fb);font-weight:600;cursor:pointer;padding:2px 7px;border-radius:5px;transition:all .12s;letter-spacing:.3px;display:flex;align-items:center;gap:4px;}
+.cm-act:hover{background:var(--s3);color:var(--t1);}
+.cm-act.liked{color:var(--red);}
+.cm-rx-wrap{position:relative;display:inline-flex;}
+.cm-rx-pick{position:absolute;bottom:calc(100% + 6px);left:0;background:var(--s3);border:1px solid var(--b2);border-radius:28px;padding:5px 8px;display:flex;gap:2px;z-index:200;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;transform:scale(.85);transform-origin:bottom left;box-shadow:0 8px 32px rgba(0,0,0,.7);white-space:nowrap;}
+.cm-rx-wrap:hover .cm-rx-pick,.cm-rx-pick:hover{opacity:1;pointer-events:all;transform:scale(1);}
+.cm-rx-e{font-size:18px;cursor:pointer;border:none;background:none;padding:2px 4px;border-radius:50%;transition:transform .12s;line-height:1;}
+.cm-rx-e:hover{transform:scale(1.4) translateY(-3px);}
+.cm-rx-chip{display:flex;align-items:center;gap:3px;padding:2px 7px;background:var(--s3);border:1px solid var(--b1);border-radius:10px;font-size:10px;cursor:pointer;transition:all .12s;font-family:var(--fm);}
+.cm-rx-chip:hover,.cm-rx-chip.mine{border-color:var(--red-border);background:var(--red-sub);color:var(--red);}
 .cm-empty{padding:16px 18px;font-size:13px;color:var(--t3);font-family:var(--fm);}
 .cm-input-row{display:flex;gap:8px;align-items:center;padding:10px 18px 12px;}
 .cm-inp{flex:1;background:var(--s2);border:1px solid var(--b1);border-radius:22px;padding:7px 16px;color:var(--t1);font-size:13px;font-family:var(--fb);outline:none;transition:border-color .2s,box-shadow .2s;}
@@ -233,18 +257,16 @@ const css = `
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
 const RX_TYPES = [
-  { emoji: '👍', type: 'like',      label: 'Like' },
-  { emoji: '❤️',  type: 'love',      label: 'Love' },
+  { emoji: '👍', type: 'like',       label: 'Like' },
+  { emoji: '❤️',  type: 'love',       label: 'Love' },
   { emoji: '💡', type: 'insightful', label: 'Insightful' },
-  { emoji: '🎉', type: 'celebrate', label: 'Celebrate' },
-  { emoji: '🤝', type: 'support',   label: 'Support' },
+  { emoji: '🎉', type: 'celebrate',  label: 'Celebrate' },
+  { emoji: '🤝', type: 'support',    label: 'Support' },
 ];
-// FIX: emojis now match DB seed data exactly (insightful→💡, not 🔥)
 const RX_EMOJI = {
   like: '👍', love: '❤️', insightful: '💡', celebrate: '🎉', support: '🤝',
 };
 
-// Placeholder — wire to real hashtag/user endpoints when available
 const TRENDS = [
   { tag: '#FinalExams',   sub: 'Trending in Education', cnt: '2.4k' },
   { tag: '#CampusLife',   sub: 'Trending near you',     cnt: '1.8k' },
@@ -252,12 +274,8 @@ const TRENDS = [
   { tag: '#InternSeason', sub: 'Career & Jobs',          cnt: '712'  },
   { tag: '#LearnexTips',  sub: 'Community picks',        cnt: '500'  },
 ];
-const SUGGEST = [
-  { i: 'MN', name: 'Minh Nguyen', role: 'CS · Y3',      bg: '#0d1f35', c: '#4a9eff' },
-  { i: 'TL', name: 'Trang Le',   role: 'Business · Y2', bg: '#0d2918', c: '#4adf8a' },
-  { i: 'HK', name: 'Hieu Kim',   role: 'Design · Y4',   bg: '#2a0d1e', c: '#df4a8a' },
-];
 
+/* ─── Avatar helpers ────────────────────────────────────────────────────── */
 const AV_BG = ['#0d1f35','#0d2918','#2a0d1e','#1e1a0d','#1a0d2e','#1a1a0d'];
 const AV_C  = ['#4a9eff','#4adf8a','#df4a8a','#dfb84a','#af4adf','#df9a4a'];
 function avatarStyle(seed) {
@@ -291,18 +309,119 @@ function extractTags(content) {
   return [...new Set((content.match(/#\w+/g) || []))];
 }
 
+/* ─── Lightbox ────────────────────────────────────────────────────────────── */
+const lboxCss = `@keyframes lbox-in{from{opacity:0}to{opacity:1}}`;
+
+function Lightbox({ images, startIndex, onClose }) {
+  const [idx, setIdx] = useState(startIndex);
+  useEffect(() => {
+    const h = (e) => {
+      if (e.key === 'Escape')     onClose();
+      if (e.key === 'ArrowLeft')  setIdx(i => (i - 1 + images.length) % images.length);
+      if (e.key === 'ArrowRight') setIdx(i => (i + 1) % images.length);
+    };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, [images.length, onClose]);
+
+  return (
+    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,.92)',display:'flex',alignItems:'center',justifyContent:'center',animation:'lbox-in .15s ease'}}>
+      <style>{lboxCss}</style>
+      <button onClick={onClose} style={{position:'absolute',top:18,right:22,background:'none',border:'none',color:'#fff',fontSize:28,cursor:'pointer',opacity:.7}}>✕</button>
+      {images.length > 1 && (
+        <>
+          <button onClick={e => { e.stopPropagation(); setIdx(i => (i - 1 + images.length) % images.length); }} style={{position:'absolute',left:16,top:'50%',transform:'translateY(-50%)',background:'rgba(255,255,255,.08)',border:'none',borderRadius:'50%',width:46,height:46,color:'#fff',fontSize:22,cursor:'pointer'}}>‹</button>
+          <button onClick={e => { e.stopPropagation(); setIdx(i => (i + 1) % images.length); }} style={{position:'absolute',right:16,top:'50%',transform:'translateY(-50%)',background:'rgba(255,255,255,.08)',border:'none',borderRadius:'50%',width:46,height:46,color:'#fff',fontSize:22,cursor:'pointer'}}>›</button>
+        </>
+      )}
+      <img src={images[idx].url} alt="" onClick={e => e.stopPropagation()} style={{maxWidth:'92vw',maxHeight:'90vh',objectFit:'contain',borderRadius:8}} />
+    </div>
+  );
+}
+
+/* ─── CommentReactions ────────────────────────────────────────────────────── */
+function CommentReactions({ commentId, reactions: initRx, myReaction: initMy }) {
+  const [reactions, setReactions] = useState(initRx ?? []);
+  const [myRx, setMyRx]           = useState(initMy ?? null);
+  const [busy, setBusy]           = useState(false);
+
+  const handle = async (type) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      let updated;
+      if (myRx === type) {
+        const res = await commentService.removeCommentReaction(commentId);
+        updated   = res?.data ?? res;
+        setMyRx(null);
+      } else {
+        const res = await commentService.reactToComment(commentId, type);
+        updated   = res?.data ?? res;
+        setMyRx(type);
+      }
+      if (Array.isArray(updated)) setReactions(updated);
+    } catch { /* no-op */ }
+    finally { setBusy(false); }
+  };
+
+  const total = reactions.reduce((s, r) => s + (r.count ?? 0), 0);
+
+  return (
+    <div className="cm-acts">
+      <div className="cm-rx-wrap">
+        <button className={`cm-act ${myRx ? 'liked' : ''}`} disabled={busy}>
+          {myRx ? (RX_EMOJI[myRx] ?? '👍') : '👍'}
+          {total > 0 && <span style={{fontSize:10}}>{total}</span>}
+          <div className="cm-rx-pick" onMouseDown={e => e.stopPropagation()}>
+            {RX_TYPES.map(r => (
+              <button key={r.type} className="cm-rx-e" title={r.label}
+                onMouseDown={e => { e.stopPropagation(); e.preventDefault(); handle(r.type); }}>
+                {r.emoji}
+              </button>
+            ))}
+          </div>
+        </button>
+      </div>
+      {reactions.filter(r => r.count > 0).map(r => (
+        <span key={r.name} className={`cm-rx-chip ${myRx === r.name ? 'mine' : ''}`} onClick={() => handle(r.name)}>
+          {RX_EMOJI[r.name] ?? r.emoji} {r.count}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/* ─── CardAttachmentGrid ──────────────────────────────────────────────────── */
+function CardAttachmentGrid({ attachments }) {
+  const [lightbox, setLightbox] = useState(null);
+  const images = attachments.filter(a => a.type === 'image' || a.mimeType?.startsWith('image/'));
+  if (images.length === 0) return null;
+  const n = Math.min(images.length, 4);
+  return (
+    <>
+      <div className="card-media">
+        <div className={`cm-grid n${n}`}>
+          {images.slice(0, 4).map((img, i) => (
+            <img key={img.id ?? i} className="cm-att" src={img.url} alt=""
+              onClick={e => { e.stopPropagation(); setLightbox(i); }} />
+          ))}
+        </div>
+      </div>
+      {lightbox !== null && <Lightbox images={images} startIndex={lightbox} onClose={() => setLightbox(null)} />}
+    </>
+  );
+}
+
 /* ─── PostCard ────────────────────────────────────────────────────────────── */
 function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
-  const navigate   = useNavigate();
-  const [post, setPost]         = useState(initPost);
-  // FIX: initialise myRx from the post's reactions + a server-side
-  // "myReaction" field if the backend ever returns it; otherwise null.
-  const [myRx, setMyRx]         = useState(initPost.myReaction ?? null);
-  const [showCm, setShowCm]     = useState(false);
-  const [comments, setComments] = useState([]);
-  const [cmLoaded, setCmLoaded] = useState(false);   // FIX: separate flag from loading
+  const navigate = useNavigate();
+  const [post, setPost]           = useState(initPost);
+  const [myRx, setMyRx]           = useState(initPost.myReaction ?? null);
+  const [showCm, setShowCm]       = useState(false);
+  const [comments, setComments]   = useState([]);
+  const [cmLoaded, setCmLoaded]   = useState(false);
   const [cmLoading, setCmLoading] = useState(false);
-  const [cmTxt, setCmTxt]       = useState('');
+  const [cmTxt, setCmTxt]         = useState('');
   const [cmSending, setCmSending] = useState(false);
   const [rxLoading, setRxLoading] = useState(false);
   const [menuOpen, setMenuOpen]   = useState(false);
@@ -311,7 +430,6 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
 
   const isOwn = post.authorId === currentUserId;
 
-  // Close menu on outside click
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e) => {
@@ -328,9 +446,8 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
   const { bg, c }    = avatarStyle(post.authorId);
   const commentCount = post.commentCount ?? post.comments ?? 0;
   const tags         = post.hashtags?.map(h => `#${h}`) ?? extractTags(post.content);
+  const attachments  = post.attachments ?? [];
 
-  // FIX: loadComments no longer has cmLoading in its dependency array.
-  // cmLoaded prevents double-fetch; cmLoading guards concurrent calls.
   const loadComments = useCallback(async () => {
     if (cmLoading || cmLoaded) return;
     setCmLoading(true);
@@ -343,7 +460,8 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
     finally { setCmLoading(false); }
   }, [post.id, cmLoading, cmLoaded]);
 
-  const toggleComments = () => {
+  const toggleComments = (e) => {
+    if (e) e.stopPropagation();
     const next = !showCm;
     setShowCm(next);
     if (next) {
@@ -352,21 +470,24 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
     }
   };
 
-  // FIX: reactions now work for all 5 types.
-  // handleReact sends the chosen type string; the backend accepts
-  // like/love/insightful/celebrate/support (matches DB reaction_type.name seed).
-  const handleReact = async (type) => {
+  const handleCardClick = (e) => {
+    const tag = e.target.tagName;
+    if (['BUTTON','INPUT','TEXTAREA','A','IMG'].includes(tag)) return;
+    if (e.target.closest('.c-more-wrap') || e.target.closest('.comments') || e.target.closest('.rx-pick')) return;
+    navigate(`/post/${post.id}`);
+  };
+
+  const handleReact = async (type, e) => {
+    if (e) e.stopPropagation();
     if (rxLoading) return;
     setRxLoading(true);
     try {
       let updatedReactions;
       if (myRx === type) {
-        // Same reaction clicked again → remove
         const res = await postService.removePostReaction(post.id);
         updatedReactions = res?.data ?? res;
         setMyRx(null);
       } else {
-        // New reaction or switch
         const res = await postService.reactToPost(post.id, type);
         updatedReactions = res?.data ?? res;
         setMyRx(type);
@@ -374,11 +495,12 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
       if (Array.isArray(updatedReactions)) {
         setPost(p => ({ ...p, reactions: updatedReactions }));
       }
-    } catch { /* optimistic state already applied; server error leaves it */ }
+    } catch { /* no-op */ }
     finally { setRxLoading(false); }
   };
 
-  const sendComment = async () => {
+  const sendComment = async (e) => {
+    if (e) e.stopPropagation();
     if (!cmTxt.trim() || cmSending) return;
     setCmSending(true);
     const text = cmTxt.trim();
@@ -389,7 +511,7 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
       setComments(prev => [...prev, saved]);
       setPost(p => ({ ...p, commentCount: (p.commentCount ?? 0) + 1 }));
     } catch {
-      setCmTxt(text); // restore on failure
+      setCmTxt(text);
     } finally {
       setCmSending(false);
     }
@@ -408,24 +530,22 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
 
   const handleReport = () => {
     setMenuOpen(false);
-    // TODO: open a report modal; report table exists in DB (report + report_reason).
-    // Wire to POST /api/reports when ReportController is built.
     alert('Report submitted. (Report endpoint coming soon.)');
   };
 
   return (
-    <div className="card">
+    <div className="card" onClick={handleCardClick}>
       {/* Author row */}
       <div className="card-head">
         <div
           className="c-ava"
           style={{ background: `linear-gradient(135deg,${bg},${c})` }}
-          onClick={() => navigate(`/profile/${post.authorId}`)}
+          onClick={e => { e.stopPropagation(); navigate(`/profile/${post.authorId}`); }}
         >
           {authorIni}
         </div>
         <div className="c-meta">
-          <div className="c-name" onClick={() => navigate(`/profile/${post.authorId}`)}>
+          <div className="c-name" onClick={e => { e.stopPropagation(); navigate(`/profile/${post.authorId}`); }}>
             {post.authorDisplayName || post.authorEmail || 'Unknown'}
           </div>
           <div className="c-sub">
@@ -444,21 +564,19 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
           <button
             className="c-more"
             title="Options"
-            onClick={() => setMenuOpen(v => !v)}
+            onClick={e => { e.stopPropagation(); setMenuOpen(v => !v); }}
           >
             ⋯
           </button>
           {menuOpen && (
             <div className="c-more-menu">
               {isOwn ? (
-                <>
-                  <button className="c-menu-item danger" onClick={handleDelete}>
-                    🗑 Delete Post
-                  </button>
-                </>
+                <button className="c-menu-item danger" onClick={handleDelete}>
+                  🗑 Delete Post
+                </button>
               ) : (
                 <>
-                  <button className="c-menu-item" onClick={() => { setMenuOpen(false); }}>
+                  <button className="c-menu-item" onClick={() => setMenuOpen(false)}>
                     🚫 Not Interested
                   </button>
                   <div className="c-menu-divider" />
@@ -477,15 +595,14 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
         <div className="card-body">{renderText(post.content)}</div>
       )}
 
+      {/* Attachments */}
+      {attachments.length > 0 && <CardAttachmentGrid attachments={attachments} />}
+
       {/* Hashtag chips */}
       {tags.length > 0 && (
         <div className="card-tags">
           {tags.map(t => (
-            <span
-              key={t}
-              className="tag-chip"
-              onClick={() => navigate(`/hashtag/${t.slice(1)}`)}
-            >
+            <span key={t} className="tag-chip" onClick={() => navigate(`/hashtag/${t.slice(1)}`)}>
               {t}
             </span>
           ))}
@@ -505,7 +622,7 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
           </div>
           <div className="stat-right">
             {commentCount > 0 && (
-              <span className="stat-link" onClick={toggleComments}>
+              <span className="stat-link" onClick={e => toggleComments(e)}>
                 {commentCount} comment{commentCount !== 1 ? 's' : ''}
               </span>
             )}
@@ -513,28 +630,22 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
         </div>
       )}
 
-      {/* ── Action row ──
-          FIX: .ca is a direct flex child with position:relative.
-          The reaction picker sits absolutely above the Like button —
-          no wrapper div eating flex space, so Comment/Share/Save align evenly.
-      */}
+      {/* Action row */}
       <div className="card-actions">
-        {/* Like — with hover reaction picker */}
         <button
           className={`ca ${myRx ? 'liked' : ''}`}
-          onClick={() => handleReact(myRx || 'like')}
+          onClick={e => { e.stopPropagation(); handleReact(myRx || 'like', e); }}
           disabled={rxLoading}
         >
           <span className="ca-i">{myRx ? (RX_EMOJI[myRx] ?? '👍') : '👍'}</span>
           {myRx ? (RX_TYPES.find(r => r.type === myRx)?.label ?? 'Liked') : 'Like'}
-          {/* Reaction picker — absolute, no layout impact */}
           <div className="rx-pick" onMouseDown={e => e.stopPropagation()}>
             {RX_TYPES.map(r => (
               <button
                 key={r.type}
                 className="rx-e"
                 title={r.label}
-                onMouseDown={e => { e.stopPropagation(); e.preventDefault(); handleReact(r.type); }}
+                onMouseDown={e => { e.stopPropagation(); e.preventDefault(); handleReact(r.type, e); }}
               >
                 {r.emoji}
               </button>
@@ -542,18 +653,18 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
           </div>
         </button>
 
-        <button className="ca" onClick={toggleComments}>
+        <button className="ca" onClick={e => toggleComments(e)}>
           <span className="ca-i">💬</span>Comment
         </button>
 
-        {/* Share — placeholder; wire to POST /api/shares when built */}
-        <button className="ca" onClick={() => alert('Share coming soon.')}>
-          <span className="ca-i">↗</span>Share
+        <button className="ca" onClick={e => { e.stopPropagation(); navigate(`/post/${post.id}`); }}>
+          <span className="ca-i">↗</span>View
         </button>
 
         <button
           className={`ca ${post.saved ? 'saved' : ''}`}
-          onClick={async () => {
+          onClick={async (e) => {
+            e.stopPropagation();
             try {
               if (post.saved) {
                 await postService.unsavePost(post.id);
@@ -572,7 +683,7 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
 
       {/* Comments */}
       {showCm && (
-        <div className="comments">
+        <div className="comments" onClick={e => e.stopPropagation()}>
           {cmLoading ? (
             <div style={{ padding: '14px 18px' }}>
               {[1, 2].map(i => (
@@ -586,7 +697,7 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
             <div className="cm-scroll">
               {comments.length === 0
                 ? <div className="cm-empty">No comments yet — be the first.</div>
-                : comments.map(cm => <CommentItem key={cm.id} comment={cm} />)
+                : comments.map(cm => <CommentItem key={cm.id} comment={cm} currentUserIni={currentUserIni} />)
               }
             </div>
           )}
@@ -600,11 +711,11 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
               placeholder="Write a comment…"
               value={cmTxt}
               onChange={e => setCmTxt(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendComment()}
+              onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendComment(e)}
             />
             <button
               className="cm-go"
-              onClick={sendComment}
+              onClick={e => sendComment(e)}
               disabled={!cmTxt.trim() || cmSending}
             >
               ➤
@@ -617,9 +728,9 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
 }
 
 /* ─── CommentItem ─────────────────────────────────────────────────────────── */
-function CommentItem({ comment }) {
-  const authorIni    = getInitials(comment.authorDisplayName, comment.authorEmail);
-  const { bg, c }    = avatarStyle(comment.authorId?.toString());
+function CommentItem({ comment, currentUserIni }) {
+  const authorIni = getInitials(comment.authorDisplayName, comment.authorEmail);
+  const { bg, c } = avatarStyle(comment.authorId?.toString());
 
   return (
     <div className="cmi">
@@ -634,9 +745,14 @@ function CommentItem({ comment }) {
           </div>
           <div className="cm-txt">{comment.content}</div>
         </div>
+        <CommentReactions
+          commentId={comment.id}
+          reactions={comment.reactions ?? []}
+          myReaction={comment.myReaction ?? null}
+        />
         {comment.replies?.length > 0 && (
           <div className="cm-replies">
-            {comment.replies.map(r => <CommentItem key={r.id} comment={r} />)}
+            {comment.replies.map(r => <CommentItem key={r.id} comment={r} currentUserIni={currentUserIni} />)}
           </div>
         )}
       </div>
@@ -644,7 +760,7 @@ function CommentItem({ comment }) {
   );
 }
 
-/* ─── Skeleton ────────────────────────────────────────────────────────────── */
+/* ─── PostSkeleton ────────────────────────────────────────────────────────── */
 function PostSkeleton() {
   return (
     <div className="skel">
@@ -665,20 +781,30 @@ function PostSkeleton() {
 /* ─── RightPanel ─────────────────────────────────────────────────────────── */
 function RightPanel({ followed, onToggleFollow }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const uid = user?.userId ?? user?.id;
+  const [suggestions, setSuggestions] = useState([]);
+
+  useEffect(() => {
+    import('../services/userService').then(({ default: us }) => {
+      us.search('').catch(() => null).then(res => {
+        if (!res) return;
+        const data = res?.data ?? res;
+        const users = Array.isArray(data) ? data : [];
+        setSuggestions(users.filter(u => (u.userId ?? u.id) !== uid).slice(0, 3));
+      });
+    });
+  }, [uid]);
+
   return (
     <>
-      {/* Trending — placeholder; wire to GET /api/hashtags/trending */}
       <div className="wg">
         <div className="wg-head">
           <div className="wg-title">🔥 Trending</div>
           <button className="wg-more">See all</button>
         </div>
         {TRENDS.map((t, i) => (
-          <div
-            key={t.tag}
-            className="tr-item"
-            onClick={() => navigate(`/hashtag/${t.tag.slice(1)}`)}
-          >
+          <div key={t.tag} className="tr-item" onClick={() => navigate(`/hashtag/${t.tag.slice(1)}`)}>
             <span className="tr-num">{i + 1}</span>
             <div className="tr-body">
               <div className="tr-tag">{t.tag}</div>
@@ -689,27 +815,43 @@ function RightPanel({ followed, onToggleFollow }) {
         ))}
       </div>
 
-      {/* Suggested — placeholder; wire to GET /api/users/suggestions */}
       <div className="wg">
         <div className="wg-head">
           <div className="wg-title">✦ Suggested</div>
           <button className="wg-more">See all</button>
         </div>
-        {SUGGEST.map(s => (
-          <div key={s.name} className="wf-item">
-            <div className="wf-av" style={{ background: s.bg, color: s.c }}>{s.i}</div>
-            <div className="wf-info">
-              <div className="wf-name">{s.name}</div>
-              <div className="wf-role">{s.role}</div>
-            </div>
-            <button
-              className={`fw-btn ${followed[s.name] ? 'ing' : ''}`}
-              onClick={() => onToggleFollow(s.name)}
-            >
-              {followed[s.name] ? 'Following' : 'Follow'}
-            </button>
+        {suggestions.length === 0 ? (
+          <div style={{ padding: '16px', fontSize: 12, color: 'var(--t3)', fontFamily: 'var(--fm)' }}>
+            No suggestions yet
           </div>
-        ))}
+        ) : suggestions.map(s => {
+          const id  = s.userId ?? s.id;
+          const ini = getInitials(s.displayName, s.email);
+          const { bg, c } = avatarStyle(id);
+          return (
+            <div key={id} className="wf-item">
+              <div
+                className="wf-av"
+                style={{ background: s.avatarUrl ? 'transparent' : `linear-gradient(135deg,${bg},${c})`, color: c, overflow: 'hidden' }}
+                onClick={() => navigate(`/profile/${id}`)}
+              >
+                {s.avatarUrl
+                  ? <img src={s.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : ini}
+              </div>
+              <div className="wf-info" style={{ cursor: 'pointer' }} onClick={() => navigate(`/profile/${id}`)}>
+                <div className="wf-name">{s.displayName || s.email?.split('@')[0]}</div>
+                <div className="wf-role">{s.email}</div>
+              </div>
+              <button
+                className={`fw-btn ${followed[id] ? 'ing' : ''}`}
+                onClick={() => onToggleFollow(id)}
+              >
+                {followed[id] ? 'Following' : 'Follow'}
+              </button>
+            </div>
+          );
+        })}
       </div>
 
       <div style={{ fontSize: 9, color: 'var(--t4)', lineHeight: 1.8, padding: '0 4px', fontFamily: 'var(--fm)' }}>
@@ -721,8 +863,8 @@ function RightPanel({ followed, onToggleFollow }) {
 
 /* ─── FeedPage ────────────────────────────────────────────────────────────── */
 export default function FeedPage() {
-  const { user }   = useAuth();
-  const navigate   = useNavigate();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const uid      = user?.userId ?? user?.id;
   const userIni  = getInitials(user?.displayName, user?.email);
@@ -738,7 +880,49 @@ export default function FeedPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [followed,    setFollowed]    = useState({});
   const [visibility,  setVisibility]  = useState('public');
-  const pageRef = useRef(0);
+  const [mediaFiles,  setMediaFiles]  = useState([]);
+  const fileInputRef = useRef(null);
+  const pageRef      = useRef(0);
+
+  const handleToggleFollow = async (targetId) => {
+    const isNowFollowing = !followed[targetId];
+    setFollowed(f => ({ ...f, [targetId]: isNowFollowing }));
+    try {
+      const { default: us } = await import('../services/userService');
+      isNowFollowing ? await us.follow(targetId) : await us.unfollow(targetId);
+    } catch {
+      setFollowed(f => ({ ...f, [targetId]: !isNowFollowing }));
+    }
+  };
+
+  const handleFileChange = async (e) => {
+    const selected = Array.from(e.target.files ?? []);
+    if (!selected.length) return;
+    const slots  = 4 - mediaFiles.length;
+    const toAdd  = selected.slice(0, slots);
+    const newEntries = toAdd.map(f => ({ file: f, previewUrl: URL.createObjectURL(f), id: null, uploading: true, error: null }));
+    setMediaFiles(prev => [...prev, ...newEntries]);
+    for (let i = 0; i < toAdd.length; i++) {
+      const idx = mediaFiles.length + i;
+      try {
+        const res  = await postService.uploadMedia(toAdd[i]);
+        const data = res?.data ?? res;
+        setMediaFiles(prev => prev.map((m, j) => j === idx ? { ...m, id: data.id, uploading: false } : m));
+      } catch {
+        setMediaFiles(prev => prev.map((m, j) => j === idx ? { ...m, uploading: false, error: 'Upload failed' } : m));
+      }
+    }
+    e.target.value = '';
+  };
+
+  const removeMedia = (idx) => {
+    setMediaFiles(prev => {
+      const updated = [...prev];
+      URL.revokeObjectURL(updated[idx].previewUrl);
+      updated.splice(idx, 1);
+      return updated;
+    });
+  };
 
   const loadFeed = useCallback(async (reset = true) => {
     if (!uid) return;
@@ -758,8 +942,6 @@ export default function FeedPage() {
         setPosts(prev => [...prev, ...items]);
         pageRef.current += 1;
       }
-      // FIX: data.last is Spring's way of saying "this is the last page".
-      // hasNext = !data.last. If last is absent fall back to false (don't show button).
       setHasNext(data?.hasNext ?? (data?.last === false));
     } catch {
       if (reset) setPostErr('Could not load posts. Check your connection.');
@@ -771,14 +953,19 @@ export default function FeedPage() {
   useEffect(() => { loadFeed(true); }, [uid, tab]);
 
   const submitPost = async () => {
-    if (!draft.trim() || posting) return;
+    const hasContent = draft.trim().length > 0;
+    const hasMedia   = mediaFiles.some(m => m.id);
+    if ((!hasContent && !hasMedia) || posting) return;
+    if (mediaFiles.some(m => m.uploading)) { setPostErr('Please wait for uploads to finish.'); return; }
     setPosting(true);
     setPostErr('');
     try {
-      const res  = await postService.createPost({ content: draft.trim(), visibility });
-      const saved = res?.data ?? res;
+      const mediaIds = mediaFiles.filter(m => m.id).map(m => m.id);
+      const res      = await postService.createPost({ content: draft.trim() || null, visibility, mediaIds });
+      const saved    = res?.data ?? res;
       setPosts(prev => [saved, ...prev]);
       setDraft('');
+      setMediaFiles([]);
     } catch (err) {
       setPostErr(err?.response?.data?.message || 'Failed to post. Try again.');
     } finally {
@@ -786,7 +973,6 @@ export default function FeedPage() {
     }
   };
 
-  // Remove deleted post from local state
   const handleDelete = (postId) => {
     setPosts(prev => prev.filter(p => p.id !== postId));
   };
@@ -809,7 +995,7 @@ export default function FeedPage() {
         rightPanel={
           <RightPanel
             followed={followed}
-            onToggleFollow={n => setFollowed(f => ({ ...f, [n]: !f[n] }))}
+            onToggleFollow={handleToggleFollow}
           />
         }
       >
@@ -835,24 +1021,56 @@ export default function FeedPage() {
                 onKeyDown={e => e.key === 'Enter' && e.ctrlKey && submitPost()}
               />
             </div>
-            {draft && (
-              <div className="c-toolbar">
-                <button className="c-tool">📷 Photo</button>
-                <button className="c-tool">#️⃣ Tag</button>
-                <button className="c-vis" onClick={cycleVisibility}>
-                  {visLabel[visibility]}
-                </button>
-                <div className="c-gap" />
-                <span className="c-hint">Ctrl+Enter</span>
+
+            {mediaFiles.length > 0 && (
+              <div className="c-previews">
+                {mediaFiles.map((m, i) => (
+                  <div key={i} className="c-prev-item">
+                    <img className="c-prev-img" src={m.previewUrl} alt="" />
+                    {m.uploading && (
+                      <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.5)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                        <div className="c-up-dot" />
+                      </div>
+                    )}
+                    {m.error && (
+                      <div style={{position:'absolute',inset:0,background:'rgba(232,25,44,.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,color:'#fff'}}>✕</div>
+                    )}
+                    <button className="c-prev-rm" onClick={() => removeMedia(i)}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="c-toolbar">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,video/mp4,video/webm,application/pdf"
+                multiple
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+              />
+              <button
+                className={`c-tool ${mediaFiles.length > 0 ? 'active' : ''}`}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={mediaFiles.length >= 4}
+              >
+                📷 {mediaFiles.length > 0 ? `${mediaFiles.length}/4` : 'Photo'}
+              </button>
+              <button className="c-tool">#️⃣ Tag</button>
+              <button className="c-vis" onClick={cycleVisibility}>{visLabel[visibility]}</button>
+              <div className="c-gap" />
+              {(draft.length > 0 || mediaFiles.length > 0) && <span className="c-hint">Ctrl+Enter</span>}
+              {(draft.length > 0 || mediaFiles.length > 0) && (
                 <button
                   className="c-post"
                   onClick={submitPost}
-                  disabled={posting || !draft.trim()}
+                  disabled={posting || mediaFiles.some(m => m.uploading) || (!draft.trim() && !mediaFiles.some(m => m.id))}
                 >
                   {posting ? 'Posting…' : 'Post'}
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Error */}

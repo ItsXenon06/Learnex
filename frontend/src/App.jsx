@@ -8,6 +8,7 @@ import NotificationsPage  from './pages/NotificationsPage';
 import MessagesPage       from './pages/MessagesPage';
 import GroupsPage         from './pages/GroupsPage';
 import SavedPage          from './pages/SavedPage';
+import PostDetailPage from './pages/PostDetailPage';
 
 /* ─── Session-expired toast ──────────────────────────────────────────────── */
 // Rendered at app root so it sits above everything. Reads a flag that
@@ -141,7 +142,7 @@ function AppRoutes() {
 
         {/* Post detail */}
         <Route path="/post/:postId"
-          element={<PrivateRoute><ComingSoon name="Post Detail" /></PrivateRoute>} />
+          element={<PrivateRoute><PostDetailPage /></PrivateRoute>} />
         <Route path="/hashtag/:tag"
           element={<PrivateRoute><ComingSoon name="Hashtag" /></PrivateRoute>} />
 

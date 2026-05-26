@@ -19,9 +19,9 @@ public class JwtService {
     @Value("${jwt.expiration:86400000}")
     private long jwtExpiration;
 
-    private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
-    }
+    private javax.crypto.SecretKey getSigningKey() {
+    return Keys.hmacShaKeyFor(secret.getBytes());
+}
 
     public String generateToken(String username, List<String> roles) {
         return Jwts.builder()
@@ -49,12 +49,12 @@ public class JwtService {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-    }
+    return Jwts.parser()
+            .verifyWith((javax.crypto.SecretKey) getSigningKey())
+            .build()
+            .parseSignedClaims(token)
+            .getPayload();
+}
 
     public boolean isTokenValid(String token, String username) {
         final String extractedUsername = extractUsername(token);

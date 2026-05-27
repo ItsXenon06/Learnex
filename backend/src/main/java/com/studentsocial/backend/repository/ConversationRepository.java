@@ -37,4 +37,10 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
             """)
     Optional<Conversation> findExistingDm(@Param("userA") UUID userA,
                                           @Param("userB") UUID userB);
+            @Query("""
+        SELECT c FROM Conversation c
+        WHERE c.type = 'group'
+          AND c.name = :groupTag
+        """)
+Optional<Conversation> findGroupConversationByTag(@Param("groupTag") String groupTag);
 }

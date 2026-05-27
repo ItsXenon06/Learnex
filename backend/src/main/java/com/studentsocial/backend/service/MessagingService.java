@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -29,6 +30,7 @@ public class MessagingService {
     private final UserRepository               userRepository;
     private final ProfileRepository            profileRepository;
     private final NotificationService          notificationService;
+    private final StudyGroupRepository studyGroupRepository;
 
     // ---------------------------------------------------------------
     // Conversations
@@ -58,29 +60,56 @@ public class MessagingService {
                     return toConversationResponse(conv, initiator.getId());
                 });
     }
-    @Transactional
-public ConversationResponse createGroupChat(UUID creatorId, String name, List<UUID> memberIds) {
+ 
+@Transactional
+public ConversationResponse createOrGetGroupChat(UUID creatorId, String name,
+                                                  List<UUID> memberIds,
+                                                  String groupTag) {
+    // groupTag = "grp:{studyGroupId}" — used as a stable lookup key
+    if (groupTag != null && !groupTag.isBlank()) {
+        Optional<Conversation> existing =
+                conversationRepository.findGroupConversationByTag(groupTag);
+        if (existing.isPresent()) {
+            // Ensure the caller is a member (they may have joined after creation)
+            Conversation conv = existing.get();
+            UUID convId = conv.getId();
+            if (memberRepository.findByConversationIdAndUserId(convId, creatorId).isEmpty()) {
+                User caller = userRepository.findById(creatorId)
+                        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                memberRepository.save(ConversationMember.builder()
+                        .conversation(conv).user(caller).role("member").build());
+            }
+            return toConversationResponse(conv, creatorId);
+        }
+    }
+ 
+    // Not found — create new
     User creator = userRepository.findById(creatorId)
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
+ 
+    String convName = (groupTag != null && !groupTag.isBlank()) ? groupTag : name;
+    String displayName = name; // friendly name stored separately via metadata
+ 
     Conversation conv = conversationRepository.save(
-            Conversation.builder().type("group").name(name).build());
-
-    // Add creator as owner
+            Conversation.builder()
+                    .type("group")
+                    .name(convName)       // "grp:{uuid}" — stable key
+                    .build());
+ 
     memberRepository.save(ConversationMember.builder()
             .conversation(conv).user(creator).role("owner").build());
-
-    // Add each requested member (skip duplicates and creator)
+ 
     for (UUID memberId : memberIds) {
         if (memberId.equals(creatorId)) continue;
         userRepository.findById(memberId).ifPresent(member ->
-            memberRepository.save(ConversationMember.builder()
-                    .conversation(conv).user(member).role("member").build())
+                memberRepository.save(ConversationMember.builder()
+                        .conversation(conv).user(member).role("member").build())
         );
     }
-
+ 
     return toConversationResponse(conv, creatorId);
 }
+ 
     @Transactional(readOnly = true)
     public List<ConversationResponse> getConversations(UUID userId) {
         userRepository.findById(userId)
@@ -201,6 +230,7 @@ public ConversationResponse createGroupChat(UUID creatorId, String name, List<UU
 
         return ConversationResponse.builder()
                 .id(conv.getId()).type(conv.getType()).name(conv.getName())
+                .displayName(resolveDisplayName(conv, members))   
                 .otherUserId(otherUserId).otherUserEmail(otherEmail)
                 .otherUserDisplayName(otherDisplayName)
                 .lastMessage(lastMessage).unreadCount(unreadCount)
@@ -228,4 +258,22 @@ public ConversationResponse createGroupChat(UUID creatorId, String name, List<UU
                 .editedAt(m.getEditedAt())
                 .build();
     }
+    private String resolveDisplayName(Conversation conv, List<ConversationMember> members) {
+    if ("group".equals(conv.getType())) {
+        String raw = conv.getName();
+        // "grp:{uuid}" → look up study group name, or fall back to stripping prefix
+        if (raw != null && raw.startsWith("grp:")) {
+            try {
+                UUID gid = UUID.fromString(raw.substring(4));
+                return studyGroupRepository.findById(gid)
+                        .map(g -> g.getName())
+                        .orElse(raw);
+            } catch (Exception e) {
+                return raw;
+            }
+        }
+        return raw;
+    }
+    return null; // DMs don't need this
+}
 }

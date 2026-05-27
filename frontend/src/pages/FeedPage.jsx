@@ -23,8 +23,16 @@ const css = `
 .ftab.on{color:var(--t1);}
 .ftab.on::after{transform:scaleX(1);}
 .fh-gap{flex:1;}
+
+/* Sort dropdown */
+.sort-wrap{position:relative;}
 .fh-sort{display:flex;align-items:center;gap:5px;padding:7px 12px;border:none;background:transparent;color:var(--t3);font-size:11px;font-family:var(--fb);font-weight:600;letter-spacing:.5px;cursor:pointer;border-radius:6px;transition:all .15s;}
 .fh-sort:hover{background:var(--s2);color:var(--t2);}
+.sort-menu{position:absolute;right:0;top:calc(100% + 4px);background:var(--s2);border:1px solid var(--b2);border-radius:10px;min-width:190px;padding:4px;z-index:100;box-shadow:0 8px 32px rgba(0,0,0,.6);animation:menu-pop .15s var(--ease);}
+@keyframes menu-pop{from{opacity:0;transform:scale(.93) translateY(-4px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.sort-item{display:flex;align-items:center;gap:9px;width:100%;padding:9px 12px;border:none;background:transparent;color:var(--t2);font-size:13px;font-family:var(--fb);font-weight:600;cursor:pointer;border-radius:7px;transition:all .12s;text-align:left;}
+.sort-item:hover{background:var(--s3);color:var(--t1);}
+.sort-item.active{color:var(--red);background:var(--red-sub);}
 
 /* COMPOSE */
 .compose{
@@ -78,7 +86,7 @@ position:relative;cursor:pointer;
   width:46px;height:46px;border-radius:11px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
   font-family:var(--fd);font-size:18px;color:#fff;
-  transition:transform .15s;cursor:pointer;
+  transition:transform .15s;cursor:pointer;overflow:hidden;
 }
 .c-ava:hover{transform:scale(1.06);}
 .c-meta{flex:1;min-width:0;}
@@ -98,7 +106,6 @@ position:relative;cursor:pointer;
   box-shadow:0 8px 32px rgba(0,0,0,.6);
   animation:menu-pop .15s var(--ease);
 }
-@keyframes menu-pop{from{opacity:0;transform:scale(.93) translateY(-4px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .c-menu-item{
   display:flex;align-items:center;gap:9px;width:100%;
   padding:9px 12px;border:none;background:transparent;
@@ -139,20 +146,27 @@ position:relative;cursor:pointer;
   padding:8px 18px;border-top:1px solid var(--b1);
   font-size:13px;color:var(--t3);font-family:var(--fm);
 }
-.stat-rx{display:flex;align-items:center;gap:3px;}
+.stat-rx{display:flex;align-items:center;gap:3px;cursor:pointer;}
+.stat-rx:hover .stat-n{color:var(--t1);}
 .stat-em{font-size:16px;}
-.stat-n{margin-left:4px;font-size:12px;}
+.stat-n{margin-left:4px;font-size:12px;transition:color .15s;}
 .stat-right{display:flex;align-items:center;gap:14px;}
 .stat-link{cursor:pointer;transition:color .15s;}
 .stat-link:hover{color:var(--t1);}
 
+/* ── ACTION BAR ──
+   Strategy:
+   - .rx-trigger wraps the Like button; hover on it reveals the picker
+   - An ::after bridge keeps hover alive between button and picker
+   - Click on the button = toggle current reaction (or apply 'like')
+   - Click inside picker = pick that reaction (stops propagation)
+*/
 .card-actions{display:flex;align-items:stretch;border-top:1px solid var(--b1);}
 .ca{
   flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
   padding:11px 4px;border:none;border-right:1px solid var(--b1);background:transparent;
   color:var(--t3);font-size:13px;font-family:var(--fb);font-weight:600;
   letter-spacing:.3px;cursor:pointer;transition:all .15s;
-  position:relative;
 }
 .ca:last-child{border-right:none;}
 .ca:hover{background:var(--s2);color:var(--t1);}
@@ -160,21 +174,72 @@ position:relative;cursor:pointer;
 .ca.saved{color:var(--gold);}
 .ca-i{font-size:16px;line-height:1;}
 
-/* reaction picker */
-.rx-pick{
-position:absolute;bottom:calc(100% + 8px);left:50%;
-transform:translateX(-50%) scale(.85);transform-origin:bottom center;
-background:var(--s3);border:1px solid var(--b2);border-radius:32px;
-padding:6px 10px;display:flex;gap:3px;z-index:200;
-opacity:0;pointer-events:none;
-transition:opacity .15s,transform .15s var(--ease);
-box-shadow:0 10px 40px rgba(0,0,0,.7);white-space:nowrap;
+/* The reaction trigger wraps the Like button */
+.rx-trigger{position:relative;flex:1;display:flex;}
+.rx-trigger .ca-btn{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 4px;border:none;border-right:1px solid var(--b1);background:transparent;
+  color:var(--t3);font-size:13px;font-family:var(--fb);font-weight:600;
+  letter-spacing:.3px;cursor:pointer;transition:all .15s;
 }
-.ca::after{content:'';position:absolute;bottom:100%;left:0;right:0;height:12px;background:transparent;pointer-events:none;}
-.ca:hover::after{pointer-events:all;}
-.ca:hover .rx-pick,.ca:focus-within .rx-pick,.rx-pick:hover{opacity:1;pointer-events:all;transform:translateX(-50%) scale(1);}
-.rx-e{font-size:22px;cursor:pointer;border:none;background:none;padding:3px 5px;border-radius:50%;transition:transform .12s;line-height:1;}
+.rx-trigger .ca-btn:hover{background:var(--s2);color:var(--t1);}
+.rx-trigger .ca-btn.liked{color:var(--red);}
+
+/* Bridge: invisible area connecting button to picker */
+.rx-trigger::after{
+  content:'';position:absolute;bottom:100%;left:0;right:0;height:14px;
+}
+
+.rx-pick{
+  position:absolute;bottom:calc(100% + 8px);left:50%;
+  transform:translateX(-50%) scale(.85);transform-origin:bottom center;
+  background:var(--s3);border:1px solid var(--b2);border-radius:32px;
+  padding:6px 10px;display:flex;gap:3px;z-index:200;
+  opacity:0;pointer-events:none;
+  transition:opacity .15s,transform .15s var(--ease);
+  box-shadow:0 10px 40px rgba(0,0,0,.7);white-space:nowrap;
+}
+.rx-trigger:hover .rx-pick,
+.rx-pick:hover{
+  opacity:1;pointer-events:all;
+  transform:translateX(-50%) scale(1);
+}
+.rx-e{
+  font-size:22px;cursor:pointer;border:none;background:none;
+  padding:3px 5px;border-radius:50%;transition:transform .12s;line-height:1;
+  position:relative;
+}
 .rx-e:hover{transform:scale(1.45) translateY(-4px);}
+.rx-e::after{
+  content:attr(data-label);
+  position:absolute;bottom:calc(100% + 4px);left:50%;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,.8);color:#fff;font-size:9px;font-family:var(--fm);
+  padding:2px 6px;border-radius:4px;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity .1s;
+}
+.rx-e:hover::after{opacity:1;}
+
+/* ── REACTION DETAILS MODAL ── */
+.rx-detail-overlay{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;animation:fade-in .15s ease;}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+.rx-detail-modal{background:var(--s1);border:1px solid var(--b2);border-radius:16px;width:90%;max-width:420px;overflow:hidden;max-height:80vh;display:flex;flex-direction:column;animation:slide-up .2s var(--ease);}
+@keyframes slide-up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.rx-modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--b1);}
+.rx-modal-title{font-size:15px;font-weight:700;}
+.rx-modal-close{width:28px;height:28px;border-radius:7px;border:none;background:transparent;color:var(--t3);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;}
+.rx-modal-close:hover{background:var(--s3);color:var(--t1);}
+.rx-modal-tabs{display:flex;gap:0;padding:0 10px;border-bottom:1px solid var(--b1);overflow-x:auto;}
+.rx-modal-tab{padding:10px 14px;border:none;background:transparent;color:var(--t3);font-size:12px;font-family:var(--fb);font-weight:700;cursor:pointer;transition:all .2s;position:relative;white-space:nowrap;display:flex;align-items:center;gap:5px;}
+.rx-modal-tab::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--grad-fire);transform:scaleX(0);transition:transform .2s;border-radius:2px;}
+.rx-modal-tab.on{color:var(--t1);}
+.rx-modal-tab.on::after{transform:scaleX(1);}
+.rx-modal-body{flex:1;overflow-y:auto;padding:8px 0;}
+.rx-user-row{display:flex;align-items:center;gap:12px;padding:10px 18px;transition:background .15s;cursor:pointer;}
+.rx-user-row:hover{background:var(--s2);}
+.rx-user-av{width:36px;height:36px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:14px;color:#fff;}
+.rx-user-name{font-size:13px;font-weight:600;flex:1;}
+.rx-user-emoji{font-size:18px;}
 
 /* error banner */
 .post-err{background:rgba(232,25,44,.1);border:1px solid var(--red-border);border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:var(--red);display:flex;align-items:center;gap:8px;}
@@ -190,18 +255,42 @@ box-shadow:0 10px 40px rgba(0,0,0,.7);white-space:nowrap;
 .cm-who{font-size:11px;font-weight:700;margin-bottom:3px;display:flex;align-items:center;gap:7px;}
 .cm-when{font-size:9px;color:var(--t3);font-family:var(--fm);font-weight:400;}
 .cm-txt{font-size:13px;line-height:1.55;word-break:break-word;}
-/* comment reactions */
-.cm-acts{display:flex;align-items:center;gap:2px;margin-top:4px;}
-.cm-act{background:none;border:none;color:var(--t3);font-size:11px;font-family:var(--fb);font-weight:600;cursor:pointer;padding:2px 7px;border-radius:5px;transition:all .12s;letter-spacing:.3px;display:flex;align-items:center;gap:4px;}
-.cm-act:hover{background:var(--s3);color:var(--t1);}
-.cm-act.liked{color:var(--red);}
+
+/* ── COMMENT REACTIONS ──
+   Hover-group strategy: .cm-rx-wrap provides the hover region.
+   ::after bridge keeps hover alive. Click chip = un-react if yours. */
+.cm-acts{display:flex;align-items:center;gap:4px;margin-top:4px;flex-wrap:wrap;}
 .cm-rx-wrap{position:relative;display:inline-flex;}
-.cm-rx-pick{position:absolute;bottom:calc(100% + 6px);left:0;background:var(--s3);border:1px solid var(--b2);border-radius:28px;padding:5px 8px;display:flex;gap:2px;z-index:200;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;transform:scale(.85);transform-origin:bottom left;box-shadow:0 8px 32px rgba(0,0,0,.7);white-space:nowrap;}
-.cm-rx-wrap:hover .cm-rx-pick,.cm-rx-pick:hover{opacity:1;pointer-events:all;transform:scale(1);}
+.cm-rx-wrap::after{content:'';position:absolute;bottom:100%;left:0;right:0;height:10px;}
+.cm-rx-btn{
+  display:flex;align-items:center;gap:4px;
+  background:none;border:none;color:var(--t3);font-size:11px;
+  font-family:var(--fb);font-weight:600;cursor:pointer;
+  padding:2px 7px;border-radius:5px;transition:all .12s;
+}
+.cm-rx-btn:hover{background:var(--s3);color:var(--t1);}
+.cm-rx-btn.liked{color:var(--red);}
+.cm-rx-pick{
+  position:absolute;bottom:calc(100% + 6px);left:0;
+  background:var(--s3);border:1px solid var(--b2);border-radius:28px;
+  padding:5px 8px;display:flex;gap:2px;z-index:200;
+  opacity:0;pointer-events:none;
+  transition:opacity .15s,transform .15s var(--ease);
+  transform:scale(.85);transform-origin:bottom left;
+  box-shadow:0 8px 32px rgba(0,0,0,.7);white-space:nowrap;
+}
+.cm-rx-wrap:hover .cm-rx-pick,
+.cm-rx-pick:hover{opacity:1;pointer-events:all;transform:scale(1);}
 .cm-rx-e{font-size:18px;cursor:pointer;border:none;background:none;padding:2px 4px;border-radius:50%;transition:transform .12s;line-height:1;}
 .cm-rx-e:hover{transform:scale(1.4) translateY(-3px);}
-.cm-rx-chip{display:flex;align-items:center;gap:3px;padding:2px 7px;background:var(--s3);border:1px solid var(--b1);border-radius:10px;font-size:10px;cursor:pointer;transition:all .12s;font-family:var(--fm);}
-.cm-rx-chip:hover,.cm-rx-chip.mine{border-color:var(--red-border);background:var(--red-sub);color:var(--red);}
+.cm-rx-chip{
+  display:flex;align-items:center;gap:3px;padding:2px 7px;
+  background:var(--s3);border:1px solid var(--b1);border-radius:10px;
+  font-size:10px;cursor:pointer;transition:all .12s;font-family:var(--fm);
+}
+.cm-rx-chip:hover{border-color:var(--red-border);background:var(--red-sub);color:var(--red);}
+.cm-rx-chip.mine{border-color:var(--red-border);background:var(--red-sub);color:var(--red);}
+
 .cm-empty{padding:16px 18px;font-size:13px;color:var(--t3);font-family:var(--fm);}
 .cm-input-row{display:flex;gap:8px;align-items:center;padding:10px 18px 12px;}
 .cm-inp{flex:1;background:var(--s2);border:1px solid var(--b1);border-radius:22px;padding:7px 16px;color:var(--t1);font-size:13px;font-family:var(--fb);outline:none;transition:border-color .2s,box-shadow .2s;}
@@ -212,6 +301,16 @@ box-shadow:0 10px 40px rgba(0,0,0,.7);white-space:nowrap;
 .cm-go:disabled{opacity:.4;cursor:not-allowed;transform:none;}
 .cm-replies{padding-left:20px;display:flex;flex-direction:column;gap:6px;margin-top:4px;}
 
+/* SHARE / COPY TOAST */
+.copy-toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  background:var(--s2);border:1px solid var(--b2);border-radius:10px;
+  padding:10px 20px;font-size:13px;color:var(--t1);font-family:var(--fm);
+  z-index:9999;animation:toast-up .25s var(--ease);pointer-events:none;
+  box-shadow:0 4px 20px rgba(0,0,0,.5);
+}
+@keyframes toast-up{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
 /* RIGHT PANEL */
 .lx-rp{padding:18px 16px;position:sticky;top:var(--tb);height:calc(100vh - var(--tb));overflow-y:auto;display:flex;flex-direction:column;gap:14px;}
 .lx-rp::-webkit-scrollbar{display:none;}
@@ -221,8 +320,6 @@ box-shadow:0 10px 40px rgba(0,0,0,.7);white-space:nowrap;
 .wg-title em{color:var(--red);font-style:normal;}
 .wg-more{font-size:12px;color:var(--t3);cursor:pointer;font-weight:600;letter-spacing:.5px;border:none;background:none;transition:color .15s;font-family:var(--fb);}
 .wg-more:hover{color:var(--red);}
-
-/* trending */
 .tr-item{display:flex;align-items:center;padding:11px 16px;cursor:pointer;transition:background .15s;gap:13px;border-bottom:1px solid var(--b1);}
 .tr-item:last-child{border-bottom:none;}
 .tr-item:hover{background:var(--s2);}
@@ -232,12 +329,10 @@ box-shadow:0 10px 40px rgba(0,0,0,.7);white-space:nowrap;
 .tr-item:hover .tr-tag{color:var(--red);}
 .tr-sub{font-size:11px;color:var(--t3);font-family:var(--fm);margin-top:2px;}
 .tr-cnt{font-size:11px;color:var(--t3);font-family:var(--fm);flex-shrink:0;}
-
-/* who to follow */
 .wf-item{display:flex;align-items:center;gap:11px;padding:11px 16px;border-bottom:1px solid var(--b1);transition:background .15s;}
 .wf-item:last-child{border-bottom:none;}
 .wf-item:hover{background:var(--s2);}
-.wf-av{width:38px;height:38px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;font-family:'Bebas Neue',sans-serif;}
+.wf-av{width:38px;height:38px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;font-family:'Bebas Neue',sans-serif;overflow:hidden;}
 .wf-info{flex:1;min-width:0;}
 .wf-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .wf-role{font-size:11px;color:var(--t3);font-family:var(--fm);margin-top:2px;}
@@ -247,8 +342,6 @@ box-shadow:0 10px 40px rgba(0,0,0,.7);white-space:nowrap;
 
 /* SKELETON */
 .skel{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:16px;margin-bottom:10px;}
-
-/* load more */
 .load-more{text-align:center;padding:14px;}
 .lm-btn{padding:10px 28px;background:transparent;border:1px solid var(--b2);border-radius:8px;color:var(--t2);font-size:12px;font-family:var(--fb);font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .15s;}
 .lm-btn:hover{background:var(--s2);color:var(--t1);}
@@ -263,38 +356,40 @@ const RX_TYPES = [
   { emoji: '🎉', type: 'celebrate',  label: 'Celebrate' },
   { emoji: '🤝', type: 'support',    label: 'Support' },
 ];
-const RX_EMOJI = {
-  like: '👍', love: '❤️', insightful: '💡', celebrate: '🎉', support: '🤝',
-};
+const RX_EMOJI = { like: '👍', love: '❤️', insightful: '💡', celebrate: '🎉', support: '🤝' };
+
+const SORT_OPTIONS = [
+  { key: 'latest',      label: '🕐 Latest' },
+  { key: 'likes_day',   label: '🔥 Top — 24h' },
+  { key: 'likes_month', label: '📅 Top — Month' },
+  { key: 'likes_year',  label: '🗓 Top — Year' },
+];
 
 const TRENDS = [
   { tag: '#FinalExams',   sub: 'Trending in Education', cnt: '2.4k' },
   { tag: '#CampusLife',   sub: 'Trending near you',     cnt: '1.8k' },
-  { tag: '#StudyGroup',   sub: 'Popular today',          cnt: '943'  },
-  { tag: '#InternSeason', sub: 'Career & Jobs',          cnt: '712'  },
-  { tag: '#LearnexTips',  sub: 'Community picks',        cnt: '500'  },
+  { tag: '#StudyGroup',   sub: 'Popular today',         cnt: '943'  },
+  { tag: '#InternSeason', sub: 'Career & Jobs',         cnt: '712'  },
+  { tag: '#LearnexTips',  sub: 'Community picks',       cnt: '500'  },
 ];
 
-/* ─── Avatar helpers ────────────────────────────────────────────────────── */
+/* ─── Avatar helpers ─────────────────────────────────────────────────────── */
 const AV_BG = ['#0d1f35','#0d2918','#2a0d1e','#1e1a0d','#1a0d2e','#1a1a0d'];
 const AV_C  = ['#4a9eff','#4adf8a','#df4a8a','#dfb84a','#af4adf','#df9a4a'];
 function avatarStyle(seed) {
   const i = (typeof seed === 'string' ? seed.charCodeAt(0) : seed || 0) % AV_BG.length;
   return { bg: AV_BG[i], c: AV_C[i] };
 }
-
-/* ─── Helpers ────────────────────────────────────────────────────────────── */
 function timeAgo(isoString) {
   if (!isoString) return '';
   const diff = Date.now() - new Date(isoString).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1)  return 'just now';
+  if (m < 1) return 'just now';
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
 }
-
 function renderText(text) {
   if (!text) return null;
   return text.split(/(\#\w+|@\w+)/g).map((p, i) => {
@@ -303,30 +398,25 @@ function renderText(text) {
     return <span key={i}>{p}</span>;
   });
 }
-
 function extractTags(content) {
   if (!content) return [];
   return [...new Set((content.match(/#\w+/g) || []))];
 }
 
-/* ─── Lightbox ────────────────────────────────────────────────────────────── */
-const lboxCss = `@keyframes lbox-in{from{opacity:0}to{opacity:1}}`;
-
+/* ─── Lightbox ───────────────────────────────────────────────────────────── */
 function Lightbox({ images, startIndex, onClose }) {
   const [idx, setIdx] = useState(startIndex);
   useEffect(() => {
     const h = (e) => {
-      if (e.key === 'Escape')     onClose();
+      if (e.key === 'Escape') onClose();
       if (e.key === 'ArrowLeft')  setIdx(i => (i - 1 + images.length) % images.length);
       if (e.key === 'ArrowRight') setIdx(i => (i + 1) % images.length);
     };
     document.addEventListener('keydown', h);
     return () => document.removeEventListener('keydown', h);
   }, [images.length, onClose]);
-
   return (
-    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,.92)',display:'flex',alignItems:'center',justifyContent:'center',animation:'lbox-in .15s ease'}}>
-      <style>{lboxCss}</style>
+    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,.92)',display:'flex',alignItems:'center',justifyContent:'center'}}>
       <button onClick={onClose} style={{position:'absolute',top:18,right:22,background:'none',border:'none',color:'#fff',fontSize:28,cursor:'pointer',opacity:.7}}>✕</button>
       {images.length > 1 && (
         <>
@@ -339,7 +429,73 @@ function Lightbox({ images, startIndex, onClose }) {
   );
 }
 
-/* ─── CommentReactions ────────────────────────────────────────────────────── */
+/* ─── ReactionDetailsModal ───────────────────────────────────────────────── */
+// Shows aggregate reaction counts by type, with per-user list fetched from API.
+function ReactionDetailsModal({ postId, reactions, onClose }) {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('all');
+  const [reactors, setReactors] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    postService.getPostReactions(postId)
+      .then(res => {
+        const data = res?.data ?? res;
+        setReactors(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [postId]);
+
+  const total = reactions.reduce((s, r) => s + (r.count ?? 0), 0);
+  const filtered = activeTab === 'all'
+    ? reactors
+    : reactors.filter(r => (r.reactionType ?? r.type ?? r.name) === activeTab);
+
+  return (
+    <div className="rx-detail-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="rx-detail-modal">
+        <div className="rx-modal-head">
+          <span className="rx-modal-title">Reactions</span>
+          <button className="rx-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="rx-modal-tabs">
+          <button className={`rx-modal-tab ${activeTab === 'all' ? 'on' : ''}`} onClick={() => setActiveTab('all')}>
+            ⚡ {total}
+          </button>
+          {reactions.filter(r => r.count > 0).map(r => (
+            <button
+              key={r.name ?? r.type}
+              className={`rx-modal-tab ${activeTab === (r.name ?? r.type) ? 'on' : ''}`}
+              onClick={() => setActiveTab(r.name ?? r.type)}
+            >
+              {RX_EMOJI[r.name ?? r.type] ?? '👍'} {r.count}
+            </button>
+          ))}
+        </div>
+        <div className="rx-modal-body">
+          {loading ? (
+            <div style={{padding:'20px',textAlign:'center',color:'var(--t3)',fontSize:13}}>Loading…</div>
+          ) : filtered.length === 0 ? (
+            <div style={{padding:'20px',textAlign:'center',color:'var(--t3)',fontSize:13}}>No reactions yet</div>
+          ) : filtered.map((r, i) => {
+            const ini = getInitials(r.displayName, r.email);
+            const { bg, c } = avatarStyle(r.userId);
+            return (
+              <div key={i} className="rx-user-row" onClick={() => { navigate(`/profile/${r.userId}`); onClose(); }}>
+                <div className="rx-user-av" style={{ background: `linear-gradient(135deg,${bg},${c})` }}>{ini}</div>
+                <span className="rx-user-name">{r.displayName || r.email || 'User'}</span>
+                <span className="rx-user-emoji">{RX_EMOJI[r.reactionType ?? r.type ?? r.name] ?? '👍'}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── CommentReactions ───────────────────────────────────────────────────── */
 function CommentReactions({ commentId, reactions: initRx, myReaction: initMy }) {
   const [reactions, setReactions] = useState(initRx ?? []);
   const [myRx, setMyRx]           = useState(initMy ?? null);
@@ -369,21 +525,28 @@ function CommentReactions({ commentId, reactions: initRx, myReaction: initMy }) 
   return (
     <div className="cm-acts">
       <div className="cm-rx-wrap">
-        <button className={`cm-act ${myRx ? 'liked' : ''}`} disabled={busy}>
+        <button
+          className={`cm-rx-btn ${myRx ? 'liked' : ''}`}
+          disabled={busy}
+          onClick={() => { if (myRx) handle(myRx); }}
+          title={myRx ? 'Remove reaction' : 'Hover to pick a reaction'}
+        >
           {myRx ? (RX_EMOJI[myRx] ?? '👍') : '👍'}
           {total > 0 && <span style={{fontSize:10}}>{total}</span>}
-          <div className="cm-rx-pick" onMouseDown={e => e.stopPropagation()}>
-            {RX_TYPES.map(r => (
-              <button key={r.type} className="cm-rx-e" title={r.label}
-                onMouseDown={e => { e.stopPropagation(); e.preventDefault(); handle(r.type); }}>
-                {r.emoji}
-              </button>
-            ))}
-          </div>
         </button>
+        <div className="cm-rx-pick">
+          {RX_TYPES.map(r => (
+            <button key={r.type} className="cm-rx-e" title={r.label}
+              onClick={e => { e.stopPropagation(); handle(r.type); }}>
+              {r.emoji}
+            </button>
+          ))}
+        </div>
       </div>
       {reactions.filter(r => r.count > 0).map(r => (
-        <span key={r.name} className={`cm-rx-chip ${myRx === r.name ? 'mine' : ''}`} onClick={() => handle(r.name)}>
+        <span key={r.name} className={`cm-rx-chip ${myRx === r.name ? 'mine' : ''}`}
+          onClick={() => handle(r.name)}
+          title={myRx === r.name ? 'Remove reaction' : `React with ${r.name}`}>
           {RX_EMOJI[r.name] ?? r.emoji} {r.count}
         </span>
       ))}
@@ -391,7 +554,7 @@ function CommentReactions({ commentId, reactions: initRx, myReaction: initMy }) 
   );
 }
 
-/* ─── CardAttachmentGrid ──────────────────────────────────────────────────── */
+/* ─── CardAttachmentGrid ─────────────────────────────────────────────────── */
 function CardAttachmentGrid({ attachments }) {
   const [lightbox, setLightbox] = useState(null);
   const images = attachments.filter(a => a.type === 'image' || a.mimeType?.startsWith('image/'));
@@ -402,18 +565,22 @@ function CardAttachmentGrid({ attachments }) {
       <div className="card-media">
         <div className={`cm-grid n${n}`}>
           {images.slice(0, 4).map((img, i) => (
-            <img key={img.id ?? i} className="cm-att" src={img.url} alt=""
-              onClick={e => { e.stopPropagation(); setLightbox(i); }} />
+            <img key={img.id ?? i} className="cm-att"
+              src={img.url} alt=""
+              onClick={e => { e.stopPropagation(); setLightbox(i); }}
+            />
           ))}
         </div>
       </div>
-      {lightbox !== null && <Lightbox images={images} startIndex={lightbox} onClose={() => setLightbox(null)} />}
+      {lightbox !== null && (
+        <Lightbox images={images} startIndex={lightbox} onClose={() => setLightbox(null)} />
+      )}
     </>
   );
 }
 
-/* ─── PostCard ────────────────────────────────────────────────────────────── */
-function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
+/* ─── PostCard ───────────────────────────────────────────────────────────── */
+function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, showCopyToast }) {
   const navigate = useNavigate();
   const [post, setPost]           = useState(initPost);
   const [myRx, setMyRx]           = useState(initPost.myReaction ?? null);
@@ -425,6 +592,7 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
   const [cmSending, setCmSending] = useState(false);
   const [rxLoading, setRxLoading] = useState(false);
   const [menuOpen, setMenuOpen]   = useState(false);
+  const [showRxDetail, setShowRxDetail] = useState(false);
   const menuRef = useRef(null);
   const cmRef   = useRef(null);
 
@@ -444,7 +612,7 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
   const topRx        = [...reactions].sort((a, b) => (b.count ?? 0) - (a.count ?? 0)).slice(0, 3);
   const authorIni    = getInitials(post.authorDisplayName, post.authorEmail);
   const { bg, c }    = avatarStyle(post.authorId);
-  const commentCount = post.commentCount ?? post.comments ?? 0;
+  const commentCount = post.commentCount ?? 0;
   const tags         = post.hashtags?.map(h => `#${h}`) ?? extractTags(post.content);
   const attachments  = post.attachments ?? [];
 
@@ -464,21 +632,40 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
     if (e) e.stopPropagation();
     const next = !showCm;
     setShowCm(next);
-    if (next) {
-      loadComments();
-      setTimeout(() => cmRef.current?.focus(), 150);
-    }
+    if (next) { loadComments(); setTimeout(() => cmRef.current?.focus(), 150); }
   };
 
   const handleCardClick = (e) => {
     const tag = e.target.tagName;
     if (['BUTTON','INPUT','TEXTAREA','A','IMG'].includes(tag)) return;
-    if (e.target.closest('.c-more-wrap') || e.target.closest('.comments') || e.target.closest('.rx-pick')) return;
+    if (e.target.closest('.c-more-wrap') || e.target.closest('.comments') || e.target.closest('.rx-pick') || e.target.closest('.rx-trigger')) return;
     navigate(`/post/${post.id}`);
   };
 
-  const handleReact = async (type, e) => {
-    if (e) e.stopPropagation();
+  // Click the button itself = toggle current reaction or apply default 'like'
+  const handleReactClick = async (e) => {
+    e.stopPropagation();
+    if (rxLoading) return;
+    setRxLoading(true);
+    try {
+      let updatedReactions;
+      if (myRx) {
+        const res = await postService.removePostReaction(post.id);
+        updatedReactions = res?.data ?? res;
+        setMyRx(null);
+      } else {
+        const res = await postService.reactToPost(post.id, 'like');
+        updatedReactions = res?.data ?? res;
+        setMyRx('like');
+      }
+      if (Array.isArray(updatedReactions)) setPost(p => ({ ...p, reactions: updatedReactions }));
+    } catch { /* no-op */ }
+    finally { setRxLoading(false); }
+  };
+
+  // Pick a specific reaction from the hover picker
+  const handlePickReact = async (type, e) => {
+    e.stopPropagation();
     if (rxLoading) return;
     setRxLoading(true);
     try {
@@ -492,9 +679,7 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
         updatedReactions = res?.data ?? res;
         setMyRx(type);
       }
-      if (Array.isArray(updatedReactions)) {
-        setPost(p => ({ ...p, reactions: updatedReactions }));
-      }
+      if (Array.isArray(updatedReactions)) setPost(p => ({ ...p, reactions: updatedReactions }));
     } catch { /* no-op */ }
     finally { setRxLoading(false); }
   };
@@ -506,15 +691,12 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
     const text = cmTxt.trim();
     setCmTxt('');
     try {
-      const res  = await commentService.createComment(post.id, text);
+      const res   = await commentService.createComment(post.id, text);
       const saved = res?.data ?? res;
       setComments(prev => [...prev, saved]);
       setPost(p => ({ ...p, commentCount: (p.commentCount ?? 0) + 1 }));
-    } catch {
-      setCmTxt(text);
-    } finally {
-      setCmSending(false);
-    }
+    } catch { setCmTxt(text); }
+    finally { setCmSending(false); }
   };
 
   const handleDelete = async () => {
@@ -523,220 +705,212 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete }) {
     try {
       await postService.deletePost(post.id);
       onDelete(post.id);
-    } catch (e) {
-      alert(e?.response?.data?.message || 'Could not delete post.');
-    }
+    } catch (e) { alert(e?.response?.data?.message || 'Could not delete post.'); }
   };
 
-  const handleReport = () => {
-    setMenuOpen(false);
-    alert('Report submitted. (Report endpoint coming soon.)');
+  const handleShare = async (e) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/Learnex/post/${post.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // Fallback for non-HTTPS or denied permission
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    showCopyToast();
   };
 
   return (
-    <div className="card" onClick={handleCardClick}>
-      {/* Author row */}
-      <div className="card-head">
-        <div
-          className="c-ava"
-          style={{ background: `linear-gradient(135deg,${bg},${c})` }}
-          onClick={e => { e.stopPropagation(); navigate(`/profile/${post.authorId}`); }}
-        >
-          {authorIni}
-        </div>
-        <div className="c-meta">
-          <div className="c-name" onClick={e => { e.stopPropagation(); navigate(`/profile/${post.authorId}`); }}>
-            {post.authorDisplayName || post.authorEmail || 'Unknown'}
-          </div>
-          <div className="c-sub">
-            <span>{post.authorHeadline || ''}</span>
-            {post.authorHeadline && <span className="c-dot">·</span>}
-            <span>{timeAgo(post.createdAt)}</span>
-            {post.visibility && post.visibility !== 'public' && (
-              <><span className="c-dot">·</span>
-              <span>{post.visibility === 'private' ? '🔒 Only me' : '🔗 Connections'}</span></>
-            )}
-          </div>
-        </div>
-
-        {/* ⋯ menu */}
-        <div className="c-more-wrap" ref={menuRef}>
-          <button
-            className="c-more"
-            title="Options"
-            onClick={e => { e.stopPropagation(); setMenuOpen(v => !v); }}
+    <>
+      <div className="card" onClick={handleCardClick}>
+        {/* Author row */}
+        <div className="card-head">
+          <div
+            className="c-ava"
+            style={{ background: post.authorAvatarUrl ? 'transparent' : `linear-gradient(135deg,${bg},${c})` }}
+            onClick={e => { e.stopPropagation(); navigate(`/profile/${post.authorId}`); }}
           >
-            ⋯
-          </button>
-          {menuOpen && (
-            <div className="c-more-menu">
-              {isOwn ? (
-                <button className="c-menu-item danger" onClick={handleDelete}>
-                  🗑 Delete Post
-                </button>
-              ) : (
-                <>
-                  <button className="c-menu-item" onClick={() => setMenuOpen(false)}>
-                    🚫 Not Interested
-                  </button>
-                  <div className="c-menu-divider" />
-                  <button className="c-menu-item danger" onClick={handleReport}>
-                    ⚑ Report Post
-                  </button>
-                </>
+            {post.authorAvatarUrl
+              ? <img src={post.authorAvatarUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.currentTarget.style.display='none'}} />
+              : authorIni
+            }
+          </div>
+          <div className="c-meta">
+            <div className="c-name" onClick={e => { e.stopPropagation(); navigate(`/profile/${post.authorId}`); }}>
+              {post.authorDisplayName || post.authorEmail || 'Unknown'}
+            </div>
+            <div className="c-sub">
+              {post.authorHeadline && <><span>{post.authorHeadline}</span><span className="c-dot">·</span></>}
+              <span>{timeAgo(post.createdAt)}</span>
+              {post.visibility && post.visibility !== 'public' && (
+                <><span className="c-dot">·</span>
+                <span>{post.visibility === 'private' ? '🔒 Only me' : '🔗 Connections'}</span></>
               )}
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Content */}
-      {post.content && (
-        <div className="card-body">{renderText(post.content)}</div>
-      )}
-
-      {/* Attachments */}
-      {attachments.length > 0 && <CardAttachmentGrid attachments={attachments} />}
-
-      {/* Hashtag chips */}
-      {tags.length > 0 && (
-        <div className="card-tags">
-          {tags.map(t => (
-            <span key={t} className="tag-chip" onClick={() => navigate(`/hashtag/${t.slice(1)}`)}>
-              {t}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Stats row */}
-      {(totalRx > 0 || commentCount > 0) && (
-        <div className="card-stats">
-          <div className="stat-rx">
-            {topRx.map(r => (
-              <span key={r.name ?? r.type} className="stat-em">
-                {RX_EMOJI[r.name ?? r.type] ?? r.emoji ?? '👍'}
-              </span>
-            ))}
-            {totalRx > 0 && <span className="stat-n">{totalRx}</span>}
           </div>
-          <div className="stat-right">
-            {commentCount > 0 && (
-              <span className="stat-link" onClick={e => toggleComments(e)}>
-                {commentCount} comment{commentCount !== 1 ? 's' : ''}
-              </span>
+          <div className="c-more-wrap" ref={menuRef}>
+            <button className="c-more" title="Options" onClick={e => { e.stopPropagation(); setMenuOpen(v => !v); }}>⋯</button>
+            {menuOpen && (
+              <div className="c-more-menu">
+                {isOwn ? (
+                  <button className="c-menu-item danger" onClick={handleDelete}>🗑 Delete Post</button>
+                ) : (
+                  <>
+                    <button className="c-menu-item" onClick={() => setMenuOpen(false)}>🚫 Not Interested</button>
+                    <div className="c-menu-divider" />
+                    <button className="c-menu-item danger" onClick={() => { setMenuOpen(false); alert('Report submitted.'); }}>⚑ Report Post</button>
+                  </>
+                )}
+              </div>
             )}
           </div>
         </div>
-      )}
 
-      {/* Action row */}
-      <div className="card-actions">
-        <button
-          className={`ca ${myRx ? 'liked' : ''}`}
-          onClick={e => { e.stopPropagation(); handleReact(myRx || 'like', e); }}
-          disabled={rxLoading}
-        >
-          <span className="ca-i">{myRx ? (RX_EMOJI[myRx] ?? '👍') : '👍'}</span>
-          {myRx ? (RX_TYPES.find(r => r.type === myRx)?.label ?? 'Liked') : 'Like'}
-          <div className="rx-pick" onMouseDown={e => e.stopPropagation()}>
-            {RX_TYPES.map(r => (
-              <button
-                key={r.type}
-                className="rx-e"
-                title={r.label}
-                onMouseDown={e => { e.stopPropagation(); e.preventDefault(); handleReact(r.type, e); }}
-              >
-                {r.emoji}
-              </button>
+        {post.content && <div className="card-body">{renderText(post.content)}</div>}
+
+        {attachments.length > 0 && <CardAttachmentGrid attachments={attachments} />}
+
+        {tags.length > 0 && (
+          <div className="card-tags">
+            {tags.map(t => (
+              <span key={t} className="tag-chip" onClick={e => { e.stopPropagation(); navigate(`/hashtag/${t.slice(1)}`); }}>{t}</span>
             ))}
           </div>
-        </button>
+        )}
 
-        <button className="ca" onClick={e => toggleComments(e)}>
-          <span className="ca-i">💬</span>Comment
-        </button>
+        {/* Stats row — click reactions to open detail modal */}
+        {(totalRx > 0 || commentCount > 0) && (
+          <div className="card-stats">
+            <div className="stat-rx"
+              onClick={e => { e.stopPropagation(); if (totalRx > 0) setShowRxDetail(true); }}>
+              {topRx.map(r => (
+                <span key={r.name ?? r.type} className="stat-em">{RX_EMOJI[r.name ?? r.type] ?? '👍'}</span>
+              ))}
+              {totalRx > 0 && <span className="stat-n">{totalRx}</span>}
+            </div>
+            <div className="stat-right">
+              {commentCount > 0 && (
+                <span className="stat-link" onClick={e => toggleComments(e)}>
+                  {commentCount} comment{commentCount !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
-        <button className="ca" onClick={e => { e.stopPropagation(); navigate(`/post/${post.id}`); }}>
-          <span className="ca-i">↗</span>View
-        </button>
-
-        <button
-          className={`ca ${post.saved ? 'saved' : ''}`}
-          onClick={async (e) => {
-            e.stopPropagation();
-            try {
-              if (post.saved) {
-                await postService.unsavePost(post.id);
-                setPost(p => ({ ...p, saved: false }));
-              } else {
-                await postService.savePost(post.id);
-                setPost(p => ({ ...p, saved: true }));
-              }
-            } catch { /* no-op */ }
-          }}
-        >
-          <span className="ca-i">{post.saved ? '🔖' : '🏷'}</span>
-          {post.saved ? 'Saved' : 'Save'}
-        </button>
-      </div>
-
-      {/* Comments */}
-      {showCm && (
-        <div className="comments" onClick={e => e.stopPropagation()}>
-          {cmLoading ? (
-            <div style={{ padding: '14px 18px' }}>
-              {[1, 2].map(i => (
-                <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                  <div className="sk" style={{ width: 28, height: 28, borderRadius: 7, flexShrink: 0 }} />
-                  <div className="sk" style={{ height: 44, flex: 1, borderRadius: 8 }} />
-                </div>
+        {/* Action row */}
+        <div className="card-actions">
+          {/* Like button with hover picker via .rx-trigger */}
+          <div className="rx-trigger">
+            <button
+              className={`ca-btn ${myRx ? 'liked' : ''}`}
+              onClick={handleReactClick}
+              disabled={rxLoading}
+            >
+              <span style={{fontSize:16,lineHeight:1}}>{myRx ? (RX_EMOJI[myRx] ?? '👍') : '👍'}</span>
+              {myRx ? (RX_TYPES.find(r => r.type === myRx)?.label ?? 'Liked') : 'Like'}
+            </button>
+            <div className="rx-pick">
+              {RX_TYPES.map(r => (
+                <button key={r.type} className="rx-e" data-label={r.label}
+                  onClick={e => handlePickReact(r.type, e)}>
+                  {r.emoji}
+                </button>
               ))}
             </div>
-          ) : (
-            <div className="cm-scroll">
-              {comments.length === 0
-                ? <div className="cm-empty">No comments yet — be the first.</div>
-                : comments.map(cm => <CommentItem key={cm.id} comment={cm} currentUserIni={currentUserIni} />)
-              }
-            </div>
-          )}
-          <div className="cm-input-row">
-            <div className="cm-av" style={{ background: 'var(--grad-fire)' }}>
-              {currentUserIni}
-            </div>
-            <input
-              ref={cmRef}
-              className="cm-inp"
-              placeholder="Write a comment…"
-              value={cmTxt}
-              onChange={e => setCmTxt(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendComment(e)}
-            />
-            <button
-              className="cm-go"
-              onClick={e => sendComment(e)}
-              disabled={!cmTxt.trim() || cmSending}
-            >
-              ➤
-            </button>
           </div>
+
+          <button className="ca" onClick={e => toggleComments(e)}>
+            <span className="ca-i">💬</span>Comment
+          </button>
+
+          <button className="ca" onClick={handleShare}>
+            <span className="ca-i">🔗</span>Share
+          </button>
+
+          <button
+            className={`ca ${post.saved ? 'saved' : ''}`}
+            onClick={async (e) => {
+              e.stopPropagation();
+              try {
+                if (post.saved) {
+                  await postService.unsavePost(post.id);
+                  setPost(p => ({ ...p, saved: false }));
+                } else {
+                  await postService.savePost(post.id);
+                  setPost(p => ({ ...p, saved: true }));
+                }
+              } catch { /* no-op */ }
+            }}
+          >
+            <span className="ca-i">{post.saved ? '🔖' : '🏷'}</span>
+            {post.saved ? 'Saved' : 'Save'}
+          </button>
         </div>
+
+        {/* Comments */}
+        {showCm && (
+          <div className="comments" onClick={e => e.stopPropagation()}>
+            {cmLoading ? (
+              <div style={{ padding: '14px 18px' }}>
+                {[1, 2].map(i => (
+                  <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                    <div className="sk" style={{ width: 28, height: 28, borderRadius: 7, flexShrink: 0 }} />
+                    <div className="sk" style={{ height: 44, flex: 1, borderRadius: 8 }} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="cm-scroll">
+                {comments.length === 0
+                  ? <div className="cm-empty">No comments yet — be the first.</div>
+                  : comments.map(cm => <CommentItem key={cm.id} comment={cm} currentUserIni={currentUserIni} />)
+                }
+              </div>
+            )}
+            <div className="cm-input-row">
+              <div className="cm-av" style={{ background: 'var(--grad-fire)' }}>{currentUserIni}</div>
+              <input
+                ref={cmRef}
+                className="cm-inp"
+                placeholder="Write a comment…"
+                value={cmTxt}
+                onChange={e => setCmTxt(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendComment(e)}
+              />
+              <button className="cm-go" onClick={e => sendComment(e)} disabled={!cmTxt.trim() || cmSending}>➤</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Reaction detail modal — fetches real reactor list from API */}
+      {showRxDetail && (
+        <ReactionDetailsModal
+          postId={post.id}
+          reactions={reactions}
+          onClose={() => setShowRxDetail(false)}
+        />
       )}
-    </div>
+    </>
   );
 }
 
-/* ─── CommentItem ─────────────────────────────────────────────────────────── */
+/* ─── CommentItem ────────────────────────────────────────────────────────── */
 function CommentItem({ comment, currentUserIni }) {
   const authorIni = getInitials(comment.authorDisplayName, comment.authorEmail);
   const { bg, c } = avatarStyle(comment.authorId?.toString());
-
   return (
     <div className="cmi">
-      <div className="cm-av" style={{ background: `linear-gradient(135deg,${bg},${c})` }}>
-        {authorIni}
-      </div>
+      <div className="cm-av" style={{ background: `linear-gradient(135deg,${bg},${c})` }}>{authorIni}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="cm-bub">
           <div className="cm-who">
@@ -760,7 +934,7 @@ function CommentItem({ comment, currentUserIni }) {
   );
 }
 
-/* ─── PostSkeleton ────────────────────────────────────────────────────────── */
+/* ─── PostSkeleton ───────────────────────────────────────────────────────── */
 function PostSkeleton() {
   return (
     <div className="skel">
@@ -821,32 +995,23 @@ function RightPanel({ followed, onToggleFollow }) {
           <button className="wg-more">See all</button>
         </div>
         {suggestions.length === 0 ? (
-          <div style={{ padding: '16px', fontSize: 12, color: 'var(--t3)', fontFamily: 'var(--fm)' }}>
-            No suggestions yet
-          </div>
+          <div style={{ padding: '16px', fontSize: 12, color: 'var(--t3)', fontFamily: 'var(--fm)' }}>No suggestions yet</div>
         ) : suggestions.map(s => {
-          const id  = s.userId ?? s.id;
+          const id = s.userId ?? s.id;
           const ini = getInitials(s.displayName, s.email);
           const { bg, c } = avatarStyle(id);
           return (
             <div key={id} className="wf-item">
-              <div
-                className="wf-av"
+              <div className="wf-av"
                 style={{ background: s.avatarUrl ? 'transparent' : `linear-gradient(135deg,${bg},${c})`, color: c, overflow: 'hidden' }}
-                onClick={() => navigate(`/profile/${id}`)}
-              >
-                {s.avatarUrl
-                  ? <img src={s.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : ini}
+                onClick={() => navigate(`/profile/${id}`)}>
+                {s.avatarUrl ? <img src={s.avatarUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} /> : ini}
               </div>
               <div className="wf-info" style={{ cursor: 'pointer' }} onClick={() => navigate(`/profile/${id}`)}>
                 <div className="wf-name">{s.displayName || s.email?.split('@')[0]}</div>
                 <div className="wf-role">{s.email}</div>
               </div>
-              <button
-                className={`fw-btn ${followed[id] ? 'ing' : ''}`}
-                onClick={() => onToggleFollow(id)}
-              >
+              <button className={`fw-btn ${followed[id] ? 'ing' : ''}`} onClick={() => onToggleFollow(id)}>
                 {followed[id] ? 'Following' : 'Follow'}
               </button>
             </div>
@@ -861,7 +1026,7 @@ function RightPanel({ followed, onToggleFollow }) {
   );
 }
 
-/* ─── FeedPage ────────────────────────────────────────────────────────────── */
+/* ─── FeedPage ───────────────────────────────────────────────────────────── */
 export default function FeedPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -871,6 +1036,8 @@ export default function FeedPage() {
   const userName = user?.displayName || user?.email?.split('@')[0] || 'Student';
 
   const [tab,         setTab]         = useState('following');
+  const [sortKey,     setSortKey]     = useState('latest');
+  const [sortOpen,    setSortOpen]    = useState(false);
   const [posts,       setPosts]       = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [postErr,     setPostErr]     = useState('');
@@ -881,8 +1048,23 @@ export default function FeedPage() {
   const [followed,    setFollowed]    = useState({});
   const [visibility,  setVisibility]  = useState('public');
   const [mediaFiles,  setMediaFiles]  = useState([]);
+  const [copyToast,   setCopyToast]   = useState(false);
   const fileInputRef = useRef(null);
+  const sortRef      = useRef(null);
   const pageRef      = useRef(0);
+
+  const showCopyToast = useCallback(() => {
+    setCopyToast(true);
+    setTimeout(() => setCopyToast(false), 2500);
+  }, []);
+
+  // Close sort menu on outside click
+  useEffect(() => {
+    if (!sortOpen) return;
+    const h = (e) => { if (sortRef.current && !sortRef.current.contains(e.target)) setSortOpen(false); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [sortOpen]);
 
   const handleToggleFollow = async (targetId) => {
     const isNowFollowing = !followed[targetId];
@@ -890,9 +1072,7 @@ export default function FeedPage() {
     try {
       const { default: us } = await import('../services/userService');
       isNowFollowing ? await us.follow(targetId) : await us.unfollow(targetId);
-    } catch {
-      setFollowed(f => ({ ...f, [targetId]: !isNowFollowing }));
-    }
+    } catch { setFollowed(f => ({ ...f, [targetId]: !isNowFollowing })); }
   };
 
   const handleFileChange = async (e) => {
@@ -924,6 +1104,21 @@ export default function FeedPage() {
     });
   };
 
+  // Client-side sort — works instantly while server-side sort can be added later
+  const sortPosts = useCallback((rawPosts, key) => {
+    if (key === 'latest') return rawPosts;
+    const now = Date.now();
+    const windows = { likes_day: 86400000, likes_month: 30 * 86400000, likes_year: 365 * 86400000 };
+    const win = windows[key] ?? Infinity;
+    return [...rawPosts]
+      .filter(p => now - new Date(p.createdAt).getTime() <= win)
+      .sort((a, b) => {
+        const ar = (a.reactions ?? []).reduce((s, r) => s + (r.count ?? 0), 0);
+        const br = (b.reactions ?? []).reduce((s, r) => s + (r.count ?? 0), 0);
+        return br - ar;
+      });
+  }, []);
+
   const loadFeed = useCallback(async (reset = true) => {
     if (!uid) return;
     reset ? setLoading(true) : setLoadingMore(true);
@@ -935,13 +1130,8 @@ export default function FeedPage() {
         : await postService.getDiscover(p, 20);
       const data  = res?.data ?? res;
       const items = data?.content ?? (Array.isArray(data) ? data : []);
-      if (reset) {
-        setPosts(items);
-        pageRef.current = 1;
-      } else {
-        setPosts(prev => [...prev, ...items]);
-        pageRef.current += 1;
-      }
+      if (reset) { setPosts(items); pageRef.current = 1; }
+      else { setPosts(prev => [...prev, ...items]); pageRef.current += 1; }
       setHasNext(data?.hasNext ?? (data?.last === false));
     } catch {
       if (reset) setPostErr('Could not load posts. Check your connection.');
@@ -966,6 +1156,7 @@ export default function FeedPage() {
       setPosts(prev => [saved, ...prev]);
       setDraft('');
       setMediaFiles([]);
+      setVisibility('public');
     } catch (err) {
       setPostErr(err?.response?.data?.message || 'Failed to post. Try again.');
     } finally {
@@ -973,39 +1164,47 @@ export default function FeedPage() {
     }
   };
 
-  const handleDelete = (postId) => {
-    setPosts(prev => prev.filter(p => p.id !== postId));
-  };
+  const handleDelete = (postId) => setPosts(prev => prev.filter(p => p.id !== postId));
 
   const cycleVisibility = () => {
     const opts = ['public', 'connections', 'private'];
     setVisibility(v => opts[(opts.indexOf(v) + 1) % opts.length]);
   };
-  const visLabel = {
-    public:      '🌍 Public',
-    connections: '🔗 Connections',
-    private:     '🔒 Only me',
-  };
+  const visLabel = { public: '🌍 Public', connections: '🔗 Connections', private: '🔒 Only me' };
+
+  const displayedPosts = sortPosts(posts, sortKey);
 
   return (
     <>
       <style>{css}</style>
       <Layout
         active="feed"
-        rightPanel={
-          <RightPanel
-            followed={followed}
-            onToggleFollow={handleToggleFollow}
-          />
-        }
+        rightPanel={<RightPanel followed={followed} onToggleFollow={handleToggleFollow} />}
       >
         <main className="feed">
-          {/* Tabs */}
+          {/* Tabs + Sort */}
           <div className="feed-header">
             <button className={`ftab ${tab === 'following' ? 'on' : ''}`} onClick={() => setTab('following')}>Following</button>
             <button className={`ftab ${tab === 'discover'  ? 'on' : ''}`} onClick={() => setTab('discover')}>Discover</button>
             <div className="fh-gap" />
-            <button className="fh-sort">⇅ Latest</button>
+            <div className="sort-wrap" ref={sortRef}>
+              <button className="fh-sort" onClick={() => setSortOpen(v => !v)}>
+                ⇅ {SORT_OPTIONS.find(s => s.key === sortKey)?.label ?? 'Latest'}
+              </button>
+              {sortOpen && (
+                <div className="sort-menu">
+                  {SORT_OPTIONS.map(opt => (
+                    <button
+                      key={opt.key}
+                      className={`sort-item ${sortKey === opt.key ? 'active' : ''}`}
+                      onClick={() => { setSortKey(opt.key); setSortOpen(false); }}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Compose */}
@@ -1073,41 +1272,35 @@ export default function FeedPage() {
             </div>
           </div>
 
-          {/* Error */}
           {postErr && <div className="post-err">⚠ {postErr}</div>}
 
           {/* Posts */}
           {loading ? (
             [1, 2, 3].map(i => <PostSkeleton key={i} />)
-          ) : posts.length === 0 ? (
+          ) : displayedPosts.length === 0 ? (
             <div className="lx-empty">
               <div className="lx-empty-ic">📭</div>
               <div className="lx-empty-t">Nothing Here Yet</div>
               <p className="lx-empty-s">
-                {tab === 'following'
-                  ? 'Follow students to see their posts here.'
-                  : 'No posts to discover right now.'}
+                {tab === 'following' ? 'Follow students to see their posts here.' : 'No posts to discover right now.'}
               </p>
             </div>
           ) : (
             <>
-              {posts.map((p, i) => (
+              {displayedPosts.map((p, i) => (
                 <div key={p.id} style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }}>
                   <PostCard
                     post={p}
                     currentUserId={uid}
                     currentUserIni={userIni}
                     onDelete={handleDelete}
+                    showCopyToast={showCopyToast}
                   />
                 </div>
               ))}
               {hasNext && (
                 <div className="load-more">
-                  <button
-                    className="lm-btn"
-                    onClick={() => loadFeed(false)}
-                    disabled={loadingMore}
-                  >
+                  <button className="lm-btn" onClick={() => loadFeed(false)} disabled={loadingMore}>
                     {loadingMore ? 'Loading…' : 'Load more posts'}
                   </button>
                 </div>
@@ -1116,6 +1309,9 @@ export default function FeedPage() {
           )}
         </main>
       </Layout>
+
+      {/* Global copy-link toast */}
+      {copyToast && <div className="copy-toast">🔗 Link copied to clipboard!</div>}
     </>
   );
 }

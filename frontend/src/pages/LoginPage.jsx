@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import {useSearchParams} from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 /* ─── Styles ─────────────────────────────────────────────────────────────── */
 const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=Pinyon+Script&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --red: #E8192C; --red-hover: #FF1F35; --red-dim: #9B1120;
@@ -17,6 +17,7 @@ const styles = `
     --gold: #C9A84C; --success: #22c55e;
     --font-display: 'Bebas Neue', sans-serif;
     --font-body: 'DM Sans', sans-serif;
+    --font-script: 'Pinyon Script', cursive;
   }
   body { font-family: var(--font-body); background: var(--bg); color: var(--text); }
 
@@ -26,7 +27,7 @@ const styles = `
   .left {
     position: relative; overflow: hidden;
     display: flex; flex-direction: column; justify-content: space-between;
-    padding: 48px; background: #0c0c0c;
+    padding: 52px 56px; background: #0c0c0c;
   }
   .left-bg { position: absolute; inset: 0; z-index: 0; }
   .left-bg::before {
@@ -47,31 +48,54 @@ const styles = `
     opacity: 0.04; font-family: var(--font-display); font-size: 320px;
     color: var(--red); line-height: 1; pointer-events: none; user-select: none;
   }
-  .left-logo { position: relative; z-index: 1; display: flex; align-items: center; gap: 14px; }
-  .logo-name { font-family: var(--font-display); font-size: 28px; letter-spacing: 4px; color: var(--text); }
+  .left-logo { position: relative; z-index: 1; display: flex; align-items: center; gap: 16px; }
+  .logo-icon {
+    width: 54px; height: 54px; border-radius: 14px;
+    background: linear-gradient(135deg, #c01020 0%, #8B0010 60%, #6a000c 100%);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(180,0,20,0.45), inset 0 1px 0 rgba(255,255,255,0.15);
+    position: relative; overflow: hidden; flex-shrink: 0;
+  }
+  .logo-icon::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+    border-radius: 14px;
+  }
+  .logo-x {
+    font-family: var(--font-script);
+    font-size: 38px;
+    color: #000;
+    line-height: 1;
+    position: relative;
+    z-index: 1;
+    margin-top: 4px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    letter-spacing: -1px;
+  }
+  .logo-name { font-family: var(--font-display); font-size: 30px; letter-spacing: 5px; color: var(--text); }
   .logo-name span { color: var(--red); }
-  .left-hero { position: relative; z-index: 1; }
+  .left-hero { position: relative; z-index: 1; margin-top: -8px; }
   .left-tagline {
-    font-family: var(--font-display); font-size: clamp(52px,6vw,80px);
-    line-height: 0.95; letter-spacing: 2px; margin-bottom: 24px;
+    font-family: var(--font-display); font-size: clamp(60px,6.5vw,88px);
+    line-height: 0.94; letter-spacing: 2px; margin-bottom: 26px;
   }
   .left-tagline span { color: var(--red); display: block; }
-  .left-desc { font-size: 15px; color: var(--text-muted); line-height: 1.7; max-width: 340px; }
-  .left-features { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 12px; }
+  .left-desc { font-size: 16px; color: var(--text-muted); line-height: 1.75; max-width: 380px; }
+  .left-features { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 14px; }
   .feature-pill {
-    display: flex; align-items: center; gap: 14px;
-    padding: 14px 18px; background: rgba(255,255,255,0.03);
-    border: 1px solid var(--border); border-radius: 12px;
+    display: flex; align-items: center; gap: 18px;
+    padding: 18px 22px; background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border); border-radius: 14px;
     backdrop-filter: blur(4px); transition: border-color 0.2s;
   }
   .feature-pill:hover { border-color: rgba(232,25,44,0.3); }
   .pill-icon {
-    width: 34px; height: 34px; background: rgba(232,25,44,0.12);
-    border-radius: 8px; display: flex; align-items: center;
-    justify-content: center; font-size: 16px; flex-shrink: 0;
+    width: 42px; height: 42px; background: rgba(232,25,44,0.12);
+    border-radius: 10px; display: flex; align-items: center;
+    justify-content: center; font-size: 20px; flex-shrink: 0;
   }
-  .pill-text strong { display: block; font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-  .pill-text span { font-size: 11px; color: var(--text-muted); }
+  .pill-text strong { display: block; font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+  .pill-text span { font-size: 13px; color: var(--text-muted); }
 
   /* RIGHT */
   .right {
@@ -146,6 +170,8 @@ const styles = `
     display: flex; align-items: center; justify-content: center; gap: 8px;
   }
   .social-btn:hover { border-color: var(--border-hover); background: #222; }
+  .social-btn.google-btn:hover { border-color: rgba(66,133,244,0.5); background: rgba(66,133,244,0.05); }
+  .social-btn.fb-btn:hover { border-color: rgba(24,119,242,0.5); background: rgba(24,119,242,0.05); }
 
   .submit-btn {
     width: 100%; padding: 14px; background: var(--red);
@@ -183,24 +209,6 @@ const styles = `
   }
 `;
 
-/* ─── Sub-components ─────────────────────────────────────────────────────── */
-function LearnexLogo({ size = 44 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="44" height="44" rx="11" fill="#E8192C"/>
-      <rect width="44" height="44" rx="11" fill="url(#lg)" opacity="0.6"/>
-      <path d="M10 10 L22 22 M22 22 L34 34" stroke="white" strokeWidth="5.5" strokeLinecap="round"/>
-      <path d="M34 10 L22 22 M22 22 L10 34" stroke="white" strokeWidth="5.5" strokeLinecap="round"/>
-      <circle cx="22" cy="22" r="2.5" fill="rgba(255,255,255,0.35)"/>
-      <defs>
-        <linearGradient id="lg" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#ff3a4d"/><stop offset="100%" stopColor="#8B0010"/>
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
-
 function getStrength(pw) {
   if (!pw) return 0;
   let s = 0;
@@ -216,7 +224,29 @@ function StrengthBar({ password }) {
   const cls = level === 1 ? 'fill-weak' : level === 2 ? 'fill-medium' : level >= 3 ? 'fill-strong' : '';
   return (
     <div className="strength-bar">
-      {[0,1,2].map(i => <div key={i} className={`strength-seg ${i < level ? cls : ''}`}/>)}
+      {[0, 1, 2].map(i => <div key={i} className={`strength-seg ${i < level ? cls : ''}`} />)}
+    </div>
+  );
+}
+
+// Cursive X logo icon
+function LogoIcon({ size = 54 }) {
+  return (
+    <div className="logo-icon" style={{ width: size, height: size }}>
+      <span className="logo-x" style={{ fontSize: size * 0.7 }}>𝒳</span>
+    </div>
+  );
+}
+
+function MobileLogoIcon() {
+  return (
+    <div style={{
+      width: 36, height: 36, borderRadius: 10,
+      background: 'linear-gradient(135deg, #c01020 0%, #8B0010 100%)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      boxShadow: '0 2px 10px rgba(180,0,20,0.4)',
+    }}>
+      <span style={{ fontFamily: "'Pinyon Script', cursive", fontSize: 26, color: '#000', marginTop: 3 }}>𝒳</span>
     </div>
   );
 }
@@ -227,28 +257,34 @@ const FEATURES = [
   { icon: '📢', title: 'Campus Feed', desc: 'Stay updated on events, posts & announcements' },
 ];
 
-/* ─── Main Component ─────────────────────────────────────────────────────── */
+// OAuth handlers
+function handleGoogleLogin() {
+  // Google OAuth - redirect to backend OAuth endpoint
+  window.location.href = '/api/auth/oauth2/google';
+}
+
+function handleFacebookLogin() {
+  // Facebook OAuth - redirect to backend OAuth endpoint  
+  window.location.href = '/api/auth/oauth2/facebook';
+}
+
 export default function LoginPage() {
   const { login, register } = useAuth();
   const navigate = useNavigate();
 
-  const [tab, setTab]       = useState('login');
+  const [tab, setTab] = useState('login');
   const [loading, setLoading] = useState(false);
-  const [error, setError]   = useState('');
-  const [pw, setPw]         = useState('');
-  const [form, setForm]     = useState({ identifier: '', email: '', password: '', firstName: '', lastName: '', username: '' });
+  const [error, setError] = useState('');
+  const [pw, setPw] = useState('');
+  const [form, setForm] = useState({ identifier: '', email: '', password: '', firstName: '', lastName: '', username: '' });
   const [searchParams] = useSearchParams();
   const [sessionBanner, setSessionBanner] = useState('');
   const isLogin = tab === 'login';
 
   useEffect(() => {
     const reason = searchParams.get('banner');
-    if (reason === 'session_expired') {
-      setSessionBanner('Your session has expired. Please sign in again.');
-    }
-    else if (reason === 'unauthorized') {
-      setSessionBanner('You are not authorized to access this page.');
-    }
+    if (reason === 'session_expired') setSessionBanner('Your session has expired. Please sign in again.');
+    else if (reason === 'unauthorized') setSessionBanner('You are not authorized to access this page.');
   }, []);
 
   const handleSwitch = (t) => {
@@ -284,14 +320,14 @@ export default function LoginPage() {
       <div className="auth-root">
         {/* LEFT */}
         <div className="left">
-          <div className="left-bg"/>
+          <div className="left-bg" />
           <div className="left-watermark">X</div>
           <div className="left-logo">
-            <LearnexLogo size={44}/>
+            <LogoIcon size={54} />
             <span className="logo-name">LEARN<span>EX</span></span>
           </div>
           <div className="left-hero">
-            <div className="left-tagline">LEARN.<br/>CONNECT.<br/><span>GROW.</span></div>
+            <div className="left-tagline">LEARN.<br />CONNECT.<br /><span>GROW.</span></div>
             <p className="left-desc">The social platform built for students. Share knowledge, collaborate on projects, and thrive together on campus.</p>
           </div>
           <div className="left-features">
@@ -308,7 +344,7 @@ export default function LoginPage() {
         <div className="right">
           <div className="form-card fade-in" key={tab}>
             <div className="mobile-logo">
-              <LearnexLogo size={36}/>
+              <MobileLogoIcon />
               <span style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 24, letterSpacing: 3 }}>
                 LEARN<span style={{ color: '#E8192C' }}>EX</span>
               </span>
@@ -324,28 +360,30 @@ export default function LoginPage() {
 
             <div className="divider">continue with</div>
             <div className="social-row">
-              <button className="social-btn">
+              <button className="social-btn google-btn" onClick={handleGoogleLogin}>
                 <svg width="16" height="16" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                 Google
               </button>
-              <button className="social-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-                LinkedIn
+              <button className="social-btn fb-btn" onClick={handleFacebookLogin}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#1877F2">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                </svg>
+                Facebook
               </button>
             </div>
 
             <div className="divider">or with email</div>
 
             {sessionBanner && (
-            <div className="error-banner" style={{ background: 'rgba(201,168,76,.12)', borderColor: 'rgba(201,168,76,.35)', color: '#C9A84C' }}>
-         <span>⏱</span> {sessionBanner}
-      </div>
+              <div className="error-banner" style={{ background: 'rgba(201,168,76,.12)', borderColor: 'rgba(201,168,76,.35)', color: '#C9A84C' }}>
+                <span>⏱</span> {sessionBanner}
+              </div>
             )}
-   {error && (
-     <div className="error-banner">
-      <span>⚠</span> {error}
-     </div>
-   )}
+            {error && (
+              <div className="error-banner">
+                <span>⚠</span> {error}
+              </div>
+            )}
 
             <div className="field-group" onKeyDown={handleKeyDown}>
               {!isLogin && (
@@ -354,14 +392,14 @@ export default function LoginPage() {
                     <label>First Name</label>
                     <div className="input-wrap">
                       <span className="input-icon">👤</span>
-                      <input placeholder="Alex" value={form.firstName} onChange={e => setForm({...form, firstName: e.target.value})}/>
+                      <input placeholder="Alex" value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} />
                     </div>
                   </div>
                   <div className="field">
                     <label>Last Name</label>
                     <div className="input-wrap">
                       <span className="input-icon">👤</span>
-                      <input placeholder="Nguyen" value={form.lastName} onChange={e => setForm({...form, lastName: e.target.value})}/>
+                      <input placeholder="Nguyen" value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} />
                     </div>
                   </div>
                 </div>
@@ -372,7 +410,7 @@ export default function LoginPage() {
                   <label>Username</label>
                   <div className="input-wrap">
                     <span className="input-icon">@</span>
-                    <input placeholder="alex.nguyen" value={form.username} onChange={e => setForm({...form, username: e.target.value})}/>
+                    <input placeholder="alex.nguyen" value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} />
                   </div>
                 </div>
               )}
@@ -382,8 +420,8 @@ export default function LoginPage() {
                 <div className="input-wrap">
                   <span className="input-icon">✉</span>
                   {isLogin
-                    ? <input placeholder="you@university.edu or username" value={form.identifier} onChange={e => setForm({...form, identifier: e.target.value})}/>
-                    : <input type="email" placeholder="you@university.edu" value={form.email} onChange={e => setForm({...form, email: e.target.value})}/>
+                    ? <input placeholder="you@university.edu or username" value={form.identifier} onChange={e => setForm({ ...form, identifier: e.target.value })} />
+                    : <input type="email" placeholder="you@university.edu" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
                   }
                 </div>
               </div>
@@ -396,10 +434,10 @@ export default function LoginPage() {
                     type="password"
                     placeholder={isLogin ? 'Enter your password' : 'Create a strong password'}
                     value={isLogin ? form.password : pw}
-                    onChange={e => isLogin ? setForm({...form, password: e.target.value}) : setPw(e.target.value)}
+                    onChange={e => isLogin ? setForm({ ...form, password: e.target.value }) : setPw(e.target.value)}
                   />
                 </div>
-                {!isLogin && pw && <StrengthBar password={pw}/>}
+                {!isLogin && pw && <StrengthBar password={pw} />}
               </div>
 
               {isLogin && (

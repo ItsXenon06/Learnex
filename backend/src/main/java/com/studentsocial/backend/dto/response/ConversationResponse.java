@@ -19,6 +19,7 @@ public class ConversationResponse {
     private UUID otherUserId;
     private String otherUserEmail;
     private String otherUserDisplayName;
+    private String displayName;
 
     /** Preview of the last message — null if no messages yet. */
     private MessageResponse lastMessage;

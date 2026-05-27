@@ -111,15 +111,17 @@ public class ConversationController {
 public ResponseEntity<ApiResponse<ConversationResponse>> createGroupChat(
         @AuthenticationPrincipal UserDetails principal,
         @RequestBody Map<String, Object> body) {
-
+ 
     UUID creatorId = resolveUserId(principal);
-    String name = (String) body.getOrDefault("name", "Group Chat");
-
+    String name     = (String) body.getOrDefault("name", "Group Chat");
+    String groupTag = (String) body.get("groupTag"); // "grp:{studyGroupId}" or null
+ 
     @SuppressWarnings("unchecked")
     List<String> memberIdStrings = (List<String>) body.getOrDefault("memberIds", List.of());
     List<UUID> memberIds = memberIdStrings.stream().map(UUID::fromString).toList();
-
-    ConversationResponse response = messagingService.createGroupChat(creatorId, name, memberIds);
+ 
+    ConversationResponse response =
+            messagingService.createOrGetGroupChat(creatorId, name, memberIds, groupTag);
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
 }
 }

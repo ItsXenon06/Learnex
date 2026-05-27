@@ -74,23 +74,49 @@ public class PostController {
     // Also fixed: own posts are now included so a newly created post
     // appears in the author's feed immediately.
     @GetMapping("/feed")
-    public ResponseEntity<ApiResponse<List<PostResponse>>> getFeed(
-            @AuthenticationPrincipal UserDetails principal,
-            @RequestParam(defaultValue = "0")  int page,
-            @RequestParam(defaultValue = "20") int size) {
-
-        UUID userId = resolveUserId(principal);
-        return ResponseEntity.ok(ApiResponse.success(postService.getFeed(userId, page, size)));
+public ResponseEntity<ApiResponse<List<PostResponse>>> getFeed(
+        @AuthenticationPrincipal UserDetails principal,
+        @RequestParam(defaultValue = "0")      int    page,
+        @RequestParam(defaultValue = "20")     int    size,
+        @RequestParam(defaultValue = "latest") String sort,
+        @RequestParam(defaultValue = "24h")    String window) {  // 24h | 30d | 365d
+ 
+    UUID userId = resolveUserId(principal);
+    List<PostResponse> posts;
+    if ("likes".equals(sort)) {
+        String interval = switch (window) {
+            case "30d"  -> "30 days";
+            case "365d" -> "365 days";
+            default     -> "24 hours";
+        };
+        posts = postService.getFeedSortedByLikes(userId, interval, page, size);
+    } else {
+        posts = postService.getFeed(userId, page, size);
     }
-
-    // ── Discover (public posts, no auth required) ─────────────────────────
-    @GetMapping("/discover")
-    public ResponseEntity<ApiResponse<List<PostResponse>>> getDiscover(
-            @RequestParam(defaultValue = "0")  int page,
-            @RequestParam(defaultValue = "20") int size) {
-
-        return ResponseEntity.ok(ApiResponse.success(postService.getDiscover(page, size)));
+    return ResponseEntity.ok(ApiResponse.success(posts));
+}
+ 
+// ── Discover (public posts) with optional sort ────────────────────────────
+@GetMapping("/discover")
+public ResponseEntity<ApiResponse<List<PostResponse>>> getDiscover(
+        @RequestParam(defaultValue = "0")      int    page,
+        @RequestParam(defaultValue = "20")     int    size,
+        @RequestParam(defaultValue = "latest") String sort,
+        @RequestParam(defaultValue = "24h")    String window) {
+ 
+    List<PostResponse> posts;
+    if ("likes".equals(sort)) {
+        String interval = switch (window) {
+            case "30d"  -> "30 days";
+            case "365d" -> "365 days";
+            default     -> "24 hours";
+        };
+        posts = postService.getDiscoverSortedByLikes(interval, page, size);
+    } else {
+        posts = postService.getDiscover(page, size);
     }
+    return ResponseEntity.ok(ApiResponse.success(posts));
+}
 
     // ── Reactions ─────────────────────────────────────────────────────────
     // BUG FIX: these endpoints were MISSING — the frontend called

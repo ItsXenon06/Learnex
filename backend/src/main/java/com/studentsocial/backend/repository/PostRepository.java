@@ -63,4 +63,65 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
     List<Post> findDiscover(
             @Param("off") int offset,
             @Param("lim") int limit);
+    @Query(value = """
+        SELECT * FROM post
+        WHERE deleted_at IS NULL
+          AND group_id = :groupId
+        ORDER BY created_at DESC
+        LIMIT :lim OFFSET :off
+        """, nativeQuery = true)
+List<Post> findByGroupIdOrderByCreatedAt(
+        @Param("groupId") UUID groupId,
+        @Param("off")     int  offset,
+        @Param("lim")     int  limit);
+ 
+// ── Group feed: sorted by reaction count (last 30 days window) ───────────
+@Query(value = """
+        SELECT p.* FROM post p
+        LEFT JOIN post_reaction pr ON pr.post_id = p.id
+        WHERE p.deleted_at IS NULL
+          AND p.group_id = :groupId
+        GROUP BY p.id
+        ORDER BY COUNT(pr.id) DESC, p.created_at DESC
+        LIMIT :lim OFFSET :off
+        """, nativeQuery = true)
+List<Post> findByGroupIdOrderByLikes(
+        @Param("groupId") UUID groupId,
+        @Param("off")     int  offset,
+        @Param("lim")     int  limit);
+ 
+// ── Global feed sorted by likes (24h / 30d / 365d) ──────────────────────
+@Query(value = """
+        SELECT p.* FROM post p
+        LEFT JOIN post_reaction pr ON pr.post_id = p.id
+        WHERE p.deleted_at IS NULL
+          AND p.visibility = 'public'
+          AND p.created_at >= NOW() - CAST(:window AS INTERVAL)
+        GROUP BY p.id
+        ORDER BY COUNT(pr.id) DESC, p.created_at DESC
+        LIMIT :lim OFFSET :off
+        """, nativeQuery = true)
+List<Post> findDiscoverSortedByLikes(
+        @Param("window") String window,   // e.g. "24 hours", "30 days", "365 days"
+        @Param("off")    int    offset,
+        @Param("lim")    int    limit);
+ 
+// ── Feed sorted by likes for following users ──────────────────────────────
+@Query(value = """
+        SELECT p.* FROM post p
+        LEFT JOIN post_reaction pr ON pr.post_id = p.id
+        WHERE p.deleted_at IS NULL
+          AND p.author_id IN :userIds
+          AND (p.author_id = :viewerId OR p.visibility IN ('public','connections'))
+          AND p.created_at >= NOW() - CAST(:window AS INTERVAL)
+        GROUP BY p.id
+        ORDER BY COUNT(pr.id) DESC, p.created_at DESC
+        LIMIT :lim OFFSET :off
+        """, nativeQuery = true)
+List<Post> findFeedByUserIdsSortedByLikes(
+        @Param("userIds")  List<UUID> userIds,
+        @Param("viewerId") UUID       viewerId,
+        @Param("window")   String     window,
+        @Param("off")      int        offset,
+        @Param("lim")      int        limit);
 }

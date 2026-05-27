@@ -262,4 +262,27 @@ public class PostService {
                         ((Number) row[2]).longValue()))
                 .toList();
     }
+    @Transactional(readOnly = true)
+public List<PostResponse> buildGroupPostResponses(List<Post> posts, UUID requestingUserId) {
+    return buildPostResponseList(posts, requestingUserId);
+}
+ 
+// ── Discover sorted by likes ──────────────────────────────────────────────
+@Transactional(readOnly = true)
+public List<PostResponse> getDiscoverSortedByLikes(String window, int page, int size) {
+    List<Post> posts = postRepository.findDiscoverSortedByLikes(window, page * size, size);
+    return buildPostResponseList(posts, null);
+}
+ 
+// ── Feed sorted by likes ──────────────────────────────────────────────────
+@Transactional(readOnly = true)
+public List<PostResponse> getFeedSortedByLikes(UUID userId, String window, int page, int size) {
+    List<UUID> followingIds = followRepository.findFollowingByUserId(userId)
+            .stream().map(User::getId).collect(Collectors.toCollection(ArrayList::new));
+    if (!followingIds.contains(userId)) followingIds.add(userId);
+ 
+    List<Post> posts = postRepository.findFeedByUserIdsSortedByLikes(
+            followingIds, userId, window, page * size, size);
+    return buildPostResponseList(posts, userId);
+}
 }

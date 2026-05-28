@@ -91,6 +91,30 @@ const css = `
 @keyframes lx-pulse{0%,100%{opacity:.2}50%{opacity:.45}}
 `;
 
+/* ─── Persistent read IDs ─────────────────────────────────────────────────
+   We keep a localStorage set of notification IDs the user has already read
+   so the red dot doesn't reappear after a page reload (server marks them
+   read but a new fetch returns isRead=true from DB — however the dot logic
+   below merges DB state with this local set as the source of truth).
+──────────────────────────────────────────────────────────────────────────── */
+const READ_KEY = 'learnex_read_notifs';
+
+function getLocalRead() {
+  try { return new Set(JSON.parse(localStorage.getItem(READ_KEY) || '[]')); }
+  catch { return new Set(); }
+}
+
+function addLocalRead(ids) {
+  try {
+    const s = getLocalRead();
+    (Array.isArray(ids) ? ids : [ids]).forEach(id => s.add(id));
+    // Keep at most 500 entries to avoid bloat
+    const arr = [...s];
+    if (arr.length > 500) arr.splice(0, arr.length - 500);
+    localStorage.setItem(READ_KEY, JSON.stringify(arr));
+  } catch { /* no-op */ }
+}
+
 /* ─── Type metadata ─────────────────────────────────────────────────────── */
 const TYPE_META = {
   like:               { bg:'rgba(74,158,255,.15)',  color:'#4a9eff', emoji:'👍' },
@@ -176,15 +200,25 @@ export default function NotificationsPage() {
   const [notifs,      setNotifs]      = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading,     setLoading]     = useState(true);
-  const [filter,      setFilter]      = useState('all');   // 'all' | 'unread'
+  const [filter,      setFilter]      = useState('all');
   const [hasNext,     setHasNext]     = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  // pageRef avoids stale-closure / infinite-loop from page state in useEffect deps
+  // Local set of IDs the user has read this session + previous sessions
+  const [localRead, setLocalRead] = useState(() => getLocalRead());
+
   const pageRef = useRef(0);
 
-  // Initial load / filter change
-  // FIX: removed uid arg — notificationService no longer takes userId params
+  // Helper: is a notification visually unread?
+  // Unread = server says unread AND not in our local-read cache
+  const isUnread = (n) => !n.isRead && !localRead.has(n.id);
+
+  // Mark IDs as read locally and persist to localStorage
+  const markLocalRead = (ids) => {
+    addLocalRead(ids);
+    setLocalRead(getLocalRead());
+  };
+
   useEffect(() => {
     pageRef.current = 0;
     setLoading(true);
@@ -192,21 +226,23 @@ export default function NotificationsPage() {
       .getNotifications(0, 20, filter === 'unread')
       .then(res => {
         const data = res?.data ?? res;
-        setNotifs(data.notifications ?? []);
-        setUnreadCount(data.unreadCount ?? 0);
+        const fetched = data.notifications ?? [];
+        setNotifs(fetched);
+        // Recalculate unread count accounting for locally-read IDs
+        const localReadSet = getLocalRead();
+        const trueUnread = fetched.filter(n => !n.isRead && !localReadSet.has(n.id)).length;
+        setUnreadCount(data.unreadCount ?? trueUnread);
         setHasNext(data.hasNext ?? false);
         pageRef.current = 1;
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [filter]);  // uid removed from deps — JWT handles identity
+  }, [filter]);
 
-  // Load more
   const loadMore = async () => {
     if (loadingMore) return;
     setLoadingMore(true);
     try {
-      // FIX: removed uid arg
       const res = await notificationService.getNotifications(
         pageRef.current, 20, filter === 'unread'
       );
@@ -218,45 +254,51 @@ export default function NotificationsPage() {
     finally { setLoadingMore(false); }
   };
 
-  // Mark one as read then navigate
-  // FIX: removed uid arg from markAsRead
+  // Click a notification: mark read on server + locally, then navigate
   const handleClick = async (n) => {
-    if (!n.isRead) {
-      try {
-        await notificationService.markAsRead(n.id);
-        setNotifs(prev => prev.map(x => x.id === n.id ? { ...x, isRead: true } : x));
-        setUnreadCount(c => Math.max(0, c - 1));
-      } catch { /* no-op */ }
+    if (isUnread(n)) {
+      // Optimistic local update immediately — no waiting for server
+      markLocalRead([n.id]);
+      setNotifs(prev => prev.map(x => x.id === n.id ? { ...x, isRead: true } : x));
+      setUnreadCount(c => Math.max(0, c - 1));
+      // Fire-and-forget server update
+      notificationService.markAsRead(n.id).catch(() => {/* no-op */});
     }
     handleNav(n, navigate);
   };
 
-  // Mark all read
-  // FIX: removed uid arg from markAllAsRead
+  // Mark all read: server + local cache
   const markAll = async () => {
     try {
       await notificationService.markAllAsRead();
+      const allIds = notifs.map(n => n.id);
+      markLocalRead(allIds);
       setNotifs(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch { /* no-op */ }
   };
 
-  const displayed = filter === 'unread' ? notifs.filter(n => !n.isRead) : notifs;
+  // Recalculate displayed unread count using merged local+server state
+  const displayedUnread = notifs.filter(n => isUnread(n)).length;
+
+  const displayed = filter === 'unread'
+    ? notifs.filter(n => isUnread(n))
+    : notifs;
 
   return (
     <>
       <style>{css}</style>
-      <Layout active="notifications" unreadNotif={unreadCount}>
+      <Layout active="notifications" unreadNotif={displayedUnread}>
         <main className="notif-main">
           {/* Header */}
           <div className="ph">
             <div className="ph-left">
               <span className="ph-title">Notifications</span>
-              {unreadCount > 0 && (
-                <span className="ph-count">{unreadCount} unread</span>
+              {displayedUnread > 0 && (
+                <span className="ph-count">{displayedUnread} unread</span>
               )}
             </div>
-            {unreadCount > 0 && (
+            {displayedUnread > 0 && (
               <button className="btn-ghost" onClick={markAll}>✓ Mark all read</button>
             )}
           </div>
@@ -267,7 +309,7 @@ export default function NotificationsPage() {
               All
             </button>
             <button className={`ftab ${filter === 'unread' ? 'on' : ''}`} onClick={() => setFilter('unread')}>
-              Unread {unreadCount > 0 ? `(${unreadCount})` : ''}
+              Unread {displayedUnread > 0 ? `(${displayedUnread})` : ''}
             </button>
           </div>
 
@@ -289,6 +331,7 @@ export default function NotificationsPage() {
           ) : (
             <div className="notif-list">
               {displayed.map((n, i) => {
+                const unread    = isUnread(n);
                 const meta      = TYPE_META[n.type] || DEFAULT_META;
                 const actorName = n.payload?.actorName || '';
                 const actorIni  = actorName ? getInitials(actorName, '') : meta.emoji;
@@ -296,7 +339,7 @@ export default function NotificationsPage() {
                 return (
                   <div
                     key={n.id}
-                    className={`notif ${!n.isRead ? 'unread' : ''}`}
+                    className={`notif ${unread ? 'unread' : ''}`}
                     style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }}
                     onClick={() => handleClick(n)}
                   >
@@ -316,7 +359,7 @@ export default function NotificationsPage() {
                       <div className="notif-time">{timeAgo(n.createdAt)}</div>
                     </div>
 
-                    {!n.isRead && <div className="unread-dot" />}
+                    {unread && <div className="unread-dot" />}
                   </div>
                 );
               })}
@@ -334,4 +377,4 @@ export default function NotificationsPage() {
       </Layout>
     </>
   );
-}  
+}

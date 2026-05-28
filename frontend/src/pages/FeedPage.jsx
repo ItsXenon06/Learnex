@@ -155,11 +155,12 @@ position:relative;cursor:pointer;
 .stat-link:hover{color:var(--t1);}
 
 /* ── ACTION BAR ──
-   Strategy:
-   - .rx-trigger wraps the Like button; hover on it reveals the picker
-   - An ::after bridge keeps hover alive between button and picker
-   - Click on the button = toggle current reaction (or apply 'like')
-   - Click inside picker = pick that reaction (stops propagation)
+   FIXED REACTION SYSTEM:
+   - .rx-trigger is the Like button area + picker container
+   - Clicking the button = like/unlike (no picker interaction)
+   - Hovering button shows picker after 400ms delay
+   - Picker is shown via JS state (not CSS :hover) so clicks register properly
+   - Clicking picker emoji = apply that reaction
 */
 .card-actions{display:flex;align-items:stretch;border-top:1px solid var(--b1);}
 .ca{
@@ -174,7 +175,7 @@ position:relative;cursor:pointer;
 .ca.saved{color:var(--gold);}
 .ca-i{font-size:16px;line-height:1;}
 
-/* The reaction trigger wraps the Like button */
+/* Reaction trigger wrapper */
 .rx-trigger{position:relative;flex:1;display:flex;}
 .rx-trigger .ca-btn{
   width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
@@ -185,22 +186,17 @@ position:relative;cursor:pointer;
 .rx-trigger .ca-btn:hover{background:var(--s2);color:var(--t1);}
 .rx-trigger .ca-btn.liked{color:var(--red);}
 
-/* Bridge: invisible area connecting button to picker */
-.rx-trigger::after{
-  content:'';position:absolute;bottom:100%;left:0;right:0;height:14px;
-}
-
+/* Reaction picker — JS-controlled visibility */
 .rx-pick{
   position:absolute;bottom:calc(100% + 8px);left:50%;
   transform:translateX(-50%) scale(.85);transform-origin:bottom center;
   background:var(--s3);border:1px solid var(--b2);border-radius:32px;
   padding:6px 10px;display:flex;gap:3px;z-index:200;
-  opacity:0;pointer-events:none;
   transition:opacity .15s,transform .15s var(--ease);
   box-shadow:0 10px 40px rgba(0,0,0,.7);white-space:nowrap;
+  pointer-events:none;opacity:0;
 }
-.rx-trigger:hover .rx-pick,
-.rx-pick:hover{
+.rx-pick.visible{
   opacity:1;pointer-events:all;
   transform:translateX(-50%) scale(1);
 }
@@ -256,12 +252,9 @@ position:relative;cursor:pointer;
 .cm-when{font-size:9px;color:var(--t3);font-family:var(--fm);font-weight:400;}
 .cm-txt{font-size:13px;line-height:1.55;word-break:break-word;}
 
-/* ── COMMENT REACTIONS ──
-   Hover-group strategy: .cm-rx-wrap provides the hover region.
-   ::after bridge keeps hover alive. Click chip = un-react if yours. */
-.cm-acts{display:flex;align-items:center;gap:4px;margin-top:4px;flex-wrap:wrap;}
+/* ── COMMENT REACTIONS — JS-controlled like post reactions ── */
+.cm-acts{display:flex;align-items:center;gap:4px;margin-top:4px;flex-wrap:wrap;position:relative;}
 .cm-rx-wrap{position:relative;display:inline-flex;}
-.cm-rx-wrap::after{content:'';position:absolute;bottom:100%;left:0;right:0;height:10px;}
 .cm-rx-btn{
   display:flex;align-items:center;gap:4px;
   background:none;border:none;color:var(--t3);font-size:11px;
@@ -274,13 +267,12 @@ position:relative;cursor:pointer;
   position:absolute;bottom:calc(100% + 6px);left:0;
   background:var(--s3);border:1px solid var(--b2);border-radius:28px;
   padding:5px 8px;display:flex;gap:2px;z-index:200;
-  opacity:0;pointer-events:none;
   transition:opacity .15s,transform .15s var(--ease);
   transform:scale(.85);transform-origin:bottom left;
   box-shadow:0 8px 32px rgba(0,0,0,.7);white-space:nowrap;
+  pointer-events:none;opacity:0;
 }
-.cm-rx-wrap:hover .cm-rx-pick,
-.cm-rx-pick:hover{opacity:1;pointer-events:all;transform:scale(1);}
+.cm-rx-pick.visible{opacity:1;pointer-events:all;transform:scale(1);}
 .cm-rx-e{font-size:18px;cursor:pointer;border:none;background:none;padding:2px 4px;border-radius:50%;transition:transform .12s;line-height:1;}
 .cm-rx-e:hover{transform:scale(1.4) translateY(-3px);}
 .cm-rx-chip{
@@ -346,6 +338,12 @@ position:relative;cursor:pointer;
 .lm-btn{padding:10px 28px;background:transparent;border:1px solid var(--b2);border-radius:8px;color:var(--t2);font-size:12px;font-family:var(--fb);font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .15s;}
 .lm-btn:hover{background:var(--s2);color:var(--t1);}
 .lm-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* Responsive: on narrow screens, picker shouldn't go behind nav */
+@media(max-width:780px){
+  .rx-pick{left:0;transform:translateX(0) scale(.85);}
+  .rx-pick.visible{transform:translateX(0) scale(1);}
+}
 `;
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
@@ -359,10 +357,10 @@ const RX_TYPES = [
 const RX_EMOJI = { like: '👍', love: '❤️', insightful: '💡', celebrate: '🎉', support: '🤝' };
 
 const SORT_OPTIONS = [
-  { key: 'latest',      label: '🕐 Latest' },
-  { key: 'likes_day',   label: '🔥 Top — 24h' },
-  { key: 'likes_month', label: '📅 Top — Month' },
-  { key: 'likes_year',  label: '🗓 Top — Year' },
+  { key: 'latest',      label: '🕐 Latest',       sort: 'latest' },
+  { key: 'likes_day',   label: '🔥 Top — 24h',    sort: 'likes', window: '24h' },
+  { key: 'likes_month', label: '📅 Top — Month',  sort: 'likes', window: '30d' },
+  { key: 'likes_year',  label: '🗓 Top — Year',   sort: 'likes', window: '365d' },
 ];
 
 const TRENDS = [
@@ -430,7 +428,6 @@ function Lightbox({ images, startIndex, onClose }) {
 }
 
 /* ─── ReactionDetailsModal ───────────────────────────────────────────────── */
-// Shows aggregate reaction counts by type, with per-user list fetched from API.
 function ReactionDetailsModal({ postId, reactions, onClose }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('all');
@@ -495,14 +492,30 @@ function ReactionDetailsModal({ postId, reactions, onClose }) {
   );
 }
 
-/* ─── CommentReactions ───────────────────────────────────────────────────── */
+/* ─── CommentReactions — JS hover-controlled, no CSS :hover race ─────────── */
 function CommentReactions({ commentId, reactions: initRx, myReaction: initMy }) {
   const [reactions, setReactions] = useState(initRx ?? []);
   const [myRx, setMyRx]           = useState(initMy ?? null);
   const [busy, setBusy]           = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const hoverTimerRef = useRef(null);
+  const wrapRef = useRef(null);
+
+  // Close picker when clicking outside
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const handler = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [pickerOpen]);
 
   const handle = async (type) => {
     if (busy) return;
+    setPickerOpen(false);
     setBusy(true);
     try {
       let updated;
@@ -520,33 +533,58 @@ function CommentReactions({ commentId, reactions: initRx, myReaction: initMy }) 
     finally { setBusy(false); }
   };
 
+  // Click the main button: if already reacted → remove reaction; else open picker
+  const handleBtnClick = () => {
+    if (myRx) {
+      handle(myRx); // un-react
+    } else {
+      setPickerOpen(v => !v);
+    }
+  };
+
+  const handleMouseEnter = () => {
+    hoverTimerRef.current = setTimeout(() => setPickerOpen(true), 350);
+  };
+  const handleMouseLeave = () => {
+    clearTimeout(hoverTimerRef.current);
+  };
+
   const total = reactions.reduce((s, r) => s + (r.count ?? 0), 0);
 
   return (
     <div className="cm-acts">
-      <div className="cm-rx-wrap">
+      <div
+        className="cm-rx-wrap"
+        ref={wrapRef}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
         <button
           className={`cm-rx-btn ${myRx ? 'liked' : ''}`}
           disabled={busy}
-          onClick={() => { if (myRx) handle(myRx); }}
-          title={myRx ? 'Remove reaction' : 'Hover to pick a reaction'}
+          onClick={handleBtnClick}
+          title={myRx ? 'Click to remove reaction · Hold to change' : 'Click or hold to react'}
         >
           {myRx ? (RX_EMOJI[myRx] ?? '👍') : '👍'}
           {total > 0 && <span style={{fontSize:10}}>{total}</span>}
         </button>
-        <div className="cm-rx-pick">
+        <div className={`cm-rx-pick ${pickerOpen ? 'visible' : ''}`}>
           {RX_TYPES.map(r => (
             <button key={r.type} className="cm-rx-e" title={r.label}
-              onClick={e => { e.stopPropagation(); handle(r.type); }}>
+              onMouseDown={e => { e.preventDefault(); e.stopPropagation(); handle(r.type); }}>
               {r.emoji}
             </button>
           ))}
         </div>
       </div>
+      {/* Reaction chips — clicking removes if it's your reaction, adds otherwise */}
       {reactions.filter(r => r.count > 0).map(r => (
-        <span key={r.name} className={`cm-rx-chip ${myRx === r.name ? 'mine' : ''}`}
+        <span
+          key={r.name}
+          className={`cm-rx-chip ${myRx === r.name ? 'mine' : ''}`}
           onClick={() => handle(r.name)}
-          title={myRx === r.name ? 'Remove reaction' : `React with ${r.name}`}>
+          title={myRx === r.name ? 'Remove reaction' : `React with ${r.name}`}
+        >
           {RX_EMOJI[r.name] ?? r.emoji} {r.count}
         </span>
       ))}
@@ -593,11 +631,16 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
   const [rxLoading, setRxLoading] = useState(false);
   const [menuOpen, setMenuOpen]   = useState(false);
   const [showRxDetail, setShowRxDetail] = useState(false);
-  const menuRef = useRef(null);
-  const cmRef   = useRef(null);
+  // Reaction picker state — JS controlled, not CSS :hover
+  const [rxPickerOpen, setRxPickerOpen] = useState(false);
+  const hoverTimerRef = useRef(null);
+  const pickerRef     = useRef(null);
+  const menuRef       = useRef(null);
+  const cmRef         = useRef(null);
 
   const isOwn = post.authorId === currentUserId;
 
+  // Close options menu on outside click
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e) => {
@@ -606,6 +649,18 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
+
+  // Close reaction picker on outside click
+  useEffect(() => {
+    if (!rxPickerOpen) return;
+    const handler = (e) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target)) {
+        setRxPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [rxPickerOpen]);
 
   const reactions    = Array.isArray(post.reactions) ? post.reactions : [];
   const totalRx      = reactions.reduce((s, r) => s + (r.count ?? 0), 0);
@@ -638,13 +693,25 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
   const handleCardClick = (e) => {
     const tag = e.target.tagName;
     if (['BUTTON','INPUT','TEXTAREA','A','IMG'].includes(tag)) return;
-    if (e.target.closest('.c-more-wrap') || e.target.closest('.comments') || e.target.closest('.rx-pick') || e.target.closest('.rx-trigger')) return;
+    if (e.target.closest('.c-more-wrap') || e.target.closest('.comments') ||
+        e.target.closest('.rx-pick') || e.target.closest('.rx-trigger')) return;
     navigate(`/post/${post.id}`);
   };
 
-  // Click the button itself = toggle current reaction or apply default 'like'
+  // Hover on reaction trigger area → show picker after delay
+  const handleRxMouseEnter = () => {
+    hoverTimerRef.current = setTimeout(() => setRxPickerOpen(true), 350);
+  };
+  const handleRxMouseLeave = () => {
+    clearTimeout(hoverTimerRef.current);
+    // Don't close if mouse moved to picker itself
+  };
+
+  // Click the Like button itself: toggle current reaction (or like if none)
   const handleReactClick = async (e) => {
     e.stopPropagation();
+    clearTimeout(hoverTimerRef.current);
+    setRxPickerOpen(false);
     if (rxLoading) return;
     setRxLoading(true);
     try {
@@ -663,9 +730,11 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
     finally { setRxLoading(false); }
   };
 
-  // Pick a specific reaction from the hover picker
+  // Pick a specific reaction from picker
   const handlePickReact = async (type, e) => {
     e.stopPropagation();
+    e.preventDefault();
+    setRxPickerOpen(false);
     if (rxLoading) return;
     setRxLoading(true);
     try {
@@ -714,7 +783,6 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
     try {
       await navigator.clipboard.writeText(url);
     } catch {
-      // Fallback for non-HTTPS or denied permission
       const ta = document.createElement('textarea');
       ta.value = url;
       ta.style.position = 'fixed';
@@ -786,7 +854,7 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
           </div>
         )}
 
-        {/* Stats row — click reactions to open detail modal */}
+        {/* Stats row */}
         {(totalRx > 0 || commentCount > 0) && (
           <div className="card-stats">
             <div className="stat-rx"
@@ -808,8 +876,13 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
 
         {/* Action row */}
         <div className="card-actions">
-          {/* Like button with hover picker via .rx-trigger */}
-          <div className="rx-trigger">
+          {/* Like button with JS-controlled hover picker */}
+          <div
+            className="rx-trigger"
+            ref={pickerRef}
+            onMouseEnter={handleRxMouseEnter}
+            onMouseLeave={handleRxMouseLeave}
+          >
             <button
               className={`ca-btn ${myRx ? 'liked' : ''}`}
               onClick={handleReactClick}
@@ -818,10 +891,10 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
               <span style={{fontSize:16,lineHeight:1}}>{myRx ? (RX_EMOJI[myRx] ?? '👍') : '👍'}</span>
               {myRx ? (RX_TYPES.find(r => r.type === myRx)?.label ?? 'Liked') : 'Like'}
             </button>
-            <div className="rx-pick">
+            <div className={`rx-pick ${rxPickerOpen ? 'visible' : ''}`}>
               {RX_TYPES.map(r => (
                 <button key={r.type} className="rx-e" data-label={r.label}
-                  onClick={e => handlePickReact(r.type, e)}>
+                  onMouseDown={e => handlePickReact(r.type, e)}>
                   {r.emoji}
                 </button>
               ))}
@@ -892,7 +965,7 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
         )}
       </div>
 
-      {/* Reaction detail modal — fetches real reactor list from API */}
+      {/* Reaction detail modal */}
       {showRxDetail && (
         <ReactionDetailsModal
           postId={post.id}
@@ -1046,6 +1119,7 @@ export default function FeedPage() {
   const [hasNext,     setHasNext]     = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [followed,    setFollowed]    = useState({});
+  // Reset to 'public' after each post — visibility is per-post
   const [visibility,  setVisibility]  = useState('public');
   const [mediaFiles,  setMediaFiles]  = useState([]);
   const [copyToast,   setCopyToast]   = useState(false);
@@ -1104,30 +1178,20 @@ export default function FeedPage() {
     });
   };
 
-  // Client-side sort — works instantly while server-side sort can be added later
-  const sortPosts = useCallback((rawPosts, key) => {
-    if (key === 'latest') return rawPosts;
-    const now = Date.now();
-    const windows = { likes_day: 86400000, likes_month: 30 * 86400000, likes_year: 365 * 86400000 };
-    const win = windows[key] ?? Infinity;
-    return [...rawPosts]
-      .filter(p => now - new Date(p.createdAt).getTime() <= win)
-      .sort((a, b) => {
-        const ar = (a.reactions ?? []).reduce((s, r) => s + (r.count ?? 0), 0);
-        const br = (b.reactions ?? []).reduce((s, r) => s + (r.count ?? 0), 0);
-        return br - ar;
-      });
-  }, []);
-
   const loadFeed = useCallback(async (reset = true) => {
     if (!uid) return;
     reset ? setLoading(true) : setLoadingMore(true);
     setPostErr('');
     try {
-      const p   = reset ? 0 : pageRef.current;
+      const p = reset ? 0 : pageRef.current;
+      const opt = SORT_OPTIONS.find(s => s.key === sortKey) ?? SORT_OPTIONS[0];
+      const params = { page: p, size: 20, sort: opt.sort ?? 'latest' };
+      if (opt.window) params.window = opt.window;
+
       const res = tab === 'following'
-        ? await postService.getFeed(p, 20)
-        : await postService.getDiscover(p, 20);
+        ? await postService.getFeed(params.page, params.size, params.sort, params.window)
+        : await postService.getDiscover(params.page, params.size, params.sort, params.window);
+
       const data  = res?.data ?? res;
       const items = data?.content ?? (Array.isArray(data) ? data : []);
       if (reset) { setPosts(items); pageRef.current = 1; }
@@ -1138,9 +1202,9 @@ export default function FeedPage() {
     } finally {
       reset ? setLoading(false) : setLoadingMore(false);
     }
-  }, [uid, tab]);
+  }, [uid, tab, sortKey]);
 
-  useEffect(() => { loadFeed(true); }, [uid, tab]);
+  useEffect(() => { loadFeed(true); }, [uid, tab, sortKey]);
 
   const submitPost = async () => {
     const hasContent = draft.trim().length > 0;
@@ -1156,7 +1220,7 @@ export default function FeedPage() {
       setPosts(prev => [saved, ...prev]);
       setDraft('');
       setMediaFiles([]);
-      setVisibility('public');
+      setVisibility('public'); // ← always reset to public after posting
     } catch (err) {
       setPostErr(err?.response?.data?.message || 'Failed to post. Try again.');
     } finally {
@@ -1171,8 +1235,6 @@ export default function FeedPage() {
     setVisibility(v => opts[(opts.indexOf(v) + 1) % opts.length]);
   };
   const visLabel = { public: '🌍 Public', connections: '🔗 Connections', private: '🔒 Only me' };
-
-  const displayedPosts = sortPosts(posts, sortKey);
 
   return (
     <>
@@ -1277,7 +1339,7 @@ export default function FeedPage() {
           {/* Posts */}
           {loading ? (
             [1, 2, 3].map(i => <PostSkeleton key={i} />)
-          ) : displayedPosts.length === 0 ? (
+          ) : posts.length === 0 ? (
             <div className="lx-empty">
               <div className="lx-empty-ic">📭</div>
               <div className="lx-empty-t">Nothing Here Yet</div>
@@ -1287,7 +1349,7 @@ export default function FeedPage() {
             </div>
           ) : (
             <>
-              {displayedPosts.map((p, i) => (
+              {posts.map((p, i) => (
                 <div key={p.id} style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }}>
                   <PostCard
                     post={p}

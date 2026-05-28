@@ -16,6 +16,7 @@ import com.studentsocial.backend.repository.PostRepository;
 import com.studentsocial.backend.repository.ProfileRepository;
 import com.studentsocial.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import com.studentsocial.backend.repository.StudyGroupRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.studentsocial.backend.repository.PostAttachmentRepository;
@@ -45,7 +46,7 @@ public class PostService {
     private final PostReactionRepository   postReactionRepository;
     private final CommentRepository        commentRepository;
     private final SavedPostRepository      savedPostRepository;
-
+    private final StudyGroupRepository      studyGroupRepository; // FIX: needed for group posts
     // ── Create ────────────────────────────────────────────────────────────
     @Transactional
     public PostResponse createPost(UUID authorId, CreatePostRequest request) {
@@ -57,6 +58,11 @@ public class PostService {
                 .content(request.getContent())
                 .visibility(request.getVisibility() != null ? request.getVisibility() : "public")
                 .build());
+        // ADD after postRepository.save(...):
+if (request.getGroupId() != null) {
+    studyGroupRepository.findById(request.getGroupId()).ifPresent(post::setGroup);
+    postRepository.save(post); // re-save with group
+}
 
         if (request.getMediaIds() != null && !request.getMediaIds().isEmpty()) {
             short order = 0;

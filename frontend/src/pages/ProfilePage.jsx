@@ -5,6 +5,7 @@ import Layout, { sharedCss } from '../components/Layout';
 import userService from '../services/userService';
 import postService from '../services/postService';
 
+
 /* ─── Page CSS ───────────────────────────────────────────────────────────── */
 const css = `
 .prof-main{min-width:0;padding:24px 28px 90px;}
@@ -174,6 +175,7 @@ function EditModal({ profile, onClose, onSave, saving }) {
   });
   const [err, setErr] = useState('');
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   const submit = async () => {
     setErr('');
@@ -202,24 +204,67 @@ function EditModal({ profile, onClose, onSave, saving }) {
       fontSize:20, color:'#fff', fontFamily:'var(--fd)',
     }}>
       {form.avatarUrl
-        ? <img
-            src={form.avatarUrl}
-            alt="avatar preview"
+        ? <img src={form.avatarUrl} alt="avatar preview"
             style={{ width:'100%', height:'100%', objectFit:'cover' }}
             onError={e => { e.currentTarget.style.display='none'; }}
           />
         : getInitials(form.displayName, profile.email)
       }
     </div>
-    <input
-      style={{ flex:1 }}
-      value={form.avatarUrl}
-      onChange={e => set('avatarUrl', e.target.value)}
-      placeholder="https://example.com/your-photo.jpg"
-    />
-  </div>
-  <div style={{ fontSize:11, color:'var(--t4)', fontFamily:'var(--fm)' }}>
-    Paste any public image URL. Leave blank to use initials.
+    <div style={{ flex:1, display:'flex', flexDirection:'column', gap:8 }}>
+      {/* File upload button */}
+      <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+        <input
+          id="avatar-file-input"
+          type="file"
+          accept="image/*"
+          style={{ display:'none' }}
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            setAvatarUploading(true);
+            try {
+              const res  = await postService.uploadMedia(file);
+              const data = res?.data ?? res;
+              set('avatarUrl', data.url);
+            } catch {
+              // fallback: keep existing
+            } finally {
+              setAvatarUploading(false);
+              e.target.value = '';
+            }
+          }}
+        />
+        <button
+          type="button"
+          style={{
+            padding:'7px 14px', background:'var(--s3)', border:'1px solid var(--b2)',
+            borderRadius:7, color:'var(--t2)', fontSize:12, fontFamily:'var(--fb)',
+            fontWeight:700, cursor:'pointer', transition:'all .15s',
+          }}
+          onClick={() => document.getElementById('avatar-file-input').click()}
+          disabled={avatarUploading}
+        >
+          {avatarUploading ? '⏳ Uploading…' : '📷 Upload photo'}
+        </button>
+        {form.avatarUrl && (
+          <button
+            type="button"
+            style={{ background:'none', border:'none', color:'var(--t3)', fontSize:12, cursor:'pointer', fontFamily:'var(--fb)' }}
+            onClick={() => set('avatarUrl', '')}
+          >
+            Remove
+          </button>
+        )}
+      </div>
+      {/* URL fallback */}
+      <input
+        value={form.avatarUrl}
+        onChange={e => set('avatarUrl', e.target.value)}
+        placeholder="…or paste an image URL"
+        style={{ fontSize:12 }}
+      />
+    </div>
   </div>
 </div>
           <div className="mfield">
@@ -231,7 +276,7 @@ function EditModal({ profile, onClose, onSave, saving }) {
             />
           </div>
           <div className="mfield">
-            <label>Headline</label>
+            <label>Headline <span style={{fontWeight:400,textTransform:'none',letterSpacing:0}}>(pronouns, teacher/student, etc…)</span></label>
             <input
               value={form.headline}
               onChange={e => set('headline', e.target.value)}

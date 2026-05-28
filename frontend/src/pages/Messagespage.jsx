@@ -7,6 +7,7 @@ import userService from '../services/userService';
 
 /* ─── CSS ─────────────────────────────────────────────────────────────── */
 const css = `
+@import url('https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap');
 .msg-wrap{display:flex;height:calc(100vh - var(--tb));overflow:hidden;min-width:0;}
 
 /* ── LEFT conv list ── */
@@ -31,19 +32,16 @@ const css = `
 .cv-row.has-unread::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--red);box-shadow:0 0 8px var(--red-glow);}
 .cv-row.active::before{display:none;}
 
-/* Avatar wrapper — relative so logo overlay can sit on top */
 .cv-av-wrap{position:relative;flex-shrink:0;}
 .cv-av{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:16px;color:#fff;background:var(--grad-fire);}
-/* Group logo overlay: small X badge bottom-right */
-.cv-group-badge{
-  position:absolute;bottom:-3px;right:-3px;
-  width:18px;height:18px;border-radius:5px;
-  background:linear-gradient(135deg,#c01020,#8B0010);
+
+/* Group avatar — initials style */
+.cv-grp-av{
+  width:42px;height:42px;border-radius:11px;
+  background:linear-gradient(135deg,#c01020 0%,#8B0010 100%);
   display:flex;align-items:center;justify-content:center;
-  border:1.5px solid var(--s1);
-  font-size:11px;color:#000;
-  font-family:'Pinyon Script',cursive;
-  line-height:1;
+  font-family:var(--fd);font-size:16px;color:#fff;
+  box-shadow:0 2px 8px rgba(180,0,20,.3);flex-shrink:0;
 }
 
 .cv-info{flex:1;min-width:0;}
@@ -59,6 +57,12 @@ const css = `
 .chat-head{padding:13px 20px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:12px;flex-shrink:0;background:var(--s1);}
 .chat-av{width:38px;height:38px;border-radius:10px;flex-shrink:0;background:var(--grad-fire);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:14px;color:#fff;cursor:pointer;transition:transform .15s;}
 .chat-av:hover{transform:scale(1.06);}
+.chat-grp-av{
+  width:38px;height:38px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,#c01020 0%,#8B0010 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fd);font-size:14px;color:#fff;
+}
 .chat-name{font-size:15px;font-weight:700;cursor:pointer;transition:color .15s;}
 .chat-name:hover{color:var(--red);}
 .chat-sub{font-size:11px;color:var(--t3);font-family:var(--fm);margin-top:2px;}
@@ -142,17 +146,22 @@ const css = `
 @media(max-width:700px){.cl{display:none;}.cl.show{display:flex;position:fixed;top:var(--tb);left:0;right:0;bottom:0;z-index:200;background:var(--bg);width:100%;}}
 `;
 
-/* ─── Local unread persistence ─────────────────────────────────────────── */
-const UNREAD_KEY = 'learnex_unread_convs';
+/* ─── Persistent unread storage — keyed per user ─────────────────────────
+   We track which conv IDs the user has OPENED so the badge doesn't
+   reappear on reload. Keyed by userId so multi-account works.
+──────────────────────────────────────────────────────────────────────────── */
+function getReadKey(uid) { return `learnex_read_convs_${uid}`; }
 
-function getLocalUnread() {
-  try { return new Set(JSON.parse(localStorage.getItem(UNREAD_KEY) || '[]')); }
+function getLocalReadConvs(uid) {
+  try { return new Set(JSON.parse(localStorage.getItem(getReadKey(uid)) || '[]')); }
   catch { return new Set(); }
 }
-function clearLocalUnread(convId) {
+
+function markConvReadLocal(uid, convId) {
   try {
-    const s = getLocalUnread(); s.delete(convId);
-    localStorage.setItem(UNREAD_KEY, JSON.stringify([...s]));
+    const s = getLocalReadConvs(uid);
+    s.add(convId);
+    localStorage.setItem(getReadKey(uid), JSON.stringify([...s]));
   } catch { /* no-op */ }
 }
 
@@ -188,7 +197,7 @@ function dateLabel(iso) {
   return d.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
 }
 
-/** Get first 1-2 letters from group name for avatar */
+/** Initials from group name — first letter of first two words, or first two chars */
 function groupInitials(name) {
   if (!name) return 'G';
   const words = name.trim().split(/\s+/);
@@ -196,43 +205,33 @@ function groupInitials(name) {
   return name.slice(0, 2).toUpperCase();
 }
 
-/** Get best display name for a conversation */
+/** Display name for a conversation */
 function convDisplayName(conv) {
-  if (conv.type === 'group' || conv.type === 'class') {
-    return conv.name || 'Group Chat';
-  }
-  return conv.otherUserDisplayName || conv.otherUserEmail || 'Unknown';
+  if (!conv) return '';
+  if (conv.type === 'group' || conv.type === 'class') return conv.name || 'Group Chat';
+  // For DMs: prefer displayName, fall back to email username (not full email)
+  if (conv.otherUserDisplayName) return conv.otherUserDisplayName;
+  if (conv.otherUserEmail) return conv.otherUserEmail.split('@')[0];
+  return 'Unknown';
 }
 
-/** Get initials for a conversation */
+/** Initials for a conversation avatar */
 function convInitials(conv) {
-  if (conv.type === 'group' || conv.type === 'class') {
-    return groupInitials(conv.name);
-  }
+  if (!conv) return '?';
+  if (conv.type === 'group' || conv.type === 'class') return groupInitials(conv.name);
   return getInitials(conv.otherUserDisplayName, conv.otherUserEmail);
 }
 
-/* ─── Logo X component (matches site logo) ──────────────────────────────── */
-function GroupLogoIcon({ size = 42 }) {
+/* ─── Group avatar component ─────────────────────────────────────────── */
+function GroupAvatar({ name, size = 42 }) {
   return (
-    <div style={{
-      width: size, height: size, borderRadius: 11,
-      background: 'linear-gradient(135deg,#c01020 0%,#8B0010 100%)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      boxShadow: '0 2px 8px rgba(180,0,20,0.3)',
-      flexShrink: 0,
-    }}>
-      <span style={{
-        fontFamily: "'Pinyon Script', cursive",
-        fontSize: size * 0.65,
-        color: '#000',
-        lineHeight: 1,
-        marginTop: size * 0.08,
-      }}>𝒳</span>
+    <div className="cv-grp-av" style={{ width: size, height: size, fontSize: size * 0.38, borderRadius: size * 0.26 }}>
+      {groupInitials(name)}
     </div>
   );
 }
 
+/* ─── Skeletons ──────────────────────────────────────────────────────── */
 function ConvSkeleton() {
   return (
     <>
@@ -262,6 +261,7 @@ function MsgSkeleton() {
   );
 }
 
+/* ─── MessagesPage ───────────────────────────────────────────────────── */
 export default function MessagesPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -289,11 +289,17 @@ export default function MessagesPage() {
   const [groupEmails,  setGroupEmails]  = useState('');
   const [groupLoading, setGroupLoading] = useState(false);
   const [groupErr,     setGroupErr]     = useState('');
-  // Local read conv IDs
-  const [localReadConvs, setLocalReadConvs] = useState(() => getLocalUnread());
+
+  // Per-user local read set — initialised once on mount
+  const [localReadConvs, setLocalReadConvs] = useState(() => uid ? getLocalReadConvs(uid) : new Set());
 
   const scrollRef = useRef(null);
   const inputRef  = useRef(null);
+
+  // Re-init local read set when uid resolves (login)
+  useEffect(() => {
+    if (uid) setLocalReadConvs(getLocalReadConvs(uid));
+  }, [uid]);
 
   useEffect(() => {
     if (!uid) return;
@@ -333,22 +339,23 @@ export default function MessagesPage() {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages]);
 
+  const isConvUnread = useCallback((conv) => {
+    if (!conv || activeId === conv.id) return false;
+    // If user has opened this conv (local record), never show unread dot
+    if (localReadConvs.has(conv.id)) return false;
+    return (conv.unreadCount ?? 0) > 0;
+  }, [activeId, localReadConvs]);
+
   const selectConv = useCallback((conv) => {
     setActiveId(conv.id);
     setActiveConv(conv);
     navigate(`/messages/${conv.id}`, { replace: true });
-    // Mark as read locally
-    clearLocalUnread(conv.id);
-    setLocalReadConvs(getLocalUnread());
+    // Persist this conv as read for this user
+    markConvReadLocal(uid, conv.id);
+    setLocalReadConvs(getLocalReadConvs(uid));
     setConvs(prev => prev.map(c => c.id === conv.id ? { ...c, unreadCount: 0 } : c));
     setTimeout(() => inputRef.current?.focus(), 80);
-  }, [navigate]);
-
-  const isConvUnread = (conv) => {
-    if (activeId === conv.id) return false;
-    if (localReadConvs.has(conv.id)) return false;
-    return (conv.unreadCount ?? 0) > 0;
-  };
+  }, [navigate, uid]);
 
   const sendMsg = async () => {
     const text = draft.trim();
@@ -478,11 +485,10 @@ export default function MessagesPage() {
                     onClick={() => selectConv(conv)}
                   >
                     <div className="cv-av-wrap">
-                      {isGrp ? (
-                        <GroupLogoIcon size={42} />
-                      ) : (
-                        <div className="cv-av" style={avStyle(conv.otherUserId || conv.id)}>{ini}</div>
-                      )}
+                      {isGrp
+                        ? <GroupAvatar name={conv.name} size={42} />
+                        : <div className="cv-av" style={avStyle(conv.otherUserId || conv.id)}>{ini}</div>
+                      }
                     </div>
                     <div className="cv-info">
                       <div className="cv-name">{name}</div>
@@ -510,14 +516,15 @@ export default function MessagesPage() {
             ) : (
               <>
                 <div className="chat-head">
-                  {isGroup ? (
-                    <GroupLogoIcon size={38} />
-                  ) : (
-                    <div className="chat-av" style={avStyle(activeConv?.otherUserId)}
-                      onClick={() => activeConv?.otherUserId && navigate(`/profile/${activeConv.otherUserId}`)}>
-                      {otherIni}
-                    </div>
-                  )}
+                  {isGroup
+                    ? <GroupAvatar name={activeConv?.name} size={38} />
+                    : (
+                      <div className="chat-av" style={avStyle(activeConv?.otherUserId)}
+                        onClick={() => activeConv?.otherUserId && navigate(`/profile/${activeConv.otherUserId}`)}>
+                        {otherIni}
+                      </div>
+                    )
+                  }
                   <div style={{flex:1,minWidth:0}}>
                     <div className="chat-name"
                       onClick={() => !isGroup && activeConv?.otherUserId && navigate(`/profile/${activeConv.otherUserId}`)}>
@@ -541,9 +548,27 @@ export default function MessagesPage() {
                     const groups = buildGroups(messages);
                     const elements = [];
                     let lastDate = null;
+                    // Build a member name map for group chats
+const memberMap = {};
+
+if (isGroup && activeConv) {
+  messages.forEach(m => {
+    if (m.senderId && m.senderDisplayName) {
+      memberMap[m.senderId] = {
+        displayName: m.senderDisplayName,
+        email: m.senderEmail
+      };
+    }
+  });
+}
                     groups.forEach((group, gi) => {
                       const isMine = group.sender === uid;
-                      const ini = isMine ? myIni : otherIni;
+                      const senderInfo = memberMap[group.sender];
+
+const senderDisplay = (!isMine && senderInfo)
+  ? getInitials(senderInfo.displayName, senderInfo.email)
+  : (!isMine ? otherIni : myIni);
+                      //const ini = isMine ? myIni : otherIni;
                       const firstMsg = group.messages[0];
                       const thisDate = dateLabel(firstMsg.sentAt);
                       if (thisDate !== lastDate) {
@@ -559,7 +584,7 @@ export default function MessagesPage() {
                             <div className={`msg-mini-av ${isLast ? '' : 'ghost'}`}
                               style={isLast ? (isMine ? {background:'var(--grad-fire)',color:'#fff'} : avStyle(group.sender)) : {}}
                               onClick={() => !isMine && activeConv?.otherUserId && navigate(`/profile/${activeConv.otherUserId}`)}>
-                              {isLast ? ini : ''}
+                              {isLast ? (isMine ? myIni : getInitials(msg.senderDisplayName, msg.senderEmail)) : ''}
                             </div>
                             <div className="bubble-wrap">
                               {isLast && (
@@ -578,7 +603,12 @@ export default function MessagesPage() {
                               >
                                 {replySrc && (
                                   <div className="reply-quote">
-                                    ↩ <strong>{replySrc.senderId === uid ? 'You' : otherName}:</strong> {replySrc.content?.slice(0,70)}{replySrc.content?.length > 70 ? '…' : ''}
+                                    ↩ <strong>
+  {replySrc.senderId === uid
+    ? 'You'
+    : (replySrc.senderDisplayName || otherName)}
+  :
+</strong> {replySrc.content?.slice(0,70)}{replySrc.content?.length > 70 ? '…' : ''}
                                   </div>
                                 )}
                                 {msg.isDeleted ? 'Message deleted' : msg.content}

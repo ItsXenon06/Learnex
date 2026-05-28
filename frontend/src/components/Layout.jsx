@@ -1,20 +1,14 @@
 /**
  * Layout.jsx — Shared shell for all authenticated pages.
  *
- * Usage:
- *   <Layout active="feed">
- *     <main>page content</main>
- *   </Layout>
- *
- * Props:
- *   active      — nav item key: 'feed' | 'notifications' | 'messages' | 'groups' | 'saved' | 'courses' | 'profile'
- *   children    — page content rendered inside the page grid
- *   rightPanel  — optional aside content (feed's trending/suggestions panel)
- *   profile     — optional ProfileResponse, used to show real displayName in sidebar
- *   unreadNotif — number for notification badge
- *   unreadMsgs  — number for messages badge
+ * Changes vs original:
+ *  - Topbar search now navigates to /search?q=... on Enter / search icon click
+ *  - Courses added to sidebar NAV_ITEMS
+ *  - Mobile nav bottom bar fixed (no longer overlaps reaction picker on small screens)
+ *  - Group avatar in sidebar profile uses avatarUrl if set
  */
 
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth, getInitials, getDisplayName } from '../contexts/AuthContext';
 
@@ -70,7 +64,12 @@ body{
 }
 .tb-search input:focus{border-color:var(--red-border);background:var(--s3);box-shadow:0 0 0 3px var(--red-sub);}
 .tb-search input::placeholder{color:var(--t3);}
-.tb-si{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:14px;pointer-events:none;}
+.tb-si{
+  position:absolute;left:13px;top:50%;transform:translateY(-50%);
+  color:var(--t3);font-size:14px;cursor:pointer;transition:color .15s;
+  background:none;border:none;padding:0;display:flex;align-items:center;
+}
+.tb-si:hover{color:var(--t1);}
 .tb-gap{flex:1;}
 .tb-pills{display:flex;align-items:center;gap:6px;}
 .tb-pill{
@@ -88,7 +87,7 @@ body{
   display:flex;align-items:center;justify-content:center;
   font-family:var(--fd);font-size:14px;color:#fff;
   border:1px solid transparent;transition:all .2s;
-  box-shadow:0 2px 10px var(--red-glow);
+  box-shadow:0 2px 10px var(--red-glow);overflow:hidden;
 }
 .tb-av:hover{border-color:var(--red);transform:scale(1.05);}
 
@@ -131,7 +130,7 @@ body{
 .sb-footer{margin-top:auto;border-top:1px solid var(--b1);padding-top:12px;}
 .sb-me{display:flex;align-items:center;gap:11px;padding:11px 16px;border-radius:10px;cursor:pointer;transition:background .15s;}
 .sb-me:hover{background:var(--s2);}
-.sb-mav{width:38px;height:38px;border-radius:9px;flex-shrink:0;background:var(--grad-fire);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:15px;color:#fff;}
+.sb-mav{width:38px;height:38px;border-radius:9px;flex-shrink:0;background:var(--grad-fire);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:15px;color:#fff;overflow:hidden;}
 .sb-minfo{min-width:0;}
 .sb-mname{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
 .sb-memail{font-size:11px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
@@ -149,7 +148,12 @@ body{
 .lx-empty-s{font-size:13px;color:var(--t3);line-height:1.8;}
 
 /* MOBILE BOTTOM NAV */
-.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(7,7,9,.97);backdrop-filter:blur(14px);border-top:1px solid var(--b1);padding:6px 0 safe-area-inset-bottom;}
+.mob-nav{
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;
+  background:rgba(7,7,9,.97);backdrop-filter:blur(14px);
+  border-top:1px solid var(--b1);padding:6px 0;
+  /* Ensure it sits above page content but below modals (z:500) */
+}
 .mn-inner{display:flex;justify-content:space-around;}
 .mn-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 12px;border:none;background:transparent;color:var(--t3);cursor:pointer;transition:color .15s;position:relative;}
 .mn-btn.on{color:var(--red);}
@@ -162,6 +166,8 @@ body{
   .sidebar{display:none;}
   .lx-page--2col,.lx-page--3col{grid-template-columns:1fr;}
   .mob-nav{display:block;}
+  /* Add bottom padding to main content so it clears the mobile nav */
+  .lx-page > *:not(.mob-nav){padding-bottom:70px;}
 }
 `;
 
@@ -180,7 +186,7 @@ const MOBILE_NAV = [
   { key: 'notifications', icon: '🔔', label: 'Alerts',   path: '/notifications', badgeKey: 'unreadNotif' },
   { key: 'messages',      icon: '💬', label: 'Messages', path: '/messages',      badgeKey: 'unreadMsgs' },
   { key: 'groups',        icon: '👥', label: 'Groups',   path: '/groups' },
-  { key: 'profile',       icon: '👤', label: 'Profile' }, // path computed below
+  { key: 'profile',       icon: '👤', label: 'Profile' }, // path computed from uid
 ];
 
 /* ─── Layout ─────────────────────────────────────────────────────────────── */
@@ -194,9 +200,9 @@ export default function Layout({
 }) {
   const { user, logout } = useAuth();
   const navigate  = useNavigate();
-  const location  = useLocation();
 
-  // Derive display info — prefer fetched profile, fall back to auth cache
+  const [searchVal, setSearchVal] = useState('');
+
   const displayName = profile?.displayName || user?.displayName || user?.email?.split('@')[0] || 'Student';
   const ini = getInitials(profile?.displayName || user?.displayName, user?.email);
   const uid = user?.userId ?? user?.id;
@@ -205,6 +211,11 @@ export default function Layout({
   const cols = rightPanel ? 'lx-page--3col' : 'lx-page--2col';
 
   const handleLogout = () => { logout(); navigate('/login'); };
+
+  const handleSearch = () => {
+    const q = searchVal.trim();
+    if (q) navigate(`/search?q=${encodeURIComponent(q)}`);
+  };
 
   return (
     <>
@@ -217,8 +228,13 @@ export default function Layout({
         </span>
         <div className="tb-divider" />
         <div className="tb-search">
-          <span className="tb-si">⌕</span>
-          <input placeholder="Search students, posts, groups…" />
+          <button className="tb-si" onClick={handleSearch} title="Search">⌕</button>
+          <input
+            placeholder="Search students, posts, groups…"
+            value={searchVal}
+            onChange={e => setSearchVal(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSearch()}
+          />
         </div>
         <div className="tb-gap" />
         <div className="tb-pills">
@@ -242,12 +258,16 @@ export default function Layout({
           >
             👥 Groups
           </button>
-          <div className="tb-av" title={displayName} onClick={() => navigate(`/profile/${uid}`)}>
-  {profile?.avatarUrl
-    ? <img src={profile.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:7 }} onError={e=>{e.currentTarget.style.display='none'}} />
-    : ini
-  }
-</div>
+          <div
+            className="tb-av"
+            title={displayName}
+            onClick={() => navigate(`/profile/${uid}`)}
+          >
+            {profile?.avatarUrl
+              ? <img src={profile.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>{e.currentTarget.style.display='none'}} />
+              : ini
+            }
+          </div>
         </div>
       </div>
 
@@ -275,11 +295,11 @@ export default function Layout({
           <div className="sb-footer">
             <div className="sb-me" onClick={() => navigate(`/profile/${uid}`)}>
               <div className="sb-mav">
-  {profile?.avatarUrl
-    ? <img src={profile.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:8 }} onError={e=>{e.currentTarget.style.display='none'}} />
-    : ini
-  }
-</div>
+                {profile?.avatarUrl
+                  ? <img src={profile.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>{e.currentTarget.style.display='none'}} />
+                  : ini
+                }
+              </div>
               <div className="sb-minfo">
                 <div className="sb-mname">{displayName}</div>
                 <div className="sb-memail">{user?.email}</div>
@@ -305,7 +325,7 @@ export default function Layout({
         <div className="mn-inner">
           {MOBILE_NAV.map(n => {
             const path = n.key === 'profile' ? `/profile/${uid}` : n.path;
-            const isOn = n.key === active;
+            const isOn = n.key === active || (n.key === 'profile' && active === 'profile');
             const hasDot = n.badgeKey && badges[n.badgeKey] > 0;
             return (
               <button

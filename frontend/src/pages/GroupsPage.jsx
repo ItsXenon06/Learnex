@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth, getInitials } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
 import groupService from '../services/groupService';
@@ -9,7 +9,6 @@ import conversationService from '../services/conversationService';
 const css = `
 .groups-main{min-width:0;padding:24px 28px 90px;}
 
-/* Page header */
 .ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
 .ph-title{font-family:var(--fd);font-size:32px;letter-spacing:4px;}
 .btn-fire{height:36px;padding:0 20px;background:var(--grad-fire);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:800;font-family:var(--fb);letter-spacing:.8px;text-transform:uppercase;cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:8px;box-shadow:0 3px 14px var(--red-glow);}
@@ -51,14 +50,12 @@ const css = `
 .gc-type-class  {background:rgba(74,158,255,.2);color:#4a9eff;}
 .gc-type-club   {background:rgba(34,197,94,.2);color:#22c55e;}
 .gc-type-society{background:rgba(155,89,245,.2);color:#9b59f5;}
-.gc-type-general{background:rgba(201,168,76,.2);color:var(--gold);}
 
 .gc-body{padding:14px;flex:1;display:flex;flex-direction:column;}
 .gc-name{font-size:16px;font-weight:800;margin-bottom:4px;line-height:1.3;}
 .gc-desc{font-size:12px;color:var(--t3);line-height:1.6;flex:1;margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .gc-foot{display:flex;align-items:center;justify-content:space-between;}
 .gc-members{font-size:11px;color:var(--t3);font-family:var(--fm);display:flex;align-items:center;gap:4px;}
-.gc-priv{font-size:10px;color:var(--t4);font-family:var(--fm);}
 
 /* Join / Leave button */
 .join-btn{
@@ -69,16 +66,17 @@ const css = `
 .join-btn.join{background:var(--red-sub);color:var(--red);border:1px solid var(--red-border);}
 .join-btn.join:hover{background:var(--red);color:#fff;}
 .join-btn.leave{background:var(--s3);color:var(--t2);border:1px solid var(--b2);}
-.join-btn.leave:hover{background:var(--s4);color:var(--t1);}
+.join-btn.leave:hover{background:rgba(232,25,44,.12);color:var(--red);border-color:var(--red-border);}
 .join-btn:disabled{opacity:.4;cursor:not-allowed;}
 
 /* Skeleton */
 .gskel{background:var(--s1);border:1px solid var(--b1);border-radius:14px;overflow:hidden;}
 
-/* CREATE MODAL */
+/* ── MODALS (create + confirm) ── */
 .modal-bg{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;animation:mfdin .2s var(--ease);}
 @keyframes mfdin{from{opacity:0}to{opacity:1}}
 .modal{background:var(--s1);border:1px solid var(--b2);border-radius:16px;width:100%;max-width:480px;overflow:hidden;animation:mslup .25s var(--ease);}
+.modal.sm{max-width:360px;}
 @keyframes mslup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--b1);background:linear-gradient(90deg,rgba(232,25,44,.05) 0%,transparent 70%);}
 .modal-title{font-family:var(--fd);font-size:20px;letter-spacing:3px;}
@@ -103,35 +101,70 @@ const css = `
 .toggle input:checked + .toggle-slider::before{transform:translateX(16px);}
 .modal-err{font-size:12px;color:var(--red);background:var(--red-sub);border:1px solid var(--red-border);border-radius:6px;padding:7px 12px;}
 .modal-foot{display:flex;gap:10px;justify-content:flex-end;padding:0 22px 20px;}
+
+/* Confirm modal */
+.confirm-body{padding:22px;font-size:14px;line-height:1.7;color:var(--t2);}
+.confirm-body strong{color:var(--t1);}
+.confirm-warn{font-size:12px;color:var(--t3);margin-top:8px;}
 `;
 
-/* ─── Group type colors ─────────────────────────────────────────────────── */
+/* ─── Group type config (no 'general' type) ──────────────────────────────── */
 const TYPE_STYLE = {
   class:   { label: 'Class',   cls: 'gc-type-class',   banner: 'linear-gradient(135deg,rgba(74,158,255,.2),rgba(74,158,255,.05))' },
   club:    { label: 'Club',    cls: 'gc-type-club',    banner: 'linear-gradient(135deg,rgba(34,197,94,.2),rgba(34,197,94,.05))' },
   society: { label: 'Society', cls: 'gc-type-society', banner: 'linear-gradient(135deg,rgba(155,89,245,.2),rgba(155,89,245,.05))' },
-  general: { label: 'General', cls: 'gc-type-general', banner: 'linear-gradient(135deg,rgba(201,168,76,.2),rgba(201,168,76,.05))' },
 };
+const DEFAULT_TYPE = TYPE_STYLE.club;
+
+/* ─── Confirm Leave Modal ─────────────────────────────────────────────────── */
+function ConfirmLeaveModal({ groupName, onConfirm, onCancel, loading }) {
+  return (
+    <div className="modal-bg" onClick={e => e.target === e.currentTarget && onCancel()}>
+      <div className="modal sm">
+        <div className="modal-head">
+          <span className="modal-title">Leave Group</span>
+          <button className="modal-close" onClick={onCancel}>✕</button>
+        </div>
+        <div className="confirm-body">
+          You are about to leave <strong>{groupName}</strong>.
+          <div className="confirm-warn">You can rejoin later if the group is public.</div>
+        </div>
+        <div className="modal-foot">
+          <button className="btn-outline" onClick={onCancel}>Cancel</button>
+          <button className="btn-fire" onClick={onConfirm} disabled={loading}
+            style={{background:'rgba(232,25,44,.9)'}}>
+            {loading ? 'Leaving…' : 'Leave Group'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ─── GroupCard ───────────────────────────────────────────────────────────── */
-function GroupCard({ group, isMember, onJoin, onLeave, onChat, joining }) {
+function GroupCard({ group, isMember, onJoin, onLeaveRequest, onChat, joining }) {
   const navigate = useNavigate();
-  const ts = TYPE_STYLE[group.type] || TYPE_STYLE.general;
+  const ts = TYPE_STYLE[group.type] || DEFAULT_TYPE;
 
-  const handleAction = (e) => {
+  const handleJoinLeave = (e) => {
     e.stopPropagation();
-    isMember ? onLeave(group.id) : onJoin(group.id);
+    if (isMember) {
+      onLeaveRequest(group); // open confirm modal
+    } else {
+      onJoin(group.id);
+    }
   };
 
   return (
     <div
       className="gcard"
-      style={{ animationDelay: `${Math.random() * 100}ms` }}
       onClick={() => navigate(`/groups/${group.id}`)}
     >
       <div className="gc-banner" style={{ background: ts.banner }}>
         <span className={`gc-type-badge ${ts.cls}`}>{ts.label}</span>
-        {group.isPrivate && <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--t4)' }}>🔒</span>}
+        {(group.isPrivate || group.type === 'class') && (
+          <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--t4)' }}>🔒</span>
+        )}
       </div>
       <div className="gc-body">
         <div className="gc-name">{group.name}</div>
@@ -144,16 +177,17 @@ function GroupCard({ group, isMember, onJoin, onLeave, onChat, joining }) {
                 className="join-btn join"
                 style={{ background: 'rgba(155,89,245,.15)', color: '#9b59f5', borderColor: 'rgba(155,89,245,.3)' }}
                 onClick={e => { e.stopPropagation(); onChat(group); }}
+                title="Open group chat"
               >
                 💬
               </button>
             )}
             <button
               className={`join-btn ${isMember ? 'leave' : 'join'}`}
-              onClick={handleAction}
+              onClick={handleJoinLeave}
               disabled={joining === group.id}
             >
-              {joining === group.id ? '…' : isMember ? '✓ Joined' : group.isPrivate ? '🔒 Request' : '+ Join'}
+              {joining === group.id ? '…' : isMember ? '✓ Joined' : (group.isPrivate || group.type === 'class') ? '🔒 Request' : '+ Join'}
             </button>
           </div>
         </div>
@@ -187,15 +221,18 @@ function GroupSkeleton() {
 /* ─── CreateModal ─────────────────────────────────────────────────────────── */
 function CreateModal({ onClose, onCreate, creating }) {
   const [form, setForm] = useState({
-    name: '', description: '', type: 'general', isPrivate: false,
+    name: '', description: '', type: 'club', isPrivate: false,
   });
   const [err, setErr] = useState('');
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
+  // class type is always private
+  const effectivePrivate = form.type === 'class' ? true : form.isPrivate;
+
   const submit = async () => {
     if (!form.name.trim()) { setErr('Group name is required.'); return; }
     setErr('');
-    try { await onCreate(form); }
+    try { await onCreate({ ...form, isPrivate: effectivePrivate }); }
     catch (e) { setErr(e?.response?.data?.message || 'Failed to create group.'); }
   };
 
@@ -230,27 +267,34 @@ function CreateModal({ onClose, onCreate, creating }) {
             <div className="mfield">
               <label>Type</label>
               <select value={form.type} onChange={e => set('type', e.target.value)}>
-                <option value="general">General</option>
-                <option value="class">Class</option>
                 <option value="club">Club</option>
+                <option value="class">Class (invite-only)</option>
                 <option value="society">Society</option>
               </select>
             </div>
           </div>
-          <div className="toggle-row">
-            <div>
-              <div className="toggle-label">Private Group</div>
-              <div className="toggle-sub">Members must request to join</div>
+          {/* Only show private toggle for non-class types */}
+          {form.type !== 'class' && (
+            <div className="toggle-row">
+              <div>
+                <div className="toggle-label">Private Group</div>
+                <div className="toggle-sub">Members must request to join</div>
+              </div>
+              <label className="toggle">
+                <input
+                  type="checkbox"
+                  checked={form.isPrivate}
+                  onChange={e => set('isPrivate', e.target.checked)}
+                />
+                <span className="toggle-slider" />
+              </label>
             </div>
-            <label className="toggle">
-              <input
-                type="checkbox"
-                checked={form.isPrivate}
-                onChange={e => set('isPrivate', e.target.checked)}
-              />
-              <span className="toggle-slider" />
-            </label>
-          </div>
+          )}
+          {form.type === 'class' && (
+            <div style={{ fontSize: 12, color: 'var(--t3)', fontFamily: 'var(--fm)', padding: '4px 0' }}>
+              🔒 Class groups are always private — only invited members can view content.
+            </div>
+          )}
         </div>
         <div className="modal-foot">
           <button className="btn-outline" onClick={onClose}>Cancel</button>
@@ -269,14 +313,17 @@ export default function GroupsPage() {
   const navigate = useNavigate();
   const uid = user?.userId ?? user?.id;
 
-  const [tab,        setTab]        = useState('discover');
-  const [groups,     setGroups]     = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [joined,     setJoined]     = useState(new Set());
-  const [joining,    setJoining]    = useState(null);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [creating,   setCreating]   = useState(false);
-  const [error,      setError]      = useState('');
+  const [tab,          setTab]          = useState('discover');
+  const [groups,       setGroups]       = useState([]);
+  const [loading,      setLoading]      = useState(true);
+  const [joined,       setJoined]       = useState(new Set());
+  const [joining,      setJoining]      = useState(null);
+  const [createOpen,   setCreateOpen]   = useState(false);
+  const [creating,     setCreating]     = useState(false);
+  const [error,        setError]        = useState('');
+  // Leave confirm modal state
+  const [leaveTarget,  setLeaveTarget]  = useState(null); // group object
+  const [leavingId,    setLeavingId]    = useState(null);
 
   useEffect(() => {
     if (!uid) return;
@@ -307,17 +354,23 @@ export default function GroupsPage() {
     } finally { setJoining(null); }
   };
 
-  const handleLeave = async (groupId) => {
-    setJoining(groupId);
+  const handleLeaveRequest = (group) => {
+    setLeaveTarget(group);
+  };
+
+  const handleLeaveConfirm = async () => {
+    if (!leaveTarget) return;
+    setLeavingId(leaveTarget.id);
     try {
-      await groupService.leaveGroup(groupId);
-      setJoined(prev => { const s = new Set(prev); s.delete(groupId); return s; });
+      await groupService.leaveGroup(leaveTarget.id);
+      setJoined(prev => { const s = new Set(prev); s.delete(leaveTarget.id); return s; });
       setGroups(prev => prev.map(g =>
-        g.id === groupId ? { ...g, memberCount: Math.max(0, (g.memberCount ?? 1) - 1) } : g
+        g.id === leaveTarget.id ? { ...g, memberCount: Math.max(0, (g.memberCount ?? 1) - 1) } : g
       ));
+      setLeaveTarget(null);
     } catch (e) {
       setError(e?.response?.data?.message || 'Could not leave group.');
-    } finally { setJoining(null); }
+    } finally { setLeavingId(null); }
   };
 
   const handleCreate = async (form) => {
@@ -331,20 +384,18 @@ export default function GroupsPage() {
     } finally { setCreating(false); }
   };
 
+  // Open group chat — use groupTag for dedup so pressing the button
+  // multiple times reuses the same conversation instead of creating new ones
   const openGroupChat = async (group) => {
     try {
-      const token = localStorage.getItem('learnex_auth')
-        ? JSON.parse(localStorage.getItem('learnex_auth')).token
-        : '';
-      const membersRes = await fetch(`/api/groups/${group.id}/members`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const membersData = await membersRes.json();
-      const members = membersData?.data ?? membersData;
+      const groupTag = `grp:${group.id}`;
+      const membersRes = await groupService.getMembers(group.id);
+      const members = membersRes?.data ?? membersRes;
       const memberIds = (Array.isArray(members) ? members : [])
         .map(m => m.userId)
         .filter(id => id !== uid);
-      const res  = await conversationService.startGroupConversation(group.name, memberIds);
+
+      const res  = await conversationService.startGroupConversation(group.name, memberIds, groupTag);
       const conv = res?.data ?? res;
       navigate(`/messages/${conv.id}`);
     } catch {
@@ -401,7 +452,7 @@ export default function GroupsPage() {
                     group={g}
                     isMember={joined.has(g.id)}
                     onJoin={handleJoin}
-                    onLeave={handleLeave}
+                    onLeaveRequest={handleLeaveRequest}
                     onChat={openGroupChat}
                     joining={joining}
                   />
@@ -412,11 +463,22 @@ export default function GroupsPage() {
         </main>
       </Layout>
 
+      {/* Create modal */}
       {createOpen && (
         <CreateModal
           onClose={() => setCreateOpen(false)}
           onCreate={handleCreate}
           creating={creating}
+        />
+      )}
+
+      {/* Leave confirm modal */}
+      {leaveTarget && (
+        <ConfirmLeaveModal
+          groupName={leaveTarget.name}
+          onConfirm={handleLeaveConfirm}
+          onCancel={() => setLeaveTarget(null)}
+          loading={!!leavingId}
         />
       )}
     </>

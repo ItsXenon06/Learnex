@@ -1,12 +1,20 @@
 import api from './api.js';
 
 // POST /api/conversations   body: { recipientId }
+// Returns existing DM if one already exists (backend deduplicates)
 const startConversation = (recipientId) =>
   api.post('/conversations', { recipientId });
 
-// POST /api/conversations/group   body: { name, memberIds: [uuid, ...] }
-const startGroupConversation = (name, memberIds) =>
-  api.post('/conversations/group', { name, memberIds });
+// POST /api/conversations/group
+// body: { name, memberIds, groupTag? }
+// groupTag = "grp:{studyGroupId}" — backend returns existing conv if same tag exists
+// This prevents creating duplicate group chats when pressing the chat button on a group
+const startGroupConversation = (name, memberIds, groupTag = null) =>
+  api.post('/conversations/group', {
+    name,
+    memberIds,
+    ...(groupTag ? { groupTag } : {}),
+  });
 
 // GET /api/conversations
 const getConversations = () =>

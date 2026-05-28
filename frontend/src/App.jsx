@@ -7,12 +7,14 @@ import ProfilePage        from './pages/ProfilePage';
 import NotificationsPage  from './pages/NotificationsPage';
 import MessagesPage       from './pages/MessagesPage';
 import GroupsPage         from './pages/GroupsPage';
+import GroupDetailPage    from './pages/GroupDetailPage';
 import SavedPage          from './pages/SavedPage';
-import PostDetailPage from './pages/PostDetailPage';
+import PostDetailPage     from './pages/PostDetailPage';
+import SearchPage   from './pages/SearchPage';
+import HashtagPage  from './pages/HashtagPage';
+import CoursePage   from './pages/CoursePage';
 
 /* ─── Session-expired toast ──────────────────────────────────────────────── */
-// Rendered at app root so it sits above everything. Reads a flag that
-// api.js sets in sessionStorage before redirecting to /login.
 const EXPIRED_KEY = 'learnex_session_expired';
 
 function SessionExpiredToast() {
@@ -128,23 +130,38 @@ function AppRoutes() {
         <Route path="/notifications"
           element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
 
-        {/* Groups — was ComingSoon stub, now real page */}
+        {/* Groups list */}
         <Route path="/groups"
           element={<PrivateRoute><GroupsPage /></PrivateRoute>} />
         <Route path="/groups/new"
           element={<PrivateRoute><GroupsPage openCreate /></PrivateRoute>} />
-        <Route path="/groups/:groupId"
-          element={<PrivateRoute><GroupsPage /></PrivateRoute>} />
 
-        {/* Saved — was ComingSoon stub, now real page */}
+        {/* Group detail — MUST be after /groups/new to avoid "new" matching :groupId */}
+        <Route path="/groups/:groupId"
+          element={<PrivateRoute><GroupDetailPage /></PrivateRoute>} />
+
+        {/* Saved */}
         <Route path="/saved"
           element={<PrivateRoute><SavedPage /></PrivateRoute>} />
 
         {/* Post detail */}
         <Route path="/post/:postId"
           element={<PrivateRoute><PostDetailPage /></PrivateRoute>} />
-        <Route path="/hashtag/:tag"
-          element={<PrivateRoute><ComingSoon name="Hashtag" /></PrivateRoute>} />
+
+<Route path="/search"
+  element={<PrivateRoute><SearchPage /></PrivateRoute>} />
+<Route path="/hashtag/:tag"
+  element={<PrivateRoute><HashtagPage /></PrivateRoute>} />
+<Route path="/courses"
+  element={<PrivateRoute><CoursePage /></PrivateRoute>} />
+<Route path="/courses/:courseId"
+  element={<PrivateRoute><CoursePage /></PrivateRoute>} />
+
+        {/* Courses — ComingSoon for now */}
+        <Route path="/courses"
+          element={<PrivateRoute><ComingSoon name="Courses" /></PrivateRoute>} />
+        <Route path="/courses/:courseId"
+          element={<PrivateRoute><ComingSoon name="Course Detail" /></PrivateRoute>} />
 
         <Route path="*" element={<Navigate to="/feed" replace />} />
       </Routes>

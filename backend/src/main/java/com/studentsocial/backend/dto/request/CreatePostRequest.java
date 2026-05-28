@@ -6,7 +6,8 @@ import java.util.List;
 import java.util.UUID;
 @Data
 public class CreatePostRequest {
-
+    // ADD this field:
+    private UUID groupId;
 
     private String content;
 

@@ -199,13 +199,17 @@ public class GroupController {
         List<Map<String, Object>> members = groupMemberRepository.findByGroupId(id)
                 .stream()
                 .map(gm -> {
-                    Map<String, Object> m = new HashMap<>();
-                    m.put("userId",    gm.getUser().getId());
-                    m.put("email",     gm.getUser().getEmail());
-                    m.put("roleName",  gm.getRole().getName());
-                    m.put("joinedAt",  gm.getJoinedAt());
-                    return m;
-                })
+    Map<String, Object> m = new HashMap<>();
+    m.put("userId",   gm.getUser().getId());
+    m.put("email",    gm.getUser().getEmail());
+    m.put("roleName", gm.getRole().getName());
+    m.put("joinedAt", gm.getJoinedAt());
+    // ADD displayName lookup:
+    profileRepository.findByUserId(gm.getUser().getId())
+        .ifPresent(p -> m.put("displayName", p.getDisplayName()));
+    return m;
+})
+
                 .toList();
 
         return ResponseEntity.ok(ApiResponse.success(members));

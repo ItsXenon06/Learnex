@@ -15,6 +15,7 @@ public class PostResponse {
     private String authorEmail;
     private String authorDisplayName;
     private String authorHeadline;     // shown in post card sub-line
+    private String authorAvatarUrl;
     private String content;
     private String visibility;
     private Boolean isEdited;

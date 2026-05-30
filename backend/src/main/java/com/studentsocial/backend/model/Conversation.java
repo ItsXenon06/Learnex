@@ -26,6 +26,9 @@ public class Conversation {
     @Column(length = 255)
     private String name; // display name for group/class chats
 
+    @Column(name = "group_tag", unique = true, length = 255)
+private String groupTag;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "avatar_media_id")
     private MediaFile avatarMedia;

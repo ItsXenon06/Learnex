@@ -96,7 +96,8 @@ return AuthResponse.builder()
         .displayName(displayName)
         .roles(List.of(DEFAULT_ROLE))
         .build();
-    }
+        }
+        
     @Transactional
     public AuthResponse login(LoginRequest request) {
         // BUG-2 FIX: AuthenticationException was uncaught → Spring returned 500.
@@ -123,12 +124,19 @@ return AuthResponse.builder()
 
         String token = jwtService.generateToken(user.getEmail(), roles);
 
-        return AuthResponse.builder()
-                .token(token)
-                .userId(user.getId())
-                .email(user.getEmail())
-                .roles(roles)
-                .build();
+String displayName = profileRepository.findByUserId(user.getId())
+        .map(p -> p.getDisplayName() != null
+                ? p.getDisplayName()
+                : user.getEmail().split("@")[0])
+        .orElse(user.getEmail().split("@")[0]);
+
+return AuthResponse.builder()
+        .token(token)
+        .userId(user.getId())
+        .email(user.getEmail())
+        .displayName(displayName)
+        .roles(roles)
+        .build();
     }
     private String buildDisplayName(
         String firstName,

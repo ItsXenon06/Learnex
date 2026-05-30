@@ -91,7 +91,12 @@ export default function CoursePage() {
   const navigate = useNavigate();
 
   const [tab,       setTab]       = useState('all');
-  const [starred,   setStarred]   = useState(new Set());
+  const [starred, setStarred] = useState(() => {
+  try {
+    const saved = localStorage.getItem('learnex_starred_courses');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  } catch { return new Set(); }
+});
   const [reqOpen,   setReqOpen]   = useState(false);
   const [reqSent,   setReqSent]   = useState(false);
   const [reqForm,   setReqForm]   = useState({ courseName: '', reason: '' });
@@ -99,13 +104,15 @@ export default function CoursePage() {
   const courses = MOCK_COURSES; // swap: await courseService.getCourses()
 
   const toggleStar = (e, id) => {
-    e.stopPropagation();
-    setStarred(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
+  e.stopPropagation();
+  setStarred(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    try { localStorage.setItem('learnex_starred_courses', JSON.stringify([...next])); } 
+    catch { /* no-op */ }
+    return next;
+  });
+};
 
   const sendRequest = async () => {
     if (!reqForm.courseName.trim()) return;

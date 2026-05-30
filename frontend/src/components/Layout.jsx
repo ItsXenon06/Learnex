@@ -8,9 +8,11 @@
  *  - Group avatar in sidebar profile uses avatarUrl if set
  */
 
-import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth, getInitials, getDisplayName } from '../contexts/AuthContext';
+// REPLACE the top of the file (everything before sharedCss) with this:
+
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth, getInitials } from '../contexts/AuthContext';
 
 /* ─── Shared CSS ──────────────────────────────────────────────────────────── */
 export const sharedCss = `
@@ -199,15 +201,43 @@ export default function Layout({
   unreadMsgs  = 0,
 }) {
   const { user, logout } = useAuth();
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
 
-  const [searchVal, setSearchVal] = useState('');
-
+  // uid MUST be declared before the useEffect that uses it
+  const uid = user?.userId ?? user?.id;
   const displayName = profile?.displayName || user?.displayName || user?.email?.split('@')[0] || 'Student';
   const ini = getInitials(profile?.displayName || user?.displayName, user?.email);
-  const uid = user?.userId ?? user?.id;
 
-  const badges = { unreadNotif, unreadMsgs };
+  const [searchVal, setSearchVal] = useState('');
+  const [liveUnreadNotif, setLiveUnreadNotif] = useState(unreadNotif);
+
+  useEffect(() => {
+    setLiveUnreadNotif(unreadNotif);
+  }, [unreadNotif]);
+
+  useEffect(() => {
+    const fetchUnread = () => {
+      const token = (() => {
+        try { return JSON.parse(localStorage.getItem('learnex_auth') || '{}')?.token || ''; }
+        catch { return ''; }
+      })();
+      if (!token) return;
+      fetch('/api/notifications?page=0&size=1&unreadOnly=true', {
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+      })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          const count = data?.data?.unreadCount ?? data?.unreadCount ?? 0;
+          setLiveUnreadNotif(count);
+        })
+        .catch(() => {});
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 60000);
+    return () => clearInterval(interval);
+  }, [uid]);
+
+  const badges = { unreadNotif: liveUnreadNotif, unreadMsgs };
   const cols = rightPanel ? 'lx-page--3col' : 'lx-page--2col';
 
   const handleLogout = () => { logout(); navigate('/login'); };
@@ -216,6 +246,9 @@ export default function Layout({
     const q = searchVal.trim();
     if (q) navigate(`/search?q=${encodeURIComponent(q)}`);
   };
+
+  // ... rest of return() stays exactly the same
+ 
 
   return (
     <>

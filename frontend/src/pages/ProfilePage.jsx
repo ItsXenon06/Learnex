@@ -451,11 +451,21 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
                             {followLoading ? '…' : isFollowing ? '✓ Following' : '+ Follow'}
                           </button>
                           <button
-                            className="btn btn-outline"
-                            onClick={() => navigate('/messages')}
-                          >
-                            💬 Message
-                          </button>
+  className="btn btn-outline"
+  onClick={async () => {
+    try {
+      const { default: conversationService } = 
+        await import('../services/conversationService');
+      const res  = await conversationService.startConversation(targetId);
+      const conv = res?.data ?? res;
+      navigate(`/messages/${conv.id}`);
+    } catch {
+      navigate('/messages');
+    }
+  }}
+>
+  💬 Message
+</button>
                         </>
                       )}
                     </div>

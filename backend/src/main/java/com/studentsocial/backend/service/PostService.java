@@ -223,6 +223,7 @@ if (request.getGroupId() != null) {
                 .authorEmail(author.getEmail())
                 .authorDisplayName(profile != null ? profile.getDisplayName() : null)
                 .authorHeadline(profile != null ? profile.getHeadline() : null)
+                .authorAvatarUrl(profile != null ? profile.getAvatarUrl() : null)
                 .content(post.getContent())
                 .visibility(post.getVisibility())
                 .isEdited(post.getIsEdited())

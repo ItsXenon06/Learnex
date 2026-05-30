@@ -124,4 +124,16 @@ List<Post> findFeedByUserIdsSortedByLikes(
         @Param("window")   String     window,
         @Param("off")      int        offset,
         @Param("lim")      int        limit);
+@Query(value = """
+    SELECT * FROM post
+    WHERE deleted_at IS NULL
+      AND visibility = 'public'
+      AND LOWER(content) LIKE LOWER(CONCAT('%#', :tag, '%'))
+    ORDER BY created_at DESC
+    LIMIT :lim OFFSET :off
+    """, nativeQuery = true)
+List<Post> findByHashtag(
+    @Param("tag") String tag,
+    @Param("off") int offset,
+    @Param("lim") int limit);
 }

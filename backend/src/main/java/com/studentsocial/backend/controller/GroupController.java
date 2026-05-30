@@ -126,7 +126,7 @@ public class GroupController {
         StudyGroup group = StudyGroup.builder()
                 .name((String) body.get("name"))
                 .description((String) body.getOrDefault("description", ""))
-                .type((String) body.getOrDefault("type", "general"))
+                .type((String) body.getOrDefault("type", "club"))
                 .isPrivate(Boolean.TRUE.equals(body.get("isPrivate")))
                 .createdBy(creator)
                 .memberCount(1)

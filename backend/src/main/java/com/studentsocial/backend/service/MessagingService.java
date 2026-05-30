@@ -91,10 +91,11 @@ public ConversationResponse createOrGetGroupChat(UUID creatorId, String name,
     String displayName = name; // friendly name stored separately via metadata
  
     Conversation conv = conversationRepository.save(
-            Conversation.builder()
-                    .type("group")
-                    .name(convName)       // "grp:{uuid}" — stable key
-                    .build());
+        Conversation.builder()
+                .type("group")
+                .name(name)           // friendly display name e.g. "CS Study Squad"
+                .groupTag(groupTag)   // "grp:{uuid}" — stable dedup key, can be null
+                .build());
  
     memberRepository.save(ConversationMember.builder()
             .conversation(conv).user(creator).role("owner").build());
@@ -258,22 +259,10 @@ public ConversationResponse createOrGetGroupChat(UUID creatorId, String name,
                 .editedAt(m.getEditedAt())
                 .build();
     }
-    private String resolveDisplayName(Conversation conv, List<ConversationMember> members) {
+private String resolveDisplayName(Conversation conv, List<ConversationMember> members) {
     if ("group".equals(conv.getType())) {
-        String raw = conv.getName();
-        // "grp:{uuid}" → look up study group name, or fall back to stripping prefix
-        if (raw != null && raw.startsWith("grp:")) {
-            try {
-                UUID gid = UUID.fromString(raw.substring(4));
-                return studyGroupRepository.findById(gid)
-                        .map(g -> g.getName())
-                        .orElse(raw);
-            } catch (Exception e) {
-                return raw;
-            }
-        }
-        return raw;
+        return conv.getName(); // already the friendly name
     }
-    return null; // DMs don't need this
+    return null;
 }
 }

@@ -143,7 +143,42 @@ const css = `
 .sk{background:var(--s3);animation:lx-pulse 1.7s ease infinite;border-radius:5px;}
 @keyframes lx-pulse{0%,100%{opacity:.2}50%{opacity:.45}}
 
-@media(max-width:700px){.cl{display:none;}.cl.show{display:flex;position:fixed;top:var(--tb);left:0;right:0;bottom:0;z-index:200;background:var(--bg);width:100%;}}
+.chat-mob-back{
+  display:none;
+}
+
+@media(max-width:700px){
+
+  .chat-mob-back{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:32px;
+    height:32px;
+    border:none;
+    background:transparent;
+    color:var(--t2);
+    font-size:20px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+
+  .cl{
+    display:none;
+  }
+
+  .cl.show{
+    display:flex;
+    position:fixed;
+    top:var(--tb);
+    left:0;
+    right:0;
+    bottom:0;
+    z-index:200;
+    background:var(--bg);
+    width:100%;
+  }
+}
 `;
 
 /* ─── Persistent unread storage — keyed per user ─────────────────────────
@@ -516,6 +551,12 @@ export default function MessagesPage() {
             ) : (
               <>
                 <div className="chat-head">
+                  <button 
+  className="chat-mob-back" 
+  onClick={() => { setActiveId(null); navigate('/messages', { replace: true }); }}
+>
+  ‹
+</button>
                   {isGroup
                     ? <GroupAvatar name={activeConv?.name} size={38} />
                     : (

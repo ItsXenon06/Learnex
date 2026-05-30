@@ -242,9 +242,13 @@ export default function GroupDetailPage() {
   };
 
   const openGroupChat = async () => {
-    try {
-      const groupTag = `grp:${groupId}`;
-      const memberIds = members.map(m => m.userId).filter(id => id !== uid);
+  if (members.length === 0) {
+    alert('Member list is still loading, please try again.');
+    return;
+  }
+  try {
+    const groupTag = `grp:${groupId}`;
+    const memberIds = members.map(m => m.userId).filter(id => id !== uid);
       const res  = await conversationService.startGroupConversation(group.name, memberIds, groupTag);
       const conv = res?.data ?? res;
       navigate(`/messages/${conv.id}`);

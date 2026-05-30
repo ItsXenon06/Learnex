@@ -179,7 +179,7 @@ function GroupCard({ group, isMember, onJoin, onLeaveRequest, onChat, joining })
                 onClick={e => { e.stopPropagation(); onChat(group); }}
                 title="Open group chat"
               >
-                💬
+                💬 Chat
               </button>
             )}
             <button

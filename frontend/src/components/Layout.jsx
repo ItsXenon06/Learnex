@@ -209,13 +209,38 @@ export default function Layout({
   const ini = getInitials(profile?.displayName || user?.displayName, user?.email);
 
   const [searchVal, setSearchVal] = useState('');
-  const [liveUnreadNotif, setLiveUnreadNotif] = useState(unreadNotif);
+const [liveUnreadNotif, setLiveUnreadNotif] = useState(unreadNotif);
+const [ownProfile, setOwnProfile] = useState(null);
+
+useEffect(() => {
+  if (!uid) return;
+  import('../services/userService').then(({ default: us }) => {
+    us.getProfile(uid).then(res => {
+      setOwnProfile(res?.data ?? res);
+    }).catch(() => {});
+  });
+}, [uid]);
 
   useEffect(() => {
     setLiveUnreadNotif(unreadNotif);
   }, [unreadNotif]);
+  const [ownProfile, setOwnProfile] = useState(null);
+
+useEffect(() => {
+  if (!uid) return;
+  import('../services/userService').then(({ default: us }) => {
+    us.getProfile(uid).then(res => {
+      setOwnProfile(res?.data ?? res);
+    }).catch(() => {});
+  });
+}, [uid]);
 
   useEffect(() => {
+    useEffect(() => {
+  const handler = () => setLiveUnreadNotif(0);
+  window.addEventListener('learnex:notifications-cleared', handler);
+  return () => window.removeEventListener('learnex:notifications-cleared', handler);
+}, []);
     const fetchUnread = () => {
       const token = (() => {
         try { return JSON.parse(localStorage.getItem('learnex_auth') || '{}')?.token || ''; }
@@ -233,7 +258,7 @@ export default function Layout({
         .catch(() => {});
     };
     fetchUnread();
-    const interval = setInterval(fetchUnread, 60000);
+    const interval = setInterval(fetchUnread, 30000);
     return () => clearInterval(interval);
   }, [uid]);
 
@@ -296,7 +321,7 @@ export default function Layout({
             title={displayName}
             onClick={() => navigate(`/profile/${uid}`)}
           >
-            {profile?.avatarUrl
+            {(ownProfile ?? profile)?.avatarUrl
               ? <img src={profile.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>{e.currentTarget.style.display='none'}} />
               : ini
             }
@@ -328,7 +353,7 @@ export default function Layout({
           <div className="sb-footer">
             <div className="sb-me" onClick={() => navigate(`/profile/${uid}`)}>
               <div className="sb-mav">
-                {profile?.avatarUrl
+                {(ownProfile ?? profile)?.avatarUrl
                   ? <img src={profile.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>{e.currentTarget.style.display='none'}} />
                   : ini
                 }

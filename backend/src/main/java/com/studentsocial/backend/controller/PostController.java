@@ -149,16 +149,7 @@ public ResponseEntity<ApiResponse<List<PostResponse>>> getDiscover(
 
         return ResponseEntity.ok(ApiResponse.success(postReactionService.getReactionSummary(id)));
     }
-    @GetMapping("/users/{userId}/posts")
-// NOTE: this goes in UserController or PostController — pick one and be consistent.
-// Recommended: UserController since it's a user-scoped resource.
-public ResponseEntity<ApiResponse<List<PostResponse>>> getUserPosts(
-        @PathVariable UUID userId,
-        @RequestParam(defaultValue = "0")  int page,
-        @RequestParam(defaultValue = "20") int size) {
 
-    return ResponseEntity.ok(ApiResponse.success(postService.getUserPosts(userId, page, size)));
-}
 private final SavedPostService savedPostService; // add to @RequiredArgsConstructor field list
 
 // POST /api/posts/{id}/save

@@ -261,6 +261,9 @@ export default function NotificationsPage() {
       markLocalRead([n.id]);
       setNotifs(prev => prev.map(x => x.id === n.id ? { ...x, isRead: true } : x));
       setUnreadCount(c => Math.max(0, c - 1));
+      if (displayedUnread - 1 <= 0) {
+  window.dispatchEvent(new Event('learnex:notifications-cleared'));
+}
       // Fire-and-forget server update
       notificationService.markAsRead(n.id).catch(() => {/* no-op */});
     }
@@ -269,14 +272,15 @@ export default function NotificationsPage() {
 
   // Mark all read: server + local cache
   const markAll = async () => {
-    try {
-      await notificationService.markAllAsRead();
-      const allIds = notifs.map(n => n.id);
-      markLocalRead(allIds);
-      setNotifs(prev => prev.map(n => ({ ...n, isRead: true })));
-      setUnreadCount(0);
-    } catch { /* no-op */ }
-  };
+  try {
+    await notificationService.markAllAsRead();
+    const allIds = notifs.map(n => n.id);
+    markLocalRead(allIds);
+    setNotifs(prev => prev.map(n => ({ ...n, isRead: true })));
+    setUnreadCount(0);
+    window.dispatchEvent(new Event('learnex:notifications-cleared'));
+  } catch { /* no-op */ }
+};
 
   // Recalculate displayed unread count using merged local+server state
   const displayedUnread = notifs.filter(n => isUnread(n)).length;

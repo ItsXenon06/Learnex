@@ -33,9 +33,7 @@ public class MediaController {
     // Base URL for serving files — e.g. http://localhost:1008/learnex
     // Spring will serve files under /uploads/** via WebMvcConfigurer (wire separately)
     // or you can point this to an S3 bucket URL later.
-    @Value("${learnex.upload.base-url:http://localhost:1008/learnex/uploads}")
-    private String baseUrl;
-
+    
     private static final long MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
     private static final java.util.Set<String> ALLOWED_TYPES = java.util.Set.of(
             "image/jpeg", "image/png", "image/gif", "image/webp",
@@ -81,7 +79,7 @@ public class MediaController {
         Path dest = dir.resolve(bucketKey);
         Files.copy(file.getInputStream(), dest, StandardCopyOption.REPLACE_EXISTING);
 
-        String url = baseUrl + "/" + bucketKey;
+        String url = "/uploads/" + bucketKey;
 
         // Derive attachment type
         String type = mime.startsWith("video/") ? "video"

@@ -882,6 +882,7 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
             ref={pickerRef}
             onMouseEnter={handleRxMouseEnter}
             onMouseLeave={handleRxMouseLeave}
+            onClick={e => e.stopPropagation()}
           >
             <button
               className={`ca-btn ${myRx ? 'liked' : ''}`}

@@ -3,14 +3,19 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/Learnex/', // Match server.servlet.context-path=/learnex
+  base: '/Learnex/',
   server: {
     proxy: {
       '/api': {
         target: 'http://localhost:1008',
         changeOrigin: true,
         secure: false,
-        // Rewrite: /api/posts → /Learnex/api/posts
+        rewrite: (path) => `/Learnex${path}`,
+      },
+      '/uploads': {
+        target: 'http://localhost:1008',
+        changeOrigin: true,
+        secure: false,
         rewrite: (path) => `/Learnex${path}`,
       },
     },

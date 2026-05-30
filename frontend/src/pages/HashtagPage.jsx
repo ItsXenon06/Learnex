@@ -159,7 +159,7 @@ export default function HashtagPage() {
       <Layout active="feed">
         <main className="htag-main">
           <div className="htag-hero">
-            <button className="htag-back" onClick={() => navigate(-1)}>← Back</button>
+            <button className="htag-back" onClick={() => navigate(window.history.length > 1 ? -1 : '/feed')}>← Back</button>
             <div className="htag-header">
               <div className="htag-title-block">
                 <div className="htag-label">Hashtag</div>

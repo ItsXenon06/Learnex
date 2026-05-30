@@ -159,9 +159,13 @@ export default function SavedPage() {
                     <div className="saved-stripe" />
                     <div className="saved-body" onClick={() => navigate(`/post/${p.id}`)}>
                       <div className="saved-author">
-                        <div className="saved-av" style={avStyle(p.authorId)}>
-                          {authorIni}
-                        </div>
+                        <div
+  className="saved-av"
+  style={{...avStyle(p.authorId), cursor: 'pointer'}}
+  onClick={e => { e.stopPropagation(); navigate(`/profile/${p.authorId}`); }}
+>
+  {authorIni}
+</div>
                         <span
                           className="saved-name"
                           onClick={e => { e.stopPropagation(); navigate(`/profile/${p.authorId}`); }}

@@ -157,29 +157,9 @@ function AppRoutes() {
 <Route path="/courses/:courseId"
   element={<PrivateRoute><CoursePage /></PrivateRoute>} />
 
-        {/* Courses — ComingSoon for now */}
-        <Route path="/courses"
-          element={<PrivateRoute><ComingSoon name="Courses" /></PrivateRoute>} />
-        <Route path="/courses/:courseId"
-          element={<PrivateRoute><ComingSoon name="Course Detail" /></PrivateRoute>} />
-
         <Route path="*" element={<Navigate to="/feed" replace />} />
       </Routes>
     </>
-  );
-}
-
-function ComingSoon({ name }) {
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      height: '100vh', background: '#07070a',
-      color: '#55556a', fontFamily: 'Syne, sans-serif', fontSize: 14,
-      flexDirection: 'column', gap: 8,
-    }}>
-      <span style={{ fontSize: 32 }}>🚧</span>
-      <span>{name} — coming soon</span>
-    </div>
   );
 }
 

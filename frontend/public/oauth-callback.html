@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>OAuth Callback</title>
+</head>
+<body>
+<script>
+(function(){
+  // Parse hash or query for access_token or id_token
+  const params = {};
+  const hash = window.location.hash.substring(1);
+  hash.split('&').forEach(pair => { if (!pair) return; const [k,v] = pair.split('='); params[k]=decodeURIComponent(v); });
+  const qp = window.location.search.substring(1);
+  qp.split('&').forEach(pair => { if (!pair) return; const [k,v] = pair.split('='); params[k]=decodeURIComponent(v); });
+
+  const provider = (new URLSearchParams(window.location.search)).get('provider') || params.provider;
+  let token = params['access_token'] || params['id_token'] || null;
+
+  if (!token) {
+    // send error back
+    window.opener.postMessage({ source: 'learnex_oauth', error: 'no_token' }, window.location.origin);
+    window.close();
+    return;
+  }
+
+  window.opener.postMessage({ source: 'learnex_oauth', provider, token }, window.location.origin);
+  // close the popup
+  window.close();
+})();
+</script>
+</body>
+</html>

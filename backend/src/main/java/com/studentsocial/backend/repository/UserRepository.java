@@ -44,4 +44,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
               AND u.isActive = TRUE
             """)
     Optional<User> findActiveByEmail(@Param("email") String email);
+
+    Optional<User> findByPasswordResetToken(@Param("token") String token);
 }

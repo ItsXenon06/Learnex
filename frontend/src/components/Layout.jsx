@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth, getInitials } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 /* ─── Shared CSS ──────────────────────────────────────────────────────────── */
 export const sharedCss = `
@@ -72,6 +73,13 @@ body{
   letter-spacing:.5px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:7px;
   position:relative;
 }
+.tb-lang{display:flex;align-items:center;gap:8px;}
+.lang-btn{
+  height:28px;padding:0 10px;border-radius:8px;border:1px solid var(--b1);
+  background:var(--s2);color:var(--t2);font-size:12px;font-family:var(--fb);font-weight:700;
+  cursor:pointer;transition:all .15s;
+}
+.lang-btn.on{background:var(--red);color:#fff;border-color:var(--red-border);}
 .tb-pill:hover{background:var(--s3);color:var(--t1);}
 .tb-pill.tb-pill--active{background:var(--red-sub);color:var(--red);border:1px solid var(--red-border);}
 .tb-dot{position:absolute;top:6px;right:6px;width:6px;height:6px;background:var(--red);border-radius:50%;border:1.5px solid var(--bg);box-shadow:0 0 6px var(--red);}
@@ -165,20 +173,20 @@ body{
 
 /* ─── Nav config ─────────────────────────────────────────────────────────── */
 const NAV_ITEMS = [
-  { key: 'feed',          icon: '🏠', label: 'Feed',          path: '/feed' },
-  { key: 'notifications', icon: '🔔', label: 'Notifications', path: '/notifications', badgeKey: 'unreadNotif' },
-  { key: 'messages',      icon: '💬', label: 'Messages',      path: '/messages',      badgeKey: 'unreadMsgs' },
-  { key: 'groups',        icon: '👥', label: 'Groups',        path: '/groups' },
-  { key: 'saved',         icon: '🔖', label: 'Saved',         path: '/saved' },
-  { key: 'courses',       icon: '🎓', label: 'Courses',       path: '/courses' },
+  { key: 'feed',          icon: '🏠', labelKey: 'nav.feed',          path: '/feed' },
+  { key: 'notifications', icon: '🔔', labelKey: 'nav.notifications', path: '/notifications', badgeKey: 'unreadNotif' },
+  { key: 'messages',      icon: '💬', labelKey: 'nav.messages',      path: '/messages',      badgeKey: 'unreadMsgs' },
+  { key: 'groups',        icon: '👥', labelKey: 'nav.groups',        path: '/groups' },
+  { key: 'saved',         icon: '🔖', labelKey: 'nav.saved',         path: '/saved' },
+  { key: 'courses',       icon: '🎓', labelKey: 'nav.courses',       path: '/courses' },
 ];
 
 const MOBILE_NAV = [
-  { key: 'feed',          icon: '🏠', label: 'Feed',     path: '/feed' },
-  { key: 'notifications', icon: '🔔', label: 'Alerts',   path: '/notifications', badgeKey: 'unreadNotif' },
-  { key: 'messages',      icon: '💬', label: 'Messages', path: '/messages',      badgeKey: 'unreadMsgs' },
-  { key: 'groups',        icon: '👥', label: 'Groups',   path: '/groups' },
-  { key: 'profile',       icon: '👤', label: 'Profile' },
+  { key: 'feed',          icon: '🏠', labelKey: 'nav.feed',     path: '/feed' },
+  { key: 'notifications', icon: '🔔', labelKey: 'nav.notifications',   path: '/notifications', badgeKey: 'unreadNotif' },
+  { key: 'messages',      icon: '💬', labelKey: 'nav.messages', path: '/messages',      badgeKey: 'unreadMsgs' },
+  { key: 'groups',        icon: '👥', labelKey: 'nav.groups',   path: '/groups' },
+  { key: 'profile',       icon: '👤', labelKey: 'nav.profile' },
 ];
 
 /* ─── Layout ─────────────────────────────────────────────────────────────── */
@@ -192,6 +200,15 @@ export default function Layout({
 }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+
+  const currentLang = i18n.resolvedLanguage || 'en';
+  const setLanguage = (lng) => {
+    i18n.changeLanguage(lng);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('learnex_lang', lng);
+    }
+  };
 
   const uid = user?.userId ?? user?.id;
 
@@ -278,9 +295,9 @@ export default function Layout({
         </span>
         <div className="tb-divider" />
         <div className="tb-search">
-          <button className="tb-si" onClick={handleSearch} title="Search">⌕</button>
+          <button className="tb-si" onClick={handleSearch} title={t('app.search')}>⌕</button>
           <input
-            placeholder="Search students, posts, groups…"
+            placeholder={t('app.searchPlaceholder')}
             value={searchVal}
             onChange={e => setSearchVal(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSearch()}
@@ -292,24 +309,37 @@ export default function Layout({
             className={`tb-pill ${active === 'notifications' ? 'tb-pill--active' : ''}`}
             onClick={() => navigate('/notifications')}
           >
-            🔔 Alerts
+            🔔 {t('nav.notifications')}
             {liveUnreadNotif > 0 && <span className="tb-dot" />}
           </button>
           <button
             className={`tb-pill ${active === 'messages' ? 'tb-pill--active' : ''}`}
             onClick={() => navigate('/messages')}
           >
-            💬 Messages
+            💬 {t('nav.messages')}
             {unreadMsgs > 0 && <span className="tb-dot" />}
           </button>
           <button
             className={`tb-pill ${active === 'groups' ? 'tb-pill--active' : ''}`}
             onClick={() => navigate('/groups')}
           >
-            👥 Groups
+            👥 {t('nav.groups')}
           </button>
-          <div
-            className="tb-av"
+        </div>
+        <div className="tb-lang">
+          {['en', 'vi'].map(lang => (
+            <button
+              key={lang}
+              className={`lang-btn ${currentLang === lang ? 'on' : ''}`}
+              onClick={() => setLanguage(lang)}
+              type="button"
+            >
+              {lang.toUpperCase()}
+            </button>
+          ))}
+        </div>
+        <div
+          className="tb-av"
             title={displayName}
             onClick={() => navigate(`/profile/${uid}`)}
           >
@@ -318,14 +348,13 @@ export default function Layout({
               : ini
             }
           </div>
-        </div>
       </div>
 
       {/* ── PAGE GRID ── */}
       <div className={`lx-page ${cols}`}>
         {/* ── SIDEBAR ── */}
         <nav className="sidebar">
-          <div className="sb-label">Navigation</div>
+          <div className="sb-label">{t('nav.navigation')}</div>
 
           {NAV_ITEMS.map(n => (
             <button
@@ -334,7 +363,7 @@ export default function Layout({
               onClick={() => navigate(n.path)}
             >
               <span className="nb-icon">{n.icon}</span>
-              {n.label}
+              {t(n.labelKey)}
               {n.badgeKey && badges[n.badgeKey] > 0 && (
                 <span className="nb-badge">{badges[n.badgeKey]}</span>
               )}
@@ -356,7 +385,7 @@ export default function Layout({
               </div>
             </div>
             <button className="sb-logout" onClick={handleLogout}>
-              <span>⎋</span> Sign Out
+              <span>⎋</span> {t('app.signOut')}
             </button>
           </div>
         </nav>
@@ -384,7 +413,7 @@ export default function Layout({
                 onClick={() => navigate(path)}
               >
                 <span>{n.icon}</span>
-                <span>{n.label}</span>
+                <span>{t(n.labelKey)}</span>
                 {hasDot && <span className="mn-dot" />}
               </button>
             );

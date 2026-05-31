@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 /* ─── Styles ─────────────────────────────────────────────────────────────── */
 const styles = `
@@ -254,25 +255,76 @@ function MobileLogoIcon() {
 }
 
 const FEATURES = [
-  { icon: '🎓', title: 'Study Together', desc: 'Join subject groups & collaborate on coursework' },
-  { icon: '💬', title: 'Real-time Messaging', desc: 'DMs and group chats with your classmates' },
-  { icon: '📢', title: 'Campus Feed', desc: 'Stay updated on events, posts & announcements' },
+  { icon: '🎓', titleKey: 'features.studyTogether', descKey: 'features.studyTogetherDesc' },
+  { icon: '💬', titleKey: 'features.realTimeMessaging', descKey: 'features.realTimeMessagingDesc' },
+  { icon: '📢', titleKey: 'features.campusFeed', descKey: 'features.campusFeedDesc' },
 ];
 
 // OAuth handlers
-function handleGoogleLogin() {
-  // Google OAuth - redirect to backend OAuth endpoint
-  window.location.href = '/api/auth/oauth2/google';
+function openOAuthPopup(url, name = 'oauth', w = 600, h = 700) {
+  const left = window.screenX + (window.innerWidth - w) / 2;
+  const top = window.screenY + (window.innerHeight - h) / 2;
+  return window.open(url, name, `width=${w},height=${h},left=${left},top=${top}`);
 }
 
-function handleFacebookLogin() {
-  // Facebook OAuth - redirect to backend OAuth endpoint  
-  window.location.href = '/api/auth/oauth2/facebook';
+function handleOAuth(provider) {
+  // Popup redirect to provider auth with redirect back to /oauth-callback.html
+  const origin = window.location.origin;
+  const redirect = `${origin}/oauth-callback.html?provider=${provider}`;
+
+  if (provider === 'google') {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const scope = encodeURIComponent('openid email profile');
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=${scope}`;
+    const popup = openOAuthPopup(url, 'google_oauth');
+
+    const listener = async (e) => {
+      if (!e.data || e.data.source !== 'learnex_oauth') return;
+      if (e.data.error) {
+        popup?.close();
+        window.removeEventListener('message', listener);
+        return;
+      }
+      try {
+        const token = e.data.token;
+        // call backend
+        await window.__LEARNEX_OAUTH_HANDLER(provider, token);
+      } finally {
+        popup?.close();
+        window.removeEventListener('message', listener);
+      }
+    };
+    window.addEventListener('message', listener);
+  }
+
+  if (provider === 'facebook') {
+    const clientId = import.meta.env.VITE_FACEBOOK_APP_ID;
+    const url = `https://www.facebook.com/v14.0/dialog/oauth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=email`;
+    const popup = openOAuthPopup(url, 'facebook_oauth');
+
+    const listener = async (e) => {
+      if (!e.data || e.data.source !== 'learnex_oauth') return;
+      if (e.data.error) {
+        popup?.close();
+        window.removeEventListener('message', listener);
+        return;
+      }
+      try {
+        const token = e.data.token;
+        await window.__LEARNEX_OAUTH_HANDLER(provider, token);
+      } finally {
+        popup?.close();
+        window.removeEventListener('message', listener);
+      }
+    };
+    window.addEventListener('message', listener);
+  }
 }
 
 export default function LoginPage() {
   const { login, register } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [tab, setTab] = useState('login');
   const [loading, setLoading] = useState(false);
@@ -285,12 +337,12 @@ export default function LoginPage() {
 
   useEffect(() => {
     const reason = searchParams.get('banner');
-    if (reason === 'session_expired') setSessionBanner('Your session has expired. Please sign in again.');
-    else if (reason === 'unauthorized') setSessionBanner('You are not authorized to access this page.');
-  }, []);
+    if (reason === 'session_expired') setSessionBanner(t('messages.sessionExpired'));
+    else if (reason === 'unauthorized') setSessionBanner(t('messages.unauthorized'));
+  }, [t]);
 
-  const handleSwitch = (t) => {
-    setTab(t); setError(''); setPw('');
+  const handleSwitch = (tabName) => {
+    setTab(tabName); setError(''); setPw('');
     setForm({ identifier: '', email: '', password: '', firstName: '', lastName: '', username: '' });
   };
 
@@ -298,17 +350,17 @@ export default function LoginPage() {
     setError(''); setLoading(true);
     try {
       if (isLogin) {
-        if (!form.identifier || !form.password) { setError('Please fill in all fields.'); return; }
+        if (!form.identifier || !form.password) { setError(t('messages.fillAllFields')); return; }
         await login(form.identifier, form.password);
       } else {
         if (!form.email || !pw || !form.firstName || !form.lastName || !form.username) {
-          setError('Please fill in all fields.'); return;
+          setError(t('messages.fillAllFields')); return;
         }
         await register({ email: form.email, password: pw, firstName: form.firstName, lastName: form.lastName, username: form.username });
       }
       navigate('/feed');
     } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.');
+      setError(err.message || t('messages.somethingWentWrong'));
     } finally {
       setLoading(false);
     }
@@ -329,14 +381,18 @@ export default function LoginPage() {
             <span className="logo-name">LEARN<span>EX</span></span>
           </div>
           <div className="left-hero">
-            <div className="left-tagline">LEARN.<br />CONNECT.<br /><span>GROW.</span></div>
-            <p className="left-desc">The social platform built for students. Share knowledge, collaborate on projects, and thrive together on campus.</p>
+            <div className="left-tagline">
+              {t('app.taglineLine1')}<br />
+              {t('app.taglineLine2')}<br />
+              <span>{t('app.taglineLine3')}</span>
+            </div>
+            <p className="left-desc">{t('app.description')}</p>
           </div>
           <div className="left-features">
             {FEATURES.map(f => (
-              <div className="feature-pill" key={f.title}>
+              <div className="feature-pill" key={f.titleKey}>
                 <div className="pill-icon">{f.icon}</div>
-                <div className="pill-text"><strong>{f.title}</strong><span>{f.desc}</span></div>
+                <div className="pill-text"><strong>{t(f.titleKey)}</strong><span>{t(f.descKey)}</span></div>
               </div>
             ))}
           </div>
@@ -353,28 +409,28 @@ export default function LoginPage() {
             </div>
 
             <div className="tabs">
-              <button className={`tab ${isLogin ? 'active' : ''}`} onClick={() => handleSwitch('login')}>Sign In</button>
-              <button className={`tab ${!isLogin ? 'active' : ''}`} onClick={() => handleSwitch('register')}>Register</button>
+              <button className={`tab ${isLogin ? 'active' : ''}`} onClick={() => handleSwitch('login')}>{t('app.signIn')}</button>
+              <button className={`tab ${!isLogin ? 'active' : ''}`} onClick={() => handleSwitch('register')}>{t('app.register')}</button>
             </div>
 
-            <div className="form-title">{isLogin ? 'Welcome Back' : 'Join Learnex'}</div>
-            <div className="form-sub">{isLogin ? 'Sign in to your student account' : 'Create your free student account'}</div>
+            <div className="form-title">{isLogin ? t('app.welcomeBack') : t('app.joinLearnex')}</div>
+            <div className="form-sub">{isLogin ? t('app.loginSubtitle') : t('app.registerSubtitle')}</div>
 
-            <div className="divider">continue with</div>
+            <div className="divider">{t('app.continueWith')}</div>
             <div className="social-row">
-              <button className="social-btn google-btn" onClick={handleGoogleLogin}>
+              <button className="social-btn google-btn" onClick={() => handleOAuth('google')}>
                 <svg width="16" height="16" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-                Google
+                {t('app.google')}
               </button>
-              <button className="social-btn fb-btn" onClick={handleFacebookLogin}>
+              <button className="social-btn fb-btn" onClick={() => handleOAuth('facebook')}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="#1877F2">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                 </svg>
-                Facebook
+                {t('app.facebook')}
               </button>
             </div>
 
-            <div className="divider">or with email</div>
+            <div className="divider">{t('app.orWithEmail')}</div>
 
             {sessionBanner && (
               <div className="error-banner" style={{ background: 'rgba(201,168,76,.12)', borderColor: 'rgba(201,168,76,.35)', color: '#C9A84C' }}>
@@ -391,17 +447,17 @@ export default function LoginPage() {
               {!isLogin && (
                 <div className="field-row">
                   <div className="field">
-                    <label>First Name</label>
+                    <label>{t('forms.firstName')}</label>
                     <div className="input-wrap">
                       <span className="input-icon">👤</span>
-                      <input placeholder="Alex" value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} />
+                      <input placeholder={t('app.firstNamePlaceholder')} value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} />
                     </div>
                   </div>
                   <div className="field">
-                    <label>Last Name</label>
+                    <label>{t('forms.lastName')}</label>
                     <div className="input-wrap">
                       <span className="input-icon">👤</span>
-                      <input placeholder="Nguyen" value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} />
+                      <input placeholder={t('app.lastNamePlaceholder')} value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} />
                     </div>
                   </div>
                 </div>
@@ -409,32 +465,32 @@ export default function LoginPage() {
 
               {!isLogin && (
                 <div className="field">
-                  <label>Username</label>
+                  <label>{t('forms.username')}</label>
                   <div className="input-wrap">
                     <span className="input-icon">@</span>
-                    <input placeholder="alex.nguyen" value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} />
+                    <input placeholder={t('app.usernamePlaceholder')} value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} />
                   </div>
                 </div>
               )}
 
               <div className="field">
-                <label>{isLogin ? 'Email or Username' : 'Student Email'}</label>
+                <label>{isLogin ? t('app.emailOrUsername') : t('app.studentEmail')}</label>
                 <div className="input-wrap">
                   <span className="input-icon">✉</span>
                   {isLogin
-                    ? <input placeholder="you@university.edu or username" value={form.identifier} onChange={e => setForm({ ...form, identifier: e.target.value })} />
-                    : <input type="email" placeholder="you@university.edu" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+                    ? <input placeholder={t('app.emailOrUsernamePlaceholder')} value={form.identifier} onChange={e => setForm({ ...form, identifier: e.target.value })} />
+                    : <input type="email" placeholder={t('app.studentEmailPlaceholder')} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
                   }
                 </div>
               </div>
 
               <div className="field">
-                <label>Password</label>
+                <label>{t('forms.password')}</label>
                 <div className="input-wrap">
                   <span className="input-icon">🔒</span>
                   <input
                     type="password"
-                    placeholder={isLogin ? 'Enter your password' : 'Create a strong password'}
+                    placeholder={isLogin ? t('app.enterPassword') : t('app.createPassword')}
                     value={isLogin ? form.password : pw}
                     onChange={e => isLogin ? setForm({ ...form, password: e.target.value }) : setPw(e.target.value)}
                   />
@@ -444,26 +500,28 @@ export default function LoginPage() {
 
               {isLogin && (
                 <div style={{ textAlign: 'right', marginTop: -8 }}>
-                  <button style={{ background: 'none', border: 'none', color: '#E8192C', fontSize: 12, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
-                    Forgot password?
+                  <button onClick={() => navigate('/forgot-password')} style={{ background: 'none', border: 'none', color: '#E8192C', fontSize: 12, cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>
+                    {t('app.forgotPasswordLink')}
                   </button>
                 </div>
               )}
             </div>
 
             <button className="submit-btn" onClick={handleSubmit} disabled={loading}>
-              {loading ? 'Please wait…' : isLogin ? 'SIGN IN →' : 'CREATE ACCOUNT →'}
+              {loading ? t('app.pleaseWait') : isLogin ? t('app.signInButton') : t('app.createAccountButton')}
             </button>
 
             <div className="form-footer">
               {isLogin
-                ? <><span>Don't have an account? </span><button onClick={() => handleSwitch('register')}>Sign up free</button></>
-                : <><span>Already a member? </span><button onClick={() => handleSwitch('login')}>Sign in</button></>
+                ? <><span>{t('app.dontHaveAccount')}</span><button onClick={() => handleSwitch('register')}>{t('app.signUpFree')}</button></>
+                : <><span>{t('app.alreadyMember')}</span><button onClick={() => handleSwitch('login')}>{t('app.signIn')}</button></>
               }
             </div>
 
             {!isLogin && (
-              <p className="terms">By creating an account you agree to our <span>Terms of Service</span> and <span>Privacy Policy</span></p>
+              <p className="terms">
+                {t('app.termsAgreement')} <span>{t('app.termsOfService')}</span> {t('app.and')} <span>{t('app.privacyPolicy')}</span>
+              </p>
             )}
           </div>
         </div>

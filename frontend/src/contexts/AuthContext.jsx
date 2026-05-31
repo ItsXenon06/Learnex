@@ -53,12 +53,9 @@ export function AuthProvider({ children }) {
     // Unwrap ApiResponse<AuthResponse>
     const data = payload?.data ?? payload;
     const { token: tok, ...userData } = data;
-// displayName comes back from the updated AuthResponse
-// already included in userData spread — nothing extra needed.
-// But store it explicitly so getInitials() works immediately:
-if (userData.displayName && !userData.displayName.trim() === '') {
-  userData.displayName = userData.displayName.trim();
-}
+    if (userData.displayName && userData.displayName.trim() !== '') {
+      userData.displayName = userData.displayName.trim();
+    }
     persist(userData, tok);
     return userData;
   };
@@ -85,6 +82,25 @@ if (userData.displayName && !userData.displayName.trim() === '') {
     return userData;
   };
 
+  // ─── OAuth Login ───────────────────────────────────────────────
+  const oauthLogin = async (provider, token) => {
+    const res = await fetch('/api/auth/oauth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider, token }),
+    });
+
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(payload?.message || payload?.data?.message || 'OAuth login failed');
+    }
+
+    const data = payload?.data ?? payload;
+    const { token: tok, ...userData } = data;
+    persist(userData, tok);
+    return userData;
+  };
+
   // ─── Update user cache ────────────────────────────────────────────
   // Called by ProfilePage after a successful profile update so the
   // topbar/sidebar reflect the new displayName immediately.
@@ -102,6 +118,19 @@ if (userData.displayName && !userData.displayName.trim() === '') {
     });
   };
 
+  // Expose a global handler for popup OAuth flows to call back into the app.
+  useEffect(() => {
+    window.__LEARNEX_OAUTH_HANDLER = async (provider, token) => {
+      try {
+        await oauthLogin(provider, token);
+        return { success: true };
+      } catch (e) {
+        return { success: false, error: e.message || 'OAuth failed' };
+      }
+    };
+    return () => { window.__LEARNEX_OAUTH_HANDLER = undefined; };
+  }, []);
+
   const logout = () => {
     localStorage.removeItem(AUTH_KEY);
     setToken(null);
@@ -109,7 +138,7 @@ if (userData.displayName && !userData.displayName.trim() === '') {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateUserCache }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, oauthLogin, logout, updateUserCache }}>
       {children}
     </AuthContext.Provider>
   );

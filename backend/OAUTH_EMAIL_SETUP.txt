@@ -1,0 +1,40 @@
+Required Environment Variables and Application Properties
+
+Frontend (vite .env or system env; prefix VITE_ for Vite):
+- VITE_GOOGLE_CLIENT_ID: your Google OAuth Client ID (for popup auth)
+- VITE_FACEBOOK_APP_ID: your Facebook App ID (for popup auth)
+
+Backend (Spring Boot application.properties or environment variables):
+- spring.mail.host: SMTP host (e.g., smtp.gmail.com)
+- spring.mail.port: SMTP port (e.g., 587)
+- spring.mail.username: SMTP username (email address)
+- spring.mail.password: SMTP password or app password
+- spring.mail.properties.mail.smtp.auth=true
+- spring.mail.properties.mail.smtp.starttls.enable=true
+
+- frontend.origin: origin used to build reset links (e.g., http://localhost:5173)
+
+- jwt.secret: secret used by JwtService (if configured)
+- jwt.expiration: token expiry duration (e.g., 3600000)
+
+OAuth Callback flow (how it works):
+- Frontend opens the provider authorization URL in a popup window. The provider redirects
+  back to `frontend/public/oauth-callback.html` with the token available in the URL fragment
+  (e.g., `#access_token=...` for Facebook or `#id_token=...` for Google).
+- `oauth-callback.html` extracts the token and posts a message to `window.opener` with
+  `{ source: 'learnex_oauth', provider, token }` and then closes the popup.
+- The main app listens for that message and calls the backend `POST /api/auth/oauth` with
+  `{ provider, token }`. The backend validates the token with the provider, creates or links
+  the user, and returns an `AuthResponse` containing a JWT and user info. The frontend persists
+  the token and user in localStorage.
+
+Notes & Testing:
+- For local testing, set `VITE_GOOGLE_CLIENT_ID` and `VITE_FACEBOOK_APP_ID` in `.env.local`
+  and ensure OAuth client settings in the provider console include `http://localhost:5173/oauth-callback.html`
+  (adjust origin/port if different).
+- If you don't want to send real emails yet, the backend returns the password-reset token
+  in the `/api/auth/forgot-password` response for testing; later we'll wire SMTP to email the token.
+
+Security reminders:
+- Use HTTPS in production and restrict OAuth redirect URIs in provider consoles.
+- Store secrets securely (use environment variables, not checked-in files).

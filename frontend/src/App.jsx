@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import LoginPage          from './pages/LoginPage';
 import FeedPage           from './pages/FeedPage';
 import ProfilePage        from './pages/ProfilePage';
@@ -13,19 +14,22 @@ import PostDetailPage     from './pages/PostDetailPage';
 import SearchPage   from './pages/SearchPage';
 import HashtagPage  from './pages/HashtagPage';
 import CoursePage   from './pages/CoursePage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 /* ─── Session-expired toast ──────────────────────────────────────────────── */
 const EXPIRED_KEY = 'learnex_session_expired';
 
 function SessionExpiredToast() {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (sessionStorage.getItem(EXPIRED_KEY)) {
       sessionStorage.removeItem(EXPIRED_KEY);
       setVisible(true);
-      const t = setTimeout(() => setVisible(false), 5000);
-      return () => clearTimeout(t);
+      const timeout = setTimeout(() => setVisible(false), 5000);
+      return () => clearTimeout(timeout);
     }
   }, []);
 
@@ -54,10 +58,10 @@ function SessionExpiredToast() {
       <span style={{ fontSize: 22, flexShrink: 0 }}>🔒</span>
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#F0F0F5', marginBottom: 2 }}>
-          Session Expired
+          {t('messages.sessionExpiredShort')}
         </div>
         <div style={{ fontSize: 12, color: '#55556a', fontFamily: "'JetBrains Mono', monospace" }}>
-          Please sign in again to continue.
+          {t('messages.pleaseSignInAgain')}
         </div>
       </div>
       <button
@@ -78,6 +82,7 @@ function SessionExpiredToast() {
 
 /* ─── Route guards ───────────────────────────────────────────────────────── */
 function PrivateRoute({ children }) {
+  const { t } = useTranslation();
   const { user, loading } = useAuth();
   if (loading) return (
     <div style={{
@@ -85,7 +90,7 @@ function PrivateRoute({ children }) {
       height: '100vh', background: '#07070a',
       color: '#55556a', fontFamily: 'Syne, sans-serif', fontSize: 14,
     }}>
-      Loading…
+      {t('app.loading')}
     </div>
   );
   return user ? children : <Navigate to="/login" replace />;
@@ -106,6 +111,8 @@ function AppRoutes() {
         <Route path="/"         element={<Navigate to="/feed" replace />} />
         <Route path="/login"    element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><LoginPage /></PublicRoute>} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+        <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
 
         <Route path="/feed"
           element={<PrivateRoute><FeedPage /></PrivateRoute>} />

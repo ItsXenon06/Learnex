@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth, getInitials } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
@@ -128,6 +129,7 @@ function UserSkeleton() {
 }
 
 export default function SearchPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const inputRef = useRef(null);
@@ -199,13 +201,13 @@ export default function SearchPage() {
       <Layout active="search">
         <main className="search-main">
           <div className="search-hero">
-            <div className="search-title">Search</div>
+            <div className="search-title">{t('search.title')}</div>
             <form onSubmit={handleSubmit} className="search-bar-wrap">
               <span className="search-icon">🔍</span>
               <input
                 ref={inputRef}
                 className="search-bar"
-                placeholder="Search students, posts, topics…"
+                placeholder={t('search.placeholder')}
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 autoFocus
@@ -219,17 +221,17 @@ export default function SearchPage() {
           {!searched ? (
             <div className="search-empty">
               <div className="se-ic">🔍</div>
-              <div className="se-t">Find People & Posts</div>
-              <p className="se-s">Search for students by name or email, or discover posts by topic.</p>
+              <div className="se-t">{t('search.emptyHeading')}</div>
+              <p className="se-s">{t('search.emptyDescription')}</p>
             </div>
           ) : (
             <>
               <div className="search-tabs">
                 <button className={`stab ${tab === 'people' ? 'on' : ''}`} onClick={() => setTab('people')}>
-                  People <span className="stab-cnt">{users.length}</span>
+                  {t('search.tabs.people')} <span className="stab-cnt">{users.length}</span>
                 </button>
                 <button className={`stab ${tab === 'posts' ? 'on' : ''}`} onClick={() => setTab('posts')}>
-                  Posts <span className="stab-cnt">{posts.length}</span>
+                  {t('search.tabs.posts')} <span className="stab-cnt">{posts.length}</span>
                 </button>
               </div>
 
@@ -238,8 +240,8 @@ export default function SearchPage() {
                 users.length === 0 ? (
                   <div className="search-empty">
                     <div className="se-ic">👤</div>
-                    <div className="se-t">No People Found</div>
-                    <p className="se-s">No students match "{q}". Try a different name or email.</p>
+                    <div className="se-t">{t('search.noPeopleTitle')}</div>
+                    <p className="se-s">{t('search.noPeopleDescription', { query: q })}</p>
                   </div>
                 ) : (
                   <div className="user-list">
@@ -277,8 +279,8 @@ export default function SearchPage() {
                 posts.length === 0 ? (
                   <div className="search-empty">
                     <div className="se-ic">📝</div>
-                    <div className="se-t">No Posts Found</div>
-                    <p className="se-s">No posts mention "{q}". Try a different term or hashtag.</p>
+                    <div className="se-t">{t('search.noPostsTitle')}</div>
+                    <p className="se-s">{t('search.noPostsDescription', { query: q })}</p>
                   </div>
                 ) : (
                   <div className="post-list">

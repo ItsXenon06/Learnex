@@ -1,14 +1,6 @@
 /**
  * Layout.jsx — Shared shell for all authenticated pages.
- *
- * Changes vs original:
- *  - Topbar search now navigates to /search?q=... on Enter / search icon click
- *  - Courses added to sidebar NAV_ITEMS
- *  - Mobile nav bottom bar fixed (no longer overlaps reaction picker on small screens)
- *  - Group avatar in sidebar profile uses avatarUrl if set
  */
-
-// REPLACE the top of the file (everything before sharedCss) with this:
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -154,7 +146,6 @@ body{
   display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;
   background:rgba(7,7,9,.97);backdrop-filter:blur(14px);
   border-top:1px solid var(--b1);padding:6px 0;
-  /* Ensure it sits above page content but below modals (z:500) */
 }
 .mn-inner{display:flex;justify-content:space-around;}
 .mn-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 12px;border:none;background:transparent;color:var(--t3);cursor:pointer;transition:color .15s;position:relative;}
@@ -168,7 +159,6 @@ body{
   .sidebar{display:none;}
   .lx-page--2col,.lx-page--3col{grid-template-columns:1fr;}
   .mob-nav{display:block;}
-  /* Add bottom padding to main content so it clears the mobile nav */
   .lx-page > *:not(.mob-nav){padding-bottom:70px;}
 }
 `;
@@ -188,7 +178,7 @@ const MOBILE_NAV = [
   { key: 'notifications', icon: '🔔', label: 'Alerts',   path: '/notifications', badgeKey: 'unreadNotif' },
   { key: 'messages',      icon: '💬', label: 'Messages', path: '/messages',      badgeKey: 'unreadMsgs' },
   { key: 'groups',        icon: '👥', label: 'Groups',   path: '/groups' },
-  { key: 'profile',       icon: '👤', label: 'Profile' }, // path computed from uid
+  { key: 'profile',       icon: '👤', label: 'Profile' },
 ];
 
 /* ─── Layout ─────────────────────────────────────────────────────────────── */
@@ -203,44 +193,44 @@ export default function Layout({
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  // uid MUST be declared before the useEffect that uses it
   const uid = user?.userId ?? user?.id;
-  const displayName = profile?.displayName || user?.displayName || user?.email?.split('@')[0] || 'Student';
-  const ini = getInitials(profile?.displayName || user?.displayName, user?.email);
 
-  const [searchVal, setSearchVal] = useState('');
-const [liveUnreadNotif, setLiveUnreadNotif] = useState(unreadNotif);
-const [ownProfile, setOwnProfile] = useState(null);
+  // ── All state declarations at top level ───────────────────────────────────
+  const [searchVal,      setSearchVal]      = useState('');
+  const [liveUnreadNotif, setLiveUnreadNotif] = useState(unreadNotif);
+  const [ownProfile,     setOwnProfile]     = useState(null);
 
-useEffect(() => {
-  if (!uid) return;
-  import('../services/userService').then(({ default: us }) => {
-    us.getProfile(uid).then(res => {
-      setOwnProfile(res?.data ?? res);
-    }).catch(() => {});
-  });
-}, [uid]);
-
+  // ── Effect 1: sync unreadNotif prop → local state ─────────────────────────
   useEffect(() => {
     setLiveUnreadNotif(unreadNotif);
   }, [unreadNotif]);
-  const [ownProfile, setOwnProfile] = useState(null);
 
-useEffect(() => {
-  if (!uid) return;
-  import('../services/userService').then(({ default: us }) => {
-    us.getProfile(uid).then(res => {
-      setOwnProfile(res?.data ?? res);
-    }).catch(() => {});
-  });
-}, [uid]);
-
+  // ── Effect 2: fetch own profile for topbar/sidebar avatar ─────────────────
   useEffect(() => {
-    useEffect(() => {
-  const handler = () => setLiveUnreadNotif(0);
-  window.addEventListener('learnex:notifications-cleared', handler);
-  return () => window.removeEventListener('learnex:notifications-cleared', handler);
-}, []);
+    if (!uid) return;
+    const token = (() => {
+      try { return JSON.parse(localStorage.getItem('learnex_auth') || '{}')?.token || ''; }
+      catch { return ''; }
+    })();
+    if (!token) return;
+    fetch(`/api/users/${uid}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setOwnProfile(data?.data ?? data); })
+      .catch(() => {});
+  }, [uid]);
+
+  // ── Effect 3: listen for notifications-cleared event from NotificationsPage
+  useEffect(() => {
+    const handler = () => setLiveUnreadNotif(0);
+    window.addEventListener('learnex:notifications-cleared', handler);
+    return () => window.removeEventListener('learnex:notifications-cleared', handler);
+  }, []);
+
+  // ── Effect 4: poll unread notification count every 30s ────────────────────
+  useEffect(() => {
+    if (!uid) return;
     const fetchUnread = () => {
       const token = (() => {
         try { return JSON.parse(localStorage.getItem('learnex_auth') || '{}')?.token || ''; }
@@ -248,7 +238,7 @@ useEffect(() => {
       })();
       if (!token) return;
       fetch('/api/notifications?page=0&size=1&unreadOnly=true', {
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       })
         .then(r => r.ok ? r.json() : null)
         .then(data => {
@@ -262,18 +252,20 @@ useEffect(() => {
     return () => clearInterval(interval);
   }, [uid]);
 
+  // ── Derived values ────────────────────────────────────────────────────────
+  const activeProfile = ownProfile ?? profile;
+  const avatarUrl     = activeProfile?.avatarUrl ?? null;
+  const displayName   = activeProfile?.displayName || user?.displayName || user?.email?.split('@')[0] || 'Student';
+  const ini           = getInitials(activeProfile?.displayName || user?.displayName, user?.email);
+
   const badges = { unreadNotif: liveUnreadNotif, unreadMsgs };
-  const cols = rightPanel ? 'lx-page--3col' : 'lx-page--2col';
+  const cols   = rightPanel ? 'lx-page--3col' : 'lx-page--2col';
 
   const handleLogout = () => { logout(); navigate('/login'); };
-
   const handleSearch = () => {
     const q = searchVal.trim();
     if (q) navigate(`/search?q=${encodeURIComponent(q)}`);
   };
-
-  // ... rest of return() stays exactly the same
- 
 
   return (
     <>
@@ -301,7 +293,7 @@ useEffect(() => {
             onClick={() => navigate('/notifications')}
           >
             🔔 Alerts
-            {unreadNotif > 0 && <span className="tb-dot" />}
+            {liveUnreadNotif > 0 && <span className="tb-dot" />}
           </button>
           <button
             className={`tb-pill ${active === 'messages' ? 'tb-pill--active' : ''}`}
@@ -321,8 +313,8 @@ useEffect(() => {
             title={displayName}
             onClick={() => navigate(`/profile/${uid}`)}
           >
-            {(ownProfile ?? profile)?.avatarUrl
-              ? <img src={profile.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>{e.currentTarget.style.display='none'}} />
+            {avatarUrl
+              ? <img src={avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e => { e.currentTarget.style.display = 'none'; }} />
               : ini
             }
           </div>
@@ -353,8 +345,8 @@ useEffect(() => {
           <div className="sb-footer">
             <div className="sb-me" onClick={() => navigate(`/profile/${uid}`)}>
               <div className="sb-mav">
-                {(ownProfile ?? profile)?.avatarUrl
-                  ? <img src={profile.avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>{e.currentTarget.style.display='none'}} />
+                {avatarUrl
+                  ? <img src={avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e => { e.currentTarget.style.display = 'none'; }} />
                   : ini
                 }
               </div>

@@ -1,10 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useAuth, getInitials } from '../contexts/AuthContext';
-import Layout, { sharedCss } from '../components/Layout';
-import userService from '../services/userService';
-import postService from '../services/postService';
-
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useAuth, getInitials } from "../contexts/AuthContext";
+import Layout, { sharedCss } from "../components/Layout";
+import userService from "../services/userService";
+import postService from "../services/postService";
 
 /* ─── Page CSS ───────────────────────────────────────────────────────────── */
 const css = `
@@ -118,19 +117,21 @@ const css = `
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 function timeAgo(iso) {
-  if (!iso) return '';
+  if (!iso) return "";
   const m = Math.floor((Date.now() - new Date(iso)) / 60000);
-  if (m < 1) return 'just now';
+  if (m < 1) return "just now";
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
 }
 
-const AV_BG = ['#0d1f35','#0d2918','#2a0d1e','#1e1a0d','#1a0d2e'];
-const AV_C  = ['#4a9eff','#4adf8a','#df4a8a','#dfb84a','#af4adf'];
+const AV_BG = ["#0d1f35", "#0d2918", "#2a0d1e", "#1e1a0d", "#1a0d2e"];
+const AV_C = ["#4a9eff", "#4adf8a", "#df4a8a", "#dfb84a", "#af4adf"];
 function avStyle(id) {
-  const i = id ? (typeof id === 'string' ? id.charCodeAt(0) : 0) % AV_BG.length : 0;
+  const i = id
+    ? (typeof id === "string" ? id.charCodeAt(0) : 0) % AV_BG.length
+    : 0;
   return { background: `linear-gradient(135deg,${AV_BG[i]},${AV_C[i]})` };
 }
 
@@ -138,24 +139,86 @@ function avStyle(id) {
 function HeroSkeleton() {
   return (
     <div className="skel-hero">
-      <div style={{ height: 150, background: 'var(--s2)' }} />
-      <div style={{ padding: '0 24px 22px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: -36, marginBottom: 14 }}>
-          <div className="sk" style={{ width: 82, height: 82, borderRadius: 17 }} />
-          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', paddingBottom: 4 }}>
-            <div className="sk" style={{ width: 110, height: 34, borderRadius: 8 }} />
-            <div className="sk" style={{ width: 90, height: 34, borderRadius: 8 }} />
+      <div style={{ height: 150, background: "var(--s2)" }} />
+      <div style={{ padding: "0 24px 22px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginTop: -36,
+            marginBottom: 14,
+          }}
+        >
+          <div
+            className="sk"
+            style={{ width: 82, height: 82, borderRadius: 17 }}
+          />
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              alignItems: "flex-end",
+              paddingBottom: 4,
+            }}
+          >
+            <div
+              className="sk"
+              style={{ width: 110, height: 34, borderRadius: 8 }}
+            />
+            <div
+              className="sk"
+              style={{ width: 90, height: 34, borderRadius: 8 }}
+            />
           </div>
         </div>
-        <div className="sk" style={{ height: 26, width: '35%', marginBottom: 8, borderRadius: 6 }} />
-        <div className="sk" style={{ height: 12, width: '25%', marginBottom: 12, borderRadius: 5 }} />
-        <div className="sk" style={{ height: 12, width: '70%', marginBottom: 6, borderRadius: 5 }} />
-        <div className="sk" style={{ height: 12, width: '55%', borderRadius: 5 }} />
-        <div style={{ display: 'flex', borderTop: '1px solid var(--b1)', marginTop: 16 }}>
-          {[0, 1, 2].map(i => (
-            <div key={i} style={{ flex: 1, padding: '13px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-              <div className="sk" style={{ height: 20, width: 36, borderRadius: 5 }} />
-              <div className="sk" style={{ height: 9, width: 52, borderRadius: 4 }} />
+        <div
+          className="sk"
+          style={{ height: 26, width: "35%", marginBottom: 8, borderRadius: 6 }}
+        />
+        <div
+          className="sk"
+          style={{
+            height: 12,
+            width: "25%",
+            marginBottom: 12,
+            borderRadius: 5,
+          }}
+        />
+        <div
+          className="sk"
+          style={{ height: 12, width: "70%", marginBottom: 6, borderRadius: 5 }}
+        />
+        <div
+          className="sk"
+          style={{ height: 12, width: "55%", borderRadius: 5 }}
+        />
+        <div
+          style={{
+            display: "flex",
+            borderTop: "1px solid var(--b1)",
+            marginTop: 16,
+          }}
+        >
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              style={{
+                flex: 1,
+                padding: "13px 8px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <div
+                className="sk"
+                style={{ height: 20, width: 36, borderRadius: 5 }}
+              />
+              <div
+                className="sk"
+                style={{ height: 9, width: 52, borderRadius: 4 }}
+              />
             </div>
           ))}
         </div>
@@ -167,119 +230,214 @@ function HeroSkeleton() {
 /* ─── EditModal ───────────────────────────────────────────────────────────── */
 function EditModal({ profile, onClose, onSave, saving }) {
   const [form, setForm] = useState({
-    displayName: profile.displayName || '',
-    headline:    profile.headline    || '',
-    bio:         profile.bio         || '',
-    website:     profile.website     || '',
-    avatarUrl:   profile.avatarUrl   || '',
+    displayName: profile.displayName || "",
+    headline: profile.headline || "",
+    bio: profile.bio || "",
+    website: profile.website || "",
+    avatarUrl: profile.avatarUrl || "",
   });
-  const [err, setErr] = useState('');
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const [err, setErr] = useState("");
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const [avatarUploading, setAvatarUploading] = useState(false);
 
   const submit = async () => {
-    setErr('');
-    try { await onSave(form); }
-    catch (e) { setErr(e?.response?.data?.message || 'Save failed.'); }
+    setErr("");
+    try {
+      await onSave(form);
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Save failed.");
+    }
   };
 
   return (
-    <div className="modal-bg" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div
+      className="modal-bg"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="modal">
         <div className="modal-head">
           <span className="modal-title">Edit Profile</span>
-          <button className="modal-close" onClick={onClose}>✕</button>
+          <button className="modal-close" onClick={onClose}>
+            ✕
+          </button>
         </div>
         <div className="modal-body">
           {err && <div className="modal-err">⚠ {err}</div>}
+          {/* REPLACE the avatar mfield in EditModal */}
           <div className="mfield">
-  <label>Avatar</label>
-  <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:8 }}>
-    {/* Live preview */}
-    <div style={{
-      width:56, height:56, borderRadius:12, flexShrink:0,
-      background: form.avatarUrl ? 'transparent' : 'var(--grad-fire)',
-      overflow:'hidden', border:'2px solid var(--b2)',
-      display:'flex', alignItems:'center', justifyContent:'center',
-      fontSize:20, color:'#fff', fontFamily:'var(--fd)',
-    }}>
-      {form.avatarUrl
-        ? <img src={form.avatarUrl} alt="avatar preview"
-            style={{ width:'100%', height:'100%', objectFit:'cover' }}
-            onError={e => { e.currentTarget.style.display='none'; }}
-          />
-        : getInitials(form.displayName, profile.email)
-      }
-    </div>
-    <div style={{ flex:1, display:'flex', flexDirection:'column', gap:8 }}>
-      {/* File upload button */}
-      <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-        <input
-          id="avatar-file-input"
-          type="file"
-          accept="image/*"
-          style={{ display:'none' }}
-          onChange={async (e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            setAvatarUploading(true);
-            try {
-              const res  = await postService.uploadMedia(file);
-              const data = res?.data ?? res;
-              set('avatarUrl', data.url);
-            } catch {
-              // fallback: keep existing
-            } finally {
-              setAvatarUploading(false);
-              e.target.value = '';
-            }
-          }}
-        />
-        <button
-          type="button"
-          style={{
-            padding:'7px 14px', background:'var(--s3)', border:'1px solid var(--b2)',
-            borderRadius:7, color:'var(--t2)', fontSize:12, fontFamily:'var(--fb)',
-            fontWeight:700, cursor:'pointer', transition:'all .15s',
-          }}
-          onClick={() => document.getElementById('avatar-file-input').click()}
-          disabled={avatarUploading}
-        >
-          {avatarUploading ? '⏳ Uploading…' : '📷 Upload photo'}
-        </button>
-        {form.avatarUrl && (
-          <button
-            type="button"
-            style={{ background:'none', border:'none', color:'var(--t3)', fontSize:12, cursor:'pointer', fontFamily:'var(--fb)' }}
-            onClick={() => set('avatarUrl', '')}
-          >
-            Remove
-          </button>
-        )}
-      </div>
-      {/* URL fallback */}
-      <input
-        value={form.avatarUrl}
-        onChange={e => set('avatarUrl', e.target.value)}
-        placeholder="…or paste an image URL"
-        style={{ fontSize:12 }}
-      />
-    </div>
-  </div>
-</div>
+            <label>Avatar</label>
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+                marginBottom: 8,
+              }}
+            >
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 12,
+                  flexShrink: 0,
+                  background: form.avatarUrl
+                    ? "transparent"
+                    : "var(--grad-fire)",
+                  overflow: "hidden",
+                  border: "2px solid var(--b2)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 20,
+                  color: "#fff",
+                  fontFamily: "var(--fd)",
+                }}
+              >
+                {form.avatarUrl ? (
+                  <img
+                    src={form.avatarUrl}
+                    alt="avatar preview"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                ) : (
+                  getInitials(form.displayName, profile.email)
+                )}
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <input
+                    id="avatar-file-input"
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setAvatarUploading(true);
+                      try {
+                        const res = await postService.uploadMedia(file);
+                        const data = res?.data ?? res;
+                        set("avatarUrl", data.url);
+                      } catch {
+                        /* keep existing */
+                      } finally {
+                        setAvatarUploading(false);
+                        e.target.value = "";
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    style={{
+                      padding: "7px 14px",
+                      background: "var(--s3)",
+                      border: "1px solid var(--b2)",
+                      borderRadius: 7,
+                      color: "var(--t2)",
+                      fontSize: 12,
+                      fontFamily: "var(--fb)",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      transition: "all .15s",
+                    }}
+                    onClick={() =>
+                      document.getElementById("avatar-file-input").click()
+                    }
+                    disabled={avatarUploading}
+                  >
+                    {avatarUploading ? "⏳ Uploading…" : "📷 Upload photo"}
+                  </button>
+                  {form.avatarUrl && (
+                    <button
+                      type="button"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "var(--red)",
+                        fontSize: 12,
+                        cursor: "pointer",
+                        fontFamily: "var(--fb)",
+                      }}
+                      onClick={() => {
+                        set("avatarUrl", "");
+                        setShowUrlInput(false);
+                      }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "var(--t3)",
+                      fontSize: 11,
+                      cursor: "pointer",
+                      fontFamily: "var(--fm)",
+                      textDecoration: "underline",
+                    }}
+                    onClick={() => setShowUrlInput((v) => !v)}
+                  >
+                    {showUrlInput ? "Hide URL" : "Use URL instead"}
+                  </button>
+                </div>
+                {showUrlInput && (
+                  <input
+                    value={form.avatarUrl}
+                    onChange={(e) => set("avatarUrl", e.target.value)}
+                    placeholder="https://example.com/avatar.jpg"
+                    style={{ fontSize: 12 }}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
           <div className="mfield">
             <label>Display Name</label>
             <input
               value={form.displayName}
-              onChange={e => set('displayName', e.target.value)}
+              onChange={(e) => set("displayName", e.target.value)}
               placeholder="Your name"
             />
           </div>
           <div className="mfield">
-            <label>Headline <span style={{fontWeight:400,textTransform:'none',letterSpacing:0}}>(pronouns, teacher/student, etc…)</span></label>
+            <label>
+              Headline{" "}
+              <span
+                style={{
+                  fontWeight: 400,
+                  textTransform: "none",
+                  letterSpacing: 0,
+                }}
+              >
+                (pronouns, teacher/student, etc…)
+              </span>
+            </label>
             <input
               value={form.headline}
-              onChange={e => set('headline', e.target.value)}
+              onChange={(e) => set("headline", e.target.value)}
               placeholder="CS · Year 3 · Full-stack Dev"
             />
           </div>
@@ -288,7 +446,7 @@ function EditModal({ profile, onClose, onSave, saving }) {
             <textarea
               rows={4}
               value={form.bio}
-              onChange={e => set('bio', e.target.value)}
+              onChange={(e) => set("bio", e.target.value)}
               placeholder="Tell people about yourself…"
             />
           </div>
@@ -296,15 +454,17 @@ function EditModal({ profile, onClose, onSave, saving }) {
             <label>Website</label>
             <input
               value={form.website}
-              onChange={e => set('website', e.target.value)}
+              onChange={(e) => set("website", e.target.value)}
               placeholder="https://yoursite.com"
             />
           </div>
         </div>
         <div className="modal-foot">
-          <button className="btn btn-outline" onClick={onClose}>Cancel</button>
+          <button className="btn btn-outline" onClick={onClose}>
+            Cancel
+          </button>
           <button className="btn btn-fire" onClick={submit} disabled={saving}>
-            {saving ? 'Saving…' : 'Save Changes'}
+            {saving ? "Saving…" : "Save Changes"}
           </button>
         </div>
       </div>
@@ -318,22 +478,22 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
   const { user, logout, updateUserCache } = useAuth();
   const navigate = useNavigate();
 
-  const uid       = user?.userId ?? user?.id;
-  const targetId  = paramId ?? uid;
-  const isOwn     = uid === targetId;
-
-  const [profile,    setProfile]    = useState(null);
-  const [followers,  setFollowers]  = useState([]);
-  const [following,  setFollowing]  = useState([]);
-  const [posts,      setPosts]      = useState([]);
+  const uid = user?.userId ?? user?.id;
+  const targetId = paramId ?? uid;
+  const isOwn = uid === targetId;
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [followers, setFollowers] = useState([]);
+  const [following, setFollowing] = useState([]);
+  const [posts, setPosts] = useState([]);
   const [postsLoading, setPostsLoading] = useState(false);
-  const [loading,    setLoading]    = useState(true);
-  const [tab,        setTab]        = useState(initialTab || 'posts');
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState(initialTab || "posts");
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
-  const [editOpen,   setEditOpen]   = useState(editOnOpen || false);
-  const [saving,     setSaving]     = useState(false);
-  const [error,      setError]      = useState('');
+  const [editOpen, setEditOpen] = useState(editOnOpen || false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const profIni = getInitials(profile?.displayName, profile?.email);
 
@@ -341,7 +501,7 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
   useEffect(() => {
     if (!targetId) return;
     setLoading(true);
-    setError('');
+    setError("");
 
     Promise.all([
       userService.getProfile(targetId),
@@ -350,26 +510,31 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
     ])
       .then(([profRes, flRes, fgRes]) => {
         // api.js unwraps ApiResponse, so .data is the actual payload
-        const p  = profRes?.data  ?? profRes;
-        const fl = flRes?.data    ?? flRes;
-        const fg = fgRes?.data    ?? fgRes;
+        const p = profRes?.data ?? profRes;
+        const fl = flRes?.data ?? flRes;
+        const fg = fgRes?.data ?? fgRes;
         setProfile(p);
         setFollowers(Array.isArray(fl) ? fl : []);
         setFollowing(Array.isArray(fg) ? fg : []);
         if (!isOwn) {
-          setIsFollowing((Array.isArray(fl) ? fl : []).some(f => f.userId === uid));
+          setIsFollowing(
+            (Array.isArray(fl) ? fl : []).some(
+              (f) => (f.userId ?? f.id) === uid,
+            ),
+          );
         }
       })
-      .catch(() => setError('Failed to load profile.'))
+      .catch(() => setError("Failed to load profile."))
       .finally(() => setLoading(false));
   }, [targetId]);
 
   /* ── Load posts when that tab is active ── */
   useEffect(() => {
-    if (tab !== 'posts' || !targetId) return;
+    if (tab !== "posts" || !targetId) return;
     setPostsLoading(true);
-    postService.getUserPosts(targetId)
-      .then(res => {
+    postService
+      .getUserPosts(targetId)
+      .then((res) => {
         const data = res?.data ?? res;
         const items = data?.content ?? (Array.isArray(data) ? data : []);
         setPosts(items);
@@ -385,15 +550,21 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
     try {
       if (isFollowing) {
         await userService.unfollow(targetId);
-        setFollowers(f => f.filter(x => x.userId !== uid));
+        setFollowers((f) => f.filter((x) => x.userId !== uid));
         setIsFollowing(false);
       } else {
         await userService.follow(targetId);
-        setFollowers(f => [...f, { userId: uid, email: user.email, displayName: user.displayName }]);
+        setFollowers((f) => [
+          ...f,
+          { userId: uid, email: user.email, displayName: user.displayName },
+        ]);
         setIsFollowing(true);
       }
-    } catch { /* keep state */ }
-    finally { setFollowLoading(false); }
+    } catch {
+      /* keep state */
+    } finally {
+      setFollowLoading(false);
+    }
   };
 
   /* ── Save profile edits ── */
@@ -402,7 +573,7 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
     try {
       const res = await userService.updateProfile(form);
       const updated = res?.data ?? res;
-      setProfile(p => ({ ...p, ...updated }));
+      setProfile((p) => ({ ...p, ...updated }));
       // Sync displayName into auth cache so topbar updates immediately
       if (form.displayName) updateUserCache({ displayName: form.displayName });
       setEditOpen(false);
@@ -418,7 +589,9 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
         <main className="prof-main">
           {error && <div className="err-banner">⚠ {error}</div>}
 
-          {loading ? <HeroSkeleton /> : profile ? (
+          {loading ? (
+            <HeroSkeleton />
+          ) : profile ? (
             <>
               {/* ── HERO ── */}
               <div className="hero">
@@ -426,65 +599,88 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
                 <div className="hero-body">
                   <div className="hero-av-wrap">
                     <div className="hero-av">
-  {profile.avatarUrl
-    ? <img
-        src={profile.avatarUrl}
-        alt={profile.displayName || 'avatar'}
-        style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:14 }}
-        onError={e => { e.currentTarget.style.display='none'; }}
-      />
-    : profIni
-  }
-</div>
+                      {profile.avatarUrl ? (
+                        <img
+                          src={profile.avatarUrl}
+                          alt={profile.displayName || "avatar"}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            borderRadius: 14,
+                          }}
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
+                        />
+                      ) : (
+                        profIni
+                      )}
+                    </div>
                     <div className="hero-actions">
                       {isOwn ? (
-                        <button className="btn btn-outline" onClick={() => setEditOpen(true)}>
+                        <button
+                          className="btn btn-outline"
+                          onClick={() => setEditOpen(true)}
+                        >
                           ✏ Edit Profile
                         </button>
                       ) : (
                         <>
                           <button
-                            className={`btn ${isFollowing ? 'btn-ghost' : 'btn-fire'}`}
+                            className={`btn ${isFollowing ? "btn-ghost" : "btn-fire"}`}
                             onClick={toggleFollow}
                             disabled={followLoading}
                           >
-                            {followLoading ? '…' : isFollowing ? '✓ Following' : '+ Follow'}
+                            {followLoading
+                              ? "…"
+                              : isFollowing
+                                ? "✓ Following"
+                                : "+ Follow"}
                           </button>
                           <button
-  className="btn btn-outline"
-  onClick={async () => {
-    try {
-      const { default: conversationService } = 
-        await import('../services/conversationService');
-      const res  = await conversationService.startConversation(targetId);
-      const conv = res?.data ?? res;
-      navigate(`/messages/${conv.id}`);
-    } catch {
-      navigate('/messages');
-    }
-  }}
->
-  💬 Message
-</button>
+                            className="btn btn-outline"
+                            onClick={async () => {
+                              try {
+                                const { default: conversationService } =
+                                  await import("../services/conversationService");
+                                const res =
+                                  await conversationService.startConversation(
+                                    targetId,
+                                  );
+                                const conv = res?.data ?? res;
+                                navigate(`/messages/${conv.id}`);
+                              } catch {
+                                navigate("/messages");
+                              }
+                            }}
+                          >
+                            💬 Message
+                          </button>
                         </>
                       )}
                     </div>
                   </div>
 
                   <div className="hero-name">
-                    {profile.displayName || profile.email?.split('@')[0] || 'Student'}
+                    {profile.displayName ||
+                      profile.email?.split("@")[0] ||
+                      "Student"}
                   </div>
                   {profile.headline && (
                     <div className="hero-headline">{profile.headline}</div>
                   )}
-                  {profile.bio && (
-                    <div className="hero-bio">{profile.bio}</div>
-                  )}
+                  {profile.bio && <div className="hero-bio">{profile.bio}</div>}
 
                   <div className="hero-meta">
                     {profile.website && (
-                      <a className="hero-link" href={profile.website} target="_blank" rel="noopener noreferrer">
-                        🔗 {profile.website.replace(/^https?:\/\//, '')}
+                      <a
+                        className="hero-link"
+                        href={profile.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        🔗 {profile.website.replace(/^https?:\/\//, "")}
                       </a>
                     )}
                     <span className="hero-email">✉ {profile.email}</span>
@@ -492,17 +688,26 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
 
                   {/* Stats — click to switch tab */}
                   <div className="stats">
-                    <div className={`stat ${tab === 'posts' ? 'active' : ''}`} onClick={() => setTab('posts')}>
-                      <span className="stat-n">{posts.length || '—'}</span>
+                    <div
+                      className={`stat ${tab === "posts" ? "active" : ""}`}
+                      onClick={() => setTab("posts")}
+                    >
+                      <span className="stat-n">{posts.length || "—"}</span>
                       <span className="stat-l">Posts</span>
                       <div className="stat-pip" />
                     </div>
-                    <div className={`stat ${tab === 'followers' ? 'active' : ''}`} onClick={() => setTab('followers')}>
+                    <div
+                      className={`stat ${tab === "followers" ? "active" : ""}`}
+                      onClick={() => setTab("followers")}
+                    >
                       <span className="stat-n">{followers.length}</span>
                       <span className="stat-l">Followers</span>
                       <div className="stat-pip" />
                     </div>
-                    <div className={`stat ${tab === 'following' ? 'active' : ''}`} onClick={() => setTab('following')}>
+                    <div
+                      className={`stat ${tab === "following" ? "active" : ""}`}
+                      onClick={() => setTab("following")}
+                    >
                       <span className="stat-n">{following.length}</span>
                       <span className="stat-l">Following</span>
                       <div className="stat-pip" />
@@ -513,26 +718,50 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
 
               {/* ── TABS ── */}
               <div className="prof-tabs">
-                <button className={`prof-tab ${tab === 'posts' ? 'on' : ''}`} onClick={() => setTab('posts')}>
+                <button
+                  className={`prof-tab ${tab === "posts" ? "on" : ""}`}
+                  onClick={() => setTab("posts")}
+                >
                   Posts
                 </button>
-                <button className={`prof-tab ${tab === 'followers' ? 'on' : ''}`} onClick={() => setTab('followers')}>
+                <button
+                  className={`prof-tab ${tab === "followers" ? "on" : ""}`}
+                  onClick={() => setTab("followers")}
+                >
                   Followers
                   <span className="prof-tab-cnt">{followers.length}</span>
                 </button>
-                <button className={`prof-tab ${tab === 'following' ? 'on' : ''}`} onClick={() => setTab('following')}>
+                <button
+                  className={`prof-tab ${tab === "following" ? "on" : ""}`}
+                  onClick={() => setTab("following")}
+                >
                   Following
                   <span className="prof-tab-cnt">{following.length}</span>
                 </button>
               </div>
 
               {/* ── TAB CONTENT ── */}
-              {tab === 'posts' && (
-                postsLoading ? (
-                  [1, 2, 3].map(i => (
-                    <div key={i} className="prof-post" style={{ cursor: 'default' }}>
-                      <div className="sk" style={{ height: 13, width: '100%', marginBottom: 7, borderRadius: 5 }} />
-                      <div className="sk" style={{ height: 13, width: '75%', borderRadius: 5 }} />
+              {tab === "posts" &&
+                (postsLoading ? (
+                  [1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="prof-post"
+                      style={{ cursor: "default" }}
+                    >
+                      <div
+                        className="sk"
+                        style={{
+                          height: 13,
+                          width: "100%",
+                          marginBottom: 7,
+                          borderRadius: 5,
+                        }}
+                      />
+                      <div
+                        className="sk"
+                        style={{ height: 13, width: "75%", borderRadius: 5 }}
+                      />
                     </div>
                   ))
                 ) : posts.length === 0 ? (
@@ -541,8 +770,8 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
                     <div className="lx-empty-t">No Posts Yet</div>
                     <p className="lx-empty-s">
                       {isOwn
-                        ? 'Share something from the feed.'
-                        : `${profile.displayName || 'This student'} hasn't posted yet.`}
+                        ? "Share something from the feed."
+                        : `${profile.displayName || "This student"} hasn't posted yet.`}
                     </p>
                   </div>
                 ) : (
@@ -558,24 +787,27 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
                       )}
                       <div className="pp-meta">
                         <span>{timeAgo(p.createdAt)}</span>
-                        {p.commentCount > 0 && (
-                          <span>💬 {p.commentCount}</span>
-                        )}
+                        {p.commentCount > 0 && <span>💬 {p.commentCount}</span>}
                         {p.reactions?.length > 0 && (
                           <span className="pp-rx">
-                            👍 {p.reactions.reduce((s, r) => s + (r.count ?? 0), 0)}
+                            👍{" "}
+                            {p.reactions.reduce(
+                              (s, r) => s + (r.count ?? 0),
+                              0,
+                            )}
                           </span>
                         )}
-                        {p.visibility && p.visibility !== 'public' && (
-                          <span>{p.visibility === 'private' ? '🔒' : '🔗'}</span>
+                        {p.visibility && p.visibility !== "public" && (
+                          <span>
+                            {p.visibility === "private" ? "🔒" : "🔗"}
+                          </span>
                         )}
                       </div>
                     </div>
                   ))
-                )
-              )}
+                ))}
 
-              {tab === 'followers' && (
+              {tab === "followers" && (
                 <div className="follow-grid">
                   {followers.length === 0 ? (
                     <div className="lx-empty">
@@ -583,51 +815,65 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
                       <div className="lx-empty-t">No Followers Yet</div>
                       <p className="lx-empty-s">Be the first to follow.</p>
                     </div>
-                  ) : followers.map((f, i) => {
-                    const ini = getInitials(f.displayName, f.email);
-                    return (
-                      <div
-                        key={f.userId}
-                        className="follow-card"
-                        style={{ animationDelay: `${i * 35}ms` }}
-                        onClick={() => navigate(`/profile/${f.userId}`)}
-                      >
-                        <div className="follow-av" style={avStyle(f.userId)}>{ini}</div>
-                        <div className="follow-info">
-                          <div className="follow-name">{f.displayName || f.email}</div>
-                          <div className="follow-email">{f.email}</div>
+                  ) : (
+                    followers.map((f, i) => {
+                      const ini = getInitials(f.displayName, f.email);
+                      return (
+                        <div
+                          key={f.userId}
+                          className="follow-card"
+                          style={{ animationDelay: `${i * 35}ms` }}
+                          onClick={() => navigate(`/profile/${f.userId}`)}
+                        >
+                          <div className="follow-av" style={avStyle(f.userId)}>
+                            {ini}
+                          </div>
+                          <div className="follow-info">
+                            <div className="follow-name">
+                              {f.displayName || f.email}
+                            </div>
+                            <div className="follow-email">{f.email}</div>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
                 </div>
               )}
 
-              {tab === 'following' && (
+              {tab === "following" && (
                 <div className="follow-grid">
                   {following.length === 0 ? (
                     <div className="lx-empty">
                       <div className="lx-empty-ic">🔍</div>
                       <div className="lx-empty-t">Not Following Anyone</div>
-                      <p className="lx-empty-s">Discover students from the feed.</p>
+                      <p className="lx-empty-s">
+                        Discover students from the feed.
+                      </p>
                     </div>
-                  ) : following.map((f, i) => {
-                    const ini = getInitials(f.displayName, f.email);
-                    return (
-                      <div
-                        key={f.userId}
-                        className="follow-card"
-                        style={{ animationDelay: `${i * 35}ms` }}
-                        onClick={() => navigate(`/profile/${f.userId}`)}
-                      >
-                        <div className="follow-av" style={avStyle(f.userId)}>{ini}</div>
-                        <div className="follow-info">
-                          <div className="follow-name">{f.displayName || f.email}</div>
-                          <div className="follow-email">{f.email}</div>
+                  ) : (
+                    following.map((f, i) => {
+                      const ini = getInitials(f.displayName, f.email);
+                      return (
+                        <div
+                          key={f.userId}
+                          className="follow-card"
+                          style={{ animationDelay: `${i * 35}ms` }}
+                          onClick={() => navigate(`/profile/${f.userId}`)}
+                        >
+                          <div className="follow-av" style={avStyle(f.userId)}>
+                            {ini}
+                          </div>
+                          <div className="follow-info">
+                            <div className="follow-name">
+                              {f.displayName || f.email}
+                            </div>
+                            <div className="follow-email">{f.email}</div>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
                 </div>
               )}
             </>

@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useAuth, getInitials } from '../contexts/AuthContext';
-import Layout from '../components/Layout';
-import conversationService from '../services/conversationService';
-import userService from '../services/userService';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useAuth, getInitials } from "../contexts/AuthContext";
+import Layout from "../components/Layout";
+import conversationService from "../services/conversationService";
+import userService from "../services/userService";
 
 /* ─── CSS ─────────────────────────────────────────────────────────────── */
 const css = `
@@ -185,11 +185,16 @@ const css = `
    We track which conv IDs the user has OPENED so the badge doesn't
    reappear on reload. Keyed by userId so multi-account works.
 ──────────────────────────────────────────────────────────────────────────── */
-function getReadKey(uid) { return `learnex_read_convs_${uid}`; }
+function getReadKey(uid) {
+  return `learnex_read_convs_${uid}`;
+}
 
 function getLocalReadConvs(uid) {
-  try { return new Set(JSON.parse(localStorage.getItem(getReadKey(uid)) || '[]')); }
-  catch { return new Set(); }
+  try {
+    return new Set(JSON.parse(localStorage.getItem(getReadKey(uid)) || "[]"));
+  } catch {
+    return new Set();
+  }
 }
 
 function markConvReadLocal(uid, convId) {
@@ -197,44 +202,57 @@ function markConvReadLocal(uid, convId) {
     const s = getLocalReadConvs(uid);
     s.add(convId);
     localStorage.setItem(getReadKey(uid), JSON.stringify([...s]));
-  } catch { /* no-op */ }
+  } catch {
+    /* no-op */
+  }
 }
 
 /* ─── Helpers ─────────────────────────────────────────────────────────── */
-const AV_BG = ['#0d1f35','#0d2918','#2a0d1e','#1e1a0d','#1a0d2e'];
-const AV_C  = ['#4a9eff','#4adf8a','#df4a8a','#dfb84a','#af4adf'];
+const AV_BG = ["#0d1f35", "#0d2918", "#2a0d1e", "#1e1a0d", "#1a0d2e"];
+const AV_C = ["#4a9eff", "#4adf8a", "#df4a8a", "#dfb84a", "#af4adf"];
 function avStyle(seed) {
-  const i = (typeof seed === 'string' ? seed.charCodeAt(0) : 0) % AV_BG.length;
+  const i = (typeof seed === "string" ? seed.charCodeAt(0) : 0) % AV_BG.length;
   return { background: `linear-gradient(135deg,${AV_BG[i]},${AV_C[i]})` };
 }
 function timeAgo(iso) {
-  if (!iso) return '';
+  if (!iso) return "";
   const m = Math.floor((Date.now() - new Date(iso)) / 60000);
-  if (m < 1) return 'now';
+  if (m < 1) return "now";
   if (m < 60) return `${m}m`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h`;
   const d = Math.floor(h / 24);
   if (d < 7) return `${d}d`;
-  return new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric' });
+  return new Date(iso).toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+  });
 }
 function fullTime(iso) {
-  if (!iso) return '';
-  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (!iso) return "";
+  return new Date(iso).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 function dateLabel(iso) {
-  if (!iso) return '';
+  if (!iso) return "";
   const d = new Date(iso);
   const today = new Date();
-  const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
-  if (d.toDateString() === today.toDateString()) return 'Today';
-  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
-  return d.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (d.toDateString() === today.toDateString()) return "Today";
+  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+  return d.toLocaleDateString([], {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 /** Initials from group name — first letter of first two words, or first two chars */
 function groupInitials(name) {
-  if (!name) return 'G';
+  if (!name) return "G";
   const words = name.trim().split(/\s+/);
   if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
   return name.slice(0, 2).toUpperCase();
@@ -242,25 +260,35 @@ function groupInitials(name) {
 
 /** Display name for a conversation */
 function convDisplayName(conv) {
-  if (!conv) return '';
-  if (conv.type === 'group' || conv.type === 'class') return conv.name || 'Group Chat';
+  if (!conv) return "";
+  if (conv.type === "group" || conv.type === "class")
+    return conv.name || "Group Chat";
   // For DMs: prefer displayName, fall back to email username (not full email)
   if (conv.otherUserDisplayName) return conv.otherUserDisplayName;
-  if (conv.otherUserEmail) return conv.otherUserEmail.split('@')[0];
-  return 'Unknown';
+  if (conv.otherUserEmail) return conv.otherUserEmail.split("@")[0];
+  return "Unknown";
 }
 
 /** Initials for a conversation avatar */
 function convInitials(conv) {
-  if (!conv) return '?';
-  if (conv.type === 'group' || conv.type === 'class') return groupInitials(conv.name);
+  if (!conv) return "?";
+  if (conv.type === "group" || conv.type === "class")
+    return groupInitials(conv.name);
   return getInitials(conv.otherUserDisplayName, conv.otherUserEmail);
 }
 
 /* ─── Group avatar component ─────────────────────────────────────────── */
 function GroupAvatar({ name, size = 42 }) {
   return (
-    <div className="cv-grp-av" style={{ width: size, height: size, fontSize: size * 0.38, borderRadius: size * 0.26 }}>
+    <div
+      className="cv-grp-av"
+      style={{
+        width: size,
+        height: size,
+        fontSize: size * 0.38,
+        borderRadius: size * 0.26,
+      }}
+    >
       {groupInitials(name)}
     </div>
   );
@@ -270,12 +298,35 @@ function GroupAvatar({ name, size = 42 }) {
 function ConvSkeleton() {
   return (
     <>
-      {[1,2,3,4,5].map(i => (
-        <div key={i} style={{display:'flex',gap:11,alignItems:'center',padding:'13px 14px',borderBottom:'1px solid var(--b1)'}}>
-          <div className="sk" style={{width:42,height:42,borderRadius:11,flexShrink:0}}/>
-          <div style={{flex:1}}>
-            <div className="sk" style={{height:12,width:'50%',marginBottom:7,borderRadius:4}}/>
-            <div className="sk" style={{height:10,width:'75%',borderRadius:4}}/>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <div
+          key={i}
+          style={{
+            display: "flex",
+            gap: 11,
+            alignItems: "center",
+            padding: "13px 14px",
+            borderBottom: "1px solid var(--b1)",
+          }}
+        >
+          <div
+            className="sk"
+            style={{ width: 42, height: 42, borderRadius: 11, flexShrink: 0 }}
+          />
+          <div style={{ flex: 1 }}>
+            <div
+              className="sk"
+              style={{
+                height: 12,
+                width: "50%",
+                marginBottom: 7,
+                borderRadius: 4,
+              }}
+            />
+            <div
+              className="sk"
+              style={{ height: 10, width: "75%", borderRadius: 4 }}
+            />
           </div>
         </div>
       ))}
@@ -285,11 +336,38 @@ function ConvSkeleton() {
 
 function MsgSkeleton() {
   return (
-    <div style={{display:'flex',flexDirection:'column',gap:8,padding:'8px 0'}}>
-      {[false,true,false,false,true].map((mine, i) => (
-        <div key={i} style={{display:'flex',gap:8,alignSelf:mine?'flex-end':'flex-start',maxWidth:'60%',flexDirection:mine?'row-reverse':'row',alignItems:'flex-end'}}>
-          <div className="sk" style={{width:26,height:26,borderRadius:7,flexShrink:0}}/>
-          <div className="sk" style={{height:36+(i%2)*16,width:100+i*30,borderRadius:14}}/>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        padding: "8px 0",
+      }}
+    >
+      {[false, true, false, false, true].map((mine, i) => (
+        <div
+          key={i}
+          style={{
+            display: "flex",
+            gap: 8,
+            alignSelf: mine ? "flex-end" : "flex-start",
+            maxWidth: "60%",
+            flexDirection: mine ? "row-reverse" : "row",
+            alignItems: "flex-end",
+          }}
+        >
+          <div
+            className="sk"
+            style={{ width: 26, height: 26, borderRadius: 7, flexShrink: 0 }}
+          />
+          <div
+            className="sk"
+            style={{
+              height: 36 + (i % 2) * 16,
+              width: 100 + i * 30,
+              borderRadius: 14,
+            }}
+          />
         </div>
       ))}
     </div>
@@ -302,35 +380,38 @@ export default function MessagesPage() {
   const navigate = useNavigate();
   const { convId: paramConvId } = useParams();
 
-  const uid   = user?.userId ?? user?.id;
+  const uid = user?.userId ?? user?.id;
   const myIni = getInitials(user?.displayName, user?.email);
 
-  const [convs,        setConvs]        = useState([]);
+  const [convs, setConvs] = useState([]);
   const [convsLoading, setConvsLoading] = useState(true);
-  const [activeId,     setActiveId]     = useState(paramConvId || null);
-  const [activeConv,   setActiveConv]   = useState(null);
-  const [messages,     setMessages]     = useState([]);
-  const [msgsLoading,  setMsgsLoading]  = useState(false);
-  const [draft,        setDraft]        = useState('');
-  const [sending,      setSending]      = useState(false);
-  const [replyTo,      setReplyTo]      = useState(null);
-  const [searchQ,      setSearchQ]      = useState('');
-  const [dmOpen,       setDmOpen]       = useState(false);
-  const [dmEmail,      setDmEmail]      = useState('');
-  const [dmLoading,    setDmLoading]    = useState(false);
-  const [dmErr,        setDmErr]        = useState('');
-  const [dmTab,        setDmTab]        = useState('dm');
-  const [groupName,    setGroupName]    = useState('');
-  const [groupEmails,  setGroupEmails]  = useState('');
+  const [activeId, setActiveId] = useState(paramConvId || null);
+  const [activeConv, setActiveConv] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [msgsLoading, setMsgsLoading] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const [replyTo, setReplyTo] = useState(null);
+  const [searchQ, setSearchQ] = useState("");
+  const [dmOpen, setDmOpen] = useState(false);
+  const [dmEmail, setDmEmail] = useState("");
+  const [dmLoading, setDmLoading] = useState(false);
+  const [dmErr, setDmErr] = useState("");
+  const [dmTab, setDmTab] = useState("dm");
+  const [groupName, setGroupName] = useState("");
+  const [groupEmails, setGroupEmails] = useState("");
   const [groupLoading, setGroupLoading] = useState(false);
-  const [groupErr,     setGroupErr]     = useState('');
+  const [groupErr, setGroupErr] = useState("");
 
   // Per-user local read set — initialised once on mount
-  const [localReadConvs, setLocalReadConvs] = useState(() => uid ? getLocalReadConvs(uid) : new Set());
+  const [localReadConvs, setLocalReadConvs] = useState(() =>
+    uid ? getLocalReadConvs(uid) : new Set(),
+  );
 
   const scrollRef = useRef(null);
-  const inputRef  = useRef(null);
+  const inputRef = useRef(null);
 
+  const [showConvList, setShowConvList] = useState(!paramConvId);
   // Re-init local read set when uid resolves (login)
   useEffect(() => {
     if (uid) setLocalReadConvs(getLocalReadConvs(uid));
@@ -339,8 +420,9 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!uid) return;
     setConvsLoading(true);
-    conversationService.getConversations()
-      .then(res => {
+    conversationService
+      .getConversations()
+      .then((res) => {
         const data = res?.data ?? res;
         setConvs(Array.isArray(data) ? data : []);
       })
@@ -354,14 +436,15 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!activeId || !uid) return;
-    const conv = convs.find(c => c.id === activeId);
+    const conv = convs.find((c) => c.id === activeId);
     setActiveConv(conv || null);
     setMsgsLoading(true);
     setMessages([]);
     setReplyTo(null);
 
-    conversationService.getMessages(activeId, 0, 50)
-      .then(res => {
+    conversationService
+      .getMessages(activeId, 0, 50)
+      .then((res) => {
         const data = res?.data ?? res;
         const msgs = data.messages ?? (Array.isArray(data) ? data : []);
         setMessages([...msgs].reverse());
@@ -371,98 +454,153 @@ export default function MessagesPage() {
   }, [activeId, uid]);
 
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (scrollRef.current)
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages]);
 
-  const isConvUnread = useCallback((conv) => {
-    if (!conv || activeId === conv.id) return false;
-    // If user has opened this conv (local record), never show unread dot
-    if (localReadConvs.has(conv.id)) return false;
-    return (conv.unreadCount ?? 0) > 0;
-  }, [activeId, localReadConvs]);
+  const isConvUnread = useCallback(
+    (conv) => {
+      if (!conv || activeId === conv.id) return false;
+      // If user has opened this conv (local record), never show unread dot
+      if (localReadConvs.has(conv.id)) return false;
+      return (conv.unreadCount ?? 0) > 0;
+    },
+    [activeId, localReadConvs],
+  );
 
-  const selectConv = useCallback((conv) => {
-    setActiveId(conv.id);
-    setActiveConv(conv);
-    navigate(`/messages/${conv.id}`, { replace: true });
-    // Persist this conv as read for this user
-    markConvReadLocal(uid, conv.id);
-    setLocalReadConvs(getLocalReadConvs(uid));
-    setConvs(prev => prev.map(c => c.id === conv.id ? { ...c, unreadCount: 0 } : c));
-    setTimeout(() => inputRef.current?.focus(), 80);
-  }, [navigate, uid]);
+  const selectConv = useCallback(
+    (conv) => {
+      setActiveId(conv.id);
+      setActiveConv(conv);
+      navigate(`/messages/${conv.id}`, { replace: true });
+      markConvReadLocal(uid, conv.id);
+      setLocalReadConvs(getLocalReadConvs(uid));
+      setConvs((prev) =>
+        prev.map((c) => (c.id === conv.id ? { ...c, unreadCount: 0 } : c)),
+      );
+      setShowConvList(false); // hide list on mobile when conv selected
+      setTimeout(() => inputRef.current?.focus(), 80);
+    },
+    [navigate, uid],
+  );
 
   const sendMsg = async () => {
     const text = draft.trim();
     if (!text || sending || !activeId) return;
     setSending(true);
-    setDraft('');
+    setDraft("");
 
     const optimistic = {
-      id: `opt-${Date.now()}`, senderId: uid, content: text,
-      replyToId: replyTo?.id || null, sentAt: new Date().toISOString(),
-      isDeleted: false, _optimistic: true,
+      id: `opt-${Date.now()}`,
+      senderId: uid,
+      content: text,
+      replyToId: replyTo?.id || null,
+      sentAt: new Date().toISOString(),
+      isDeleted: false,
+      _optimistic: true,
     };
-    setMessages(prev => [...prev, optimistic]);
+    setMessages((prev) => [...prev, optimistic]);
     setReplyTo(null);
 
     try {
-      const res = await conversationService.sendMessage(activeId, text, replyTo?.id || null);
+      const res = await conversationService.sendMessage(
+        activeId,
+        text,
+        replyTo?.id || null,
+      );
       const saved = res?.data ?? res;
-      setMessages(prev => prev.map(m => m.id === optimistic.id ? { ...saved, _sent: true } : m));
-      setConvs(prev => prev.map(c => c.id === activeId ? { ...c, lastMessage: saved } : c));
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === optimistic.id ? { ...saved, _sent: true } : m,
+        ),
+      );
+      setConvs((prev) =>
+        prev.map((c) => (c.id === activeId ? { ...c, lastMessage: saved } : c)),
+      );
     } catch {
-      setMessages(prev => prev.filter(m => m.id !== optimistic.id));
+      setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
       setDraft(text);
-    } finally { setSending(false); }
+    } finally {
+      setSending(false);
+    }
   };
 
   const startDm = async () => {
     const emailOrId = dmEmail.trim();
     if (!emailOrId || dmLoading) return;
-    setDmLoading(true); setDmErr('');
+    setDmLoading(true);
+    setDmErr("");
     try {
       let recipientId = emailOrId;
-      if (emailOrId.includes('@')) {
+      if (emailOrId.includes("@")) {
         const searchRes = await userService.searchByEmail(emailOrId);
         const found = searchRes?.data ?? searchRes;
         const resolved = Array.isArray(found) ? found[0] : found;
-        if (!resolved?.userId && !resolved?.id) { setDmErr('No user found with that email.'); return; }
+        if (!resolved?.userId && !resolved?.id) {
+          setDmErr("No user found with that email.");
+          return;
+        }
         recipientId = resolved.userId ?? resolved.id;
       }
-      const res  = await conversationService.startConversation(recipientId);
+      const res = await conversationService.startConversation(recipientId);
       const conv = res?.data ?? res;
-      setConvs(prev => [conv, ...prev.filter(c => c.id !== conv.id)]);
-      setDmOpen(false); setDmEmail('');
+      setConvs((prev) => [conv, ...prev.filter((c) => c.id !== conv.id)]);
+      setDmOpen(false);
+      setDmEmail("");
       selectConv(conv);
     } catch (e) {
-      setDmErr(e?.response?.data?.message || e?.displayMessage || 'Could not start conversation.');
-    } finally { setDmLoading(false); }
+      setDmErr(
+        e?.response?.data?.message ||
+          e?.displayMessage ||
+          "Could not start conversation.",
+      );
+    } finally {
+      setDmLoading(false);
+    }
   };
 
   const startGroupChat = async () => {
     const name = groupName.trim();
     if (!name || groupLoading) return;
-    setGroupLoading(true); setGroupErr('');
+    setGroupLoading(true);
+    setGroupErr("");
     try {
-      const emails = groupEmails.split(',').map(e => e.trim()).filter(Boolean);
+      const emails = groupEmails
+        .split(",")
+        .map((e) => e.trim())
+        .filter(Boolean);
       const memberIds = [];
       for (const email of emails) {
         const res = await userService.searchByEmail(email);
         const found = res?.data ?? res;
         const u = Array.isArray(found) ? found[0] : found;
         const id = u?.userId ?? u?.id;
-        if (!id) { setGroupErr(`No user found: ${email}`); return; }
+        if (!id) {
+          setGroupErr(`No user found: ${email}`);
+          return;
+        }
         memberIds.push(id);
       }
-      const res  = await conversationService.startGroupConversation(name, memberIds);
+      const res = await conversationService.startGroupConversation(
+        name,
+        memberIds,
+      );
       const conv = res?.data ?? res;
-      setConvs(prev => [conv, ...prev.filter(c => c.id !== conv.id)]);
-      setDmOpen(false); setGroupName(''); setGroupEmails(''); setDmTab('dm');
+      setConvs((prev) => [conv, ...prev.filter((c) => c.id !== conv.id)]);
+      setDmOpen(false);
+      setGroupName("");
+      setGroupEmails("");
+      setDmTab("dm");
       selectConv(conv);
     } catch (e) {
-      setGroupErr(e?.response?.data?.message || e?.displayMessage || 'Could not create group.');
-    } finally { setGroupLoading(false); }
+      setGroupErr(
+        e?.response?.data?.message ||
+          e?.displayMessage ||
+          "Could not create group.",
+      );
+    } finally {
+      setGroupLoading(false);
+    }
   };
 
   function buildGroups(msgs) {
@@ -471,21 +609,24 @@ export default function MessagesPage() {
     while (i < msgs.length) {
       const sender = msgs[i].senderId;
       const group = [];
-      while (i < msgs.length && msgs[i].senderId === sender) { group.push(msgs[i]); i++; }
+      while (i < msgs.length && msgs[i].senderId === sender) {
+        group.push(msgs[i]);
+        i++;
+      }
       groups.push({ sender, messages: group });
     }
     return groups;
   }
 
-  const filtered = convs.filter(c => {
+  const filtered = convs.filter((c) => {
     if (!searchQ) return true;
     const name = convDisplayName(c);
     return name.toLowerCase().includes(searchQ.toLowerCase());
   });
 
-  const isGroup = activeConv?.type === 'group' || activeConv?.type === 'class';
+  const isGroup = activeConv?.type === "group" || activeConv?.type === "class";
   const otherName = convDisplayName(activeConv ?? {});
-  const otherIni  = activeConv ? convInitials(activeConv) : '';
+  const otherIni = activeConv ? convInitials(activeConv) : "";
 
   return (
     <>
@@ -493,49 +634,87 @@ export default function MessagesPage() {
       <Layout active="messages" fullHeight>
         <div className="msg-wrap">
           {/* ── Conversation list ── */}
-          <div className="cl">
+          <div className={`cl ${showConvList ? "show" : ""}`}>
             <div className="cl-head">
               <span className="cl-title">Messages</span>
-              <button className="cl-new" title="New conversation" onClick={() => { setDmOpen(true); setDmErr(''); setDmEmail(''); }}>✎</button>
+              <button
+                className="cl-new"
+                title="New conversation"
+                onClick={() => {
+                  setDmOpen(true);
+                  setDmErr("");
+                  setDmEmail("");
+                }}
+              >
+                ✎
+              </button>
             </div>
             <div className="cl-search">
-              <input placeholder="Search…" value={searchQ} onChange={e => setSearchQ(e.target.value)} />
+              <input
+                placeholder="Search…"
+                value={searchQ}
+                onChange={(e) => setSearchQ(e.target.value)}
+              />
             </div>
             <div className="cl-body">
-              {convsLoading ? <ConvSkeleton /> : filtered.length === 0 ? (
-                <div style={{padding:'32px 16px',textAlign:'center',color:'var(--t3)',fontSize:13,fontFamily:'var(--fm)'}}>
-                  {searchQ ? 'No results' : 'No conversations yet'}
+              {convsLoading ? (
+                <ConvSkeleton />
+              ) : filtered.length === 0 ? (
+                <div
+                  style={{
+                    padding: "32px 16px",
+                    textAlign: "center",
+                    color: "var(--t3)",
+                    fontSize: 13,
+                    fontFamily: "var(--fm)",
+                  }}
+                >
+                  {searchQ ? "No results" : "No conversations yet"}
                 </div>
-              ) : filtered.map(conv => {
-                const name    = convDisplayName(conv);
-                const ini     = convInitials(conv);
-                const isGrp   = conv.type === 'group' || conv.type === 'class';
-                const preview = conv.lastMessage?.isDeleted ? 'Message deleted' : (conv.lastMessage?.content || 'Start a conversation');
-                const unread  = isConvUnread(conv);
+              ) : (
+                filtered.map((conv) => {
+                  const name = convDisplayName(conv);
+                  const ini = convInitials(conv);
+                  const isGrp = conv.type === "group" || conv.type === "class";
+                  const preview = conv.lastMessage?.isDeleted
+                    ? "Message deleted"
+                    : conv.lastMessage?.content || "Start a conversation";
+                  const unread = isConvUnread(conv);
 
-                return (
-                  <div
-                    key={conv.id}
-                    className={`cv-row ${activeId === conv.id ? 'active' : ''} ${unread ? 'has-unread' : ''}`}
-                    onClick={() => selectConv(conv)}
-                  >
-                    <div className="cv-av-wrap">
-                      {isGrp
-                        ? <GroupAvatar name={conv.name} size={42} />
-                        : <div className="cv-av" style={avStyle(conv.otherUserId || conv.id)}>{ini}</div>
-                      }
+                  return (
+                    <div
+                      key={conv.id}
+                      className={`cv-row ${activeId === conv.id ? "active" : ""} ${unread ? "has-unread" : ""}`}
+                      onClick={() => selectConv(conv)}
+                    >
+                      <div className="cv-av-wrap">
+                        {isGrp ? (
+                          <GroupAvatar name={conv.name} size={42} />
+                        ) : (
+                          <div
+                            className="cv-av"
+                            style={avStyle(conv.otherUserId || conv.id)}
+                          >
+                            {ini}
+                          </div>
+                        )}
+                      </div>
+                      <div className="cv-info">
+                        <div className="cv-name">{name}</div>
+                        <div className="cv-preview">{preview}</div>
+                      </div>
+                      <div className="cv-right">
+                        <span className="cv-time">
+                          {timeAgo(conv.lastMessage?.sentAt || conv.createdAt)}
+                        </span>
+                        {unread && (
+                          <span className="cv-badge">{conv.unreadCount}</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="cv-info">
-                      <div className="cv-name">{name}</div>
-                      <div className="cv-preview">{preview}</div>
-                    </div>
-                    <div className="cv-right">
-                      <span className="cv-time">{timeAgo(conv.lastMessage?.sentAt || conv.createdAt)}</span>
-                      {unread && <span className="cv-badge">{conv.unreadCount}</span>}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
 
@@ -543,36 +722,64 @@ export default function MessagesPage() {
           <div className="chat-panel">
             {!activeId ? (
               <div className="chat-empty">
-                <div className="chat-empty-ic">💬</div>
+                <div className="chat-empty-ic" style={{ fontSize: 40}}>💬</div>
                 <div className="chat-empty-t">Your Messages</div>
-                <p className="chat-empty-s">Pick a conversation or start a new one.</p>
-                <button className="btn-fire-sm" onClick={() => { setDmOpen(true); setDmErr(''); setDmEmail(''); }}>+ New Message</button>
+                <p className="chat-empty-s">
+                  Pick a conversation or start a new one.
+                </p>
+                <button
+                  className="btn-fire-sm"
+                  onClick={() => {
+                    setDmOpen(true);
+                    setDmErr("");
+                    setDmEmail("");
+                  }}
+                >
+                  + New Message
+                </button>
               </div>
             ) : (
               <>
                 <div className="chat-head">
-                  <button 
-  className="chat-mob-back" 
-  onClick={() => { setActiveId(null); navigate('/messages', { replace: true }); }}
->
-  ‹
-</button>
-                  {isGroup
-                    ? <GroupAvatar name={activeConv?.name} size={38} />
-                    : (
-                      <div className="chat-av" style={avStyle(activeConv?.otherUserId)}
-                        onClick={() => activeConv?.otherUserId && navigate(`/profile/${activeConv.otherUserId}`)}>
-                        {otherIni}
-                      </div>
-                    )
-                  }
-                  <div style={{flex:1,minWidth:0}}>
-                    <div className="chat-name"
-                      onClick={() => !isGroup && activeConv?.otherUserId && navigate(`/profile/${activeConv.otherUserId}`)}>
+                  <button
+                    className="chat-mob-back"
+                    onClick={() => {
+                      setActiveId(null);
+                      setShowConvList(true);
+                      navigate("/messages", { replace: true });
+                    }}
+                  >
+                    ‹
+                  </button>
+                  {isGroup ? (
+                    <GroupAvatar name={activeConv?.name} size={38} />
+                  ) : (
+                    <div
+                      className="chat-av"
+                      style={avStyle(activeConv?.otherUserId)}
+                      onClick={() =>
+                        activeConv?.otherUserId &&
+                        navigate(`/profile/${activeConv.otherUserId}`)
+                      }
+                    >
+                      {otherIni}
+                    </div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      className="chat-name"
+                      onClick={() =>
+                        !isGroup &&
+                        activeConv?.otherUserId &&
+                        navigate(`/profile/${activeConv.otherUserId}`)
+                      }
+                    >
                       {otherName}
                     </div>
                     {!isGroup && activeConv?.otherUserEmail && (
-                      <div className="chat-sub">{activeConv.otherUserEmail}</div>
+                      <div className="chat-sub">
+                        {activeConv.otherUserEmail}
+                      </div>
                     )}
                     {isGroup && (
                       <div className="chat-sub">Group conversation</div>
@@ -581,109 +788,221 @@ export default function MessagesPage() {
                 </div>
 
                 <div className="chat-scroll" ref={scrollRef}>
-                  {msgsLoading ? <MsgSkeleton /> : messages.length === 0 ? (
-                    <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--t3)',fontSize:13,fontFamily:'var(--fm)',paddingTop:60}}>
+                  {msgsLoading ? (
+                    <MsgSkeleton />
+                  ) : messages.length === 0 ? (
+                    <div
+                      style={{
+                        flex: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "var(--t3)",
+                        fontSize: 13,
+                        fontFamily: "var(--fm)",
+                        paddingTop: 60,
+                      }}
+                    >
                       Say hello 👋
                     </div>
-                  ) : (() => {
-                    const groups = buildGroups(messages);
-                    const elements = [];
-                    let lastDate = null;
-                    // Build a member name map for group chats
-const memberMap = {};
+                  ) : (
+                    (() => {
+                      const groups = buildGroups(messages);
+                      const elements = [];
+                      let lastDate = null;
+                      // Build a member name map for group chats
+                      const memberMap = {};
 
-if (isGroup && activeConv) {
-  messages.forEach(m => {
-    if (m.senderId && m.senderDisplayName) {
-      memberMap[m.senderId] = {
-        displayName: m.senderDisplayName,
-        email: m.senderEmail
-      };
-    }
-  });
-}
-                    groups.forEach((group, gi) => {
-                      const isMine = group.sender === uid;
-                      const senderInfo = memberMap[group.sender];
-
-const senderDisplay = (!isMine && senderInfo)
-  ? getInitials(senderInfo.displayName, senderInfo.email)
-  : (!isMine ? otherIni : myIni);
-                      //const ini = isMine ? myIni : otherIni;
-                      const firstMsg = group.messages[0];
-                      const thisDate = dateLabel(firstMsg.sentAt);
-                      if (thisDate !== lastDate) {
-                        lastDate = thisDate;
-                        elements.push(<div className="date-div" key={`date-${gi}`}><span>{thisDate}</span></div>);
+                      if (isGroup && activeConv) {
+                        messages.forEach((m) => {
+                          if (m.senderId && m.senderDisplayName) {
+                            memberMap[m.senderId] = {
+                              displayName: m.senderDisplayName,
+                              email: m.senderEmail,
+                            };
+                          }
+                        });
                       }
-                      const msgElements = group.messages.map((msg, mi) => {
-                        const isLast = mi === group.messages.length - 1;
-                        const grouped = !isLast;
-                        const replySrc = msg.replyToId ? messages.find(m => m.id === msg.replyToId) : null;
-                        return (
-                          <div key={msg.id} className={`msg-row ${isMine ? 'mine' : 'theirs'}`}>
-                            <div className={`msg-mini-av ${isLast ? '' : 'ghost'}`}
-                              style={isLast ? (isMine ? {background:'var(--grad-fire)',color:'#fff'} : avStyle(group.sender)) : {}}
-                              onClick={() => !isMine && activeConv?.otherUserId && navigate(`/profile/${activeConv.otherUserId}`)}>
-                              {isLast ? (isMine ? myIni : getInitials(msg.senderDisplayName, msg.senderEmail)) : ''}
-                            </div>
-                            <div className="bubble-wrap">
-                              {isLast && (
-                                <div className="msg-meta">
-                                  <span>{fullTime(msg.sentAt)}</span>
-                                  {isMine && <span style={{color:'var(--t4)',fontSize:9}}>{msg._optimistic ? '◌' : '✓✓'}</span>}
-                                </div>
-                              )}
+                      groups.forEach((group, gi) => {
+                        const isMine = group.sender === uid;
+                        const senderInfo = memberMap[group.sender];
+
+                        const senderDisplay =
+                          !isMine && senderInfo
+                            ? getInitials(
+                                senderInfo.displayName,
+                                senderInfo.email,
+                              )
+                            : !isMine
+                              ? otherIni
+                              : myIni;
+                        //const ini = isMine ? myIni : otherIni;
+                        const firstMsg = group.messages[0];
+                        const thisDate = dateLabel(firstMsg.sentAt);
+                        if (thisDate !== lastDate) {
+                          lastDate = thisDate;
+                          elements.push(
+                            <div className="date-div" key={`date-${gi}`}>
+                              <span>{thisDate}</span>
+                            </div>,
+                          );
+                        }
+                        const msgElements = group.messages.map((msg, mi) => {
+                          const isLast = mi === group.messages.length - 1;
+                          const grouped = !isLast;
+                          const replySrc = msg.replyToId
+                            ? messages.find((m) => m.id === msg.replyToId)
+                            : null;
+                          return (
+                            <div
+                              key={msg.id}
+                              className={`msg-row ${isMine ? "mine" : "theirs"}`}
+                            >
                               <div
-                                className={`bubble ${grouped?'grouped':''} ${msg.isDeleted?'deleted':''} ${msg._optimistic?'optimistic':''}`}
-                                onDoubleClick={() => !msg.isDeleted && setReplyTo({
-                                  id: msg.id, content: msg.content,
-                                  who: isMine ? (user?.displayName || user?.email?.split('@')[0]) : otherName,
-                                })}
-                                title="Double-click to reply"
+                                className={`msg-mini-av ${isLast ? "" : "ghost"}`}
+                                style={
+                                  isLast
+                                    ? isMine
+                                      ? {
+                                          background: "var(--grad-fire)",
+                                          color: "#fff",
+                                        }
+                                      : avStyle(group.sender)
+                                    : {}
+                                }
+                                onClick={() =>
+                                  !isMine &&
+                                  activeConv?.otherUserId &&
+                                  navigate(`/profile/${activeConv.otherUserId}`)
+                                }
                               >
-                                {replySrc && (
-                                  <div className="reply-quote">
-                                    ↩ <strong>
-  {replySrc.senderId === uid
-    ? 'You'
-    : (replySrc.senderDisplayName || otherName)}
-  :
-</strong> {replySrc.content?.slice(0,70)}{replySrc.content?.length > 70 ? '…' : ''}
+                                {isLast
+                                  ? isMine
+                                    ? myIni
+                                    : getInitials(
+                                        msg.senderDisplayName,
+                                        msg.senderEmail,
+                                      )
+                                  : ""}
+                              </div>
+                              <div className="bubble-wrap">
+                                {isLast && (
+                                  <div className="msg-meta">
+                                    <span>{fullTime(msg.sentAt)}</span>
+                                    {isMine && (
+                                      <span
+                                        style={{
+                                          color: "var(--t4)",
+                                          fontSize: 9,
+                                        }}
+                                      >
+                                        {msg._optimistic ? "◌" : "✓✓"}
+                                      </span>
+                                    )}
                                   </div>
                                 )}
-                                {msg.isDeleted ? 'Message deleted' : msg.content}
+                                <div
+                                  className={`bubble ${grouped ? "grouped" : ""} ${msg.isDeleted ? "deleted" : ""} ${msg._optimistic ? "optimistic" : ""}`}
+                                  onDoubleClick={() =>
+                                    !msg.isDeleted &&
+                                    setReplyTo({
+                                      id: msg.id,
+                                      content: msg.content,
+                                      who: isMine
+                                        ? user?.displayName ||
+                                          user?.email?.split("@")[0]
+                                        : otherName,
+                                    })
+                                  }
+                                  title="Double-click to reply"
+                                >
+                                  {replySrc && (
+                                    <div className="reply-quote">
+                                      ↩{" "}
+                                      <strong>
+                                        {replySrc.senderId === uid
+                                          ? "You"
+                                          : replySrc.senderDisplayName ||
+                                            otherName}
+                                        :
+                                      </strong>{" "}
+                                      {replySrc.content?.slice(0, 70)}
+                                      {replySrc.content?.length > 70 ? "…" : ""}
+                                    </div>
+                                  )}
+                                  {msg.isDeleted
+                                    ? "Message deleted"
+                                    : msg.content}
+                                </div>
                               </div>
                             </div>
-                          </div>
+                          );
+                        });
+                        elements.push(
+                          <div className="msg-group" key={`group-${gi}`}>
+                            {msgElements}
+                          </div>,
                         );
                       });
-                      elements.push(<div className="msg-group" key={`group-${gi}`}>{msgElements}</div>);
-                    });
-                    return elements;
-                  })()}
+                      return elements;
+                    })()
+                  )}
                 </div>
 
                 {replyTo && (
                   <div className="reply-bar">
                     <div className="reply-bar-content">
-                      <div className="reply-bar-who">Replying to {replyTo.who}</div>
-                      <div className="reply-bar-txt">{replyTo.content?.slice(0,90)}{replyTo.content?.length > 90 ? '…' : ''}</div>
+                      <div className="reply-bar-who">
+                        Replying to {replyTo.who}
+                      </div>
+                      <div className="reply-bar-txt">
+                        {replyTo.content?.slice(0, 90)}
+                        {replyTo.content?.length > 90 ? "…" : ""}
+                      </div>
                     </div>
-                    <button className="reply-dismiss" onClick={() => setReplyTo(null)}>✕</button>
+                    <button
+                      className="reply-dismiss"
+                      onClick={() => setReplyTo(null)}
+                    >
+                      ✕
+                    </button>
                   </div>
                 )}
 
                 <div className="chat-compose">
-                  <textarea ref={inputRef} className="compose-box"
+                  <textarea
+                    ref={inputRef}
+                    className="compose-box"
                     placeholder={`Message ${otherName}…`}
-                    value={draft} rows={1}
-                    onChange={e => { setDraft(e.target.value); e.target.style.height='auto'; e.target.style.height=Math.min(e.target.scrollHeight,120)+'px'; }}
-                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } }}
+                    value={draft}
+                    rows={1}
+                    onChange={(e) => {
+                      setDraft(e.target.value);
+                      e.target.style.height = "auto";
+                      e.target.style.height =
+                        Math.min(e.target.scrollHeight, 120) + "px";
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMsg();
+                      }
+                    }}
                   />
-                  <button className="send-btn" onClick={sendMsg} disabled={!draft.trim() || sending} title="Send (Enter)">➤</button>
+                  <button
+                    className="send-btn"
+                    onClick={sendMsg}
+                    disabled={!draft.trim() || sending}
+                    title="Send (Enter)"
+                  >
+                    ➤
+                  </button>
                 </div>
-                {draft && <div className="compose-hint">Shift+Enter for new line · Enter to send</div>}
+                {draft && (
+                  <div className="compose-hint">
+                    Shift+Enter for new line · Enter to send
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -692,36 +1011,87 @@ const senderDisplay = (!isMine && senderInfo)
 
       {/* ── New DM / Group modal ── */}
       {dmOpen && (
-        <div className="modal-bg" onClick={e => e.target === e.currentTarget && setDmOpen(false)}>
+        <div
+          className="modal-bg"
+          onClick={(e) => e.target === e.currentTarget && setDmOpen(false)}
+        >
           <div className="modal">
             <div className="modal-head">
               <span className="modal-title">New Message</span>
-              <button className="modal-close" onClick={() => { setDmOpen(false); setDmTab('dm'); }}>✕</button>
+              <button
+                className="modal-close"
+                onClick={() => {
+                  setDmOpen(false);
+                  setDmTab("dm");
+                }}
+              >
+                ✕
+              </button>
             </div>
-            <div style={{display:'flex',borderBottom:'1px solid var(--b1)'}}>
-              {['dm','group'].map(t => (
-                <button key={t} onClick={() => setDmTab(t)}
-                  style={{flex:1,padding:'10px 0',border:'none',background:'transparent',color:dmTab===t?'var(--t1)':'var(--t3)',fontFamily:'var(--fb)',fontSize:12,fontWeight:700,textTransform:'uppercase',letterSpacing:'1px',cursor:'pointer',borderBottom:dmTab===t?'2px solid var(--red)':'2px solid transparent',transition:'all .15s'}}>
-                  {t === 'dm' ? '💬 Direct' : '👥 Group'}
+            <div
+              style={{ display: "flex", borderBottom: "1px solid var(--b1)" }}
+            >
+              {["dm", "group"].map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setDmTab(t)}
+                  style={{
+                    flex: 1,
+                    padding: "10px 0",
+                    border: "none",
+                    background: "transparent",
+                    color: dmTab === t ? "var(--t1)" : "var(--t3)",
+                    fontFamily: "var(--fb)",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "1px",
+                    cursor: "pointer",
+                    borderBottom:
+                      dmTab === t
+                        ? "2px solid var(--red)"
+                        : "2px solid transparent",
+                    transition: "all .15s",
+                  }}
+                >
+                  {t === "dm" ? "💬 Direct" : "👥 Group"}
                 </button>
               ))}
             </div>
-            {dmTab === 'dm' ? (
+            {dmTab === "dm" ? (
               <>
                 <div className="modal-body">
                   {dmErr && <div className="modal-err">⚠ {dmErr}</div>}
                   <div className="mfield">
                     <label>Student Email or User ID</label>
-                    <input autoFocus placeholder="classmate@university.edu" value={dmEmail}
-                      onChange={e => { setDmEmail(e.target.value); setDmErr(''); }}
-                      onKeyDown={e => e.key === 'Enter' && startDm()}/>
+                    <input
+                      autoFocus
+                      placeholder="classmate@university.edu"
+                      value={dmEmail}
+                      onChange={(e) => {
+                        setDmEmail(e.target.value);
+                        setDmErr("");
+                      }}
+                      onKeyDown={(e) => e.key === "Enter" && startDm()}
+                    />
                   </div>
-                  <p className="modal-hint">Enter a student's email to start a direct conversation.</p>
+                  <p className="modal-hint">
+                    Enter a student's email to start a direct conversation.
+                  </p>
                 </div>
                 <div className="modal-foot">
-                  <button className="btn-outline-sm" onClick={() => setDmOpen(false)}>Cancel</button>
-                  <button className="btn-fire-sm" onClick={startDm} disabled={!dmEmail.trim() || dmLoading}>
-                    {dmLoading ? 'Looking up…' : 'Start Chat →'}
+                  <button
+                    className="btn-outline-sm"
+                    onClick={() => setDmOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="btn-fire-sm"
+                    onClick={startDm}
+                    disabled={!dmEmail.trim() || dmLoading}
+                  >
+                    {dmLoading ? "Looking up…" : "Start Chat →"}
                   </button>
                 </div>
               </>
@@ -731,21 +1101,45 @@ const senderDisplay = (!isMine && senderInfo)
                   {groupErr && <div className="modal-err">⚠ {groupErr}</div>}
                   <div className="mfield">
                     <label>Group Name</label>
-                    <input autoFocus placeholder="e.g. CS Study Squad" value={groupName}
-                      onChange={e => { setGroupName(e.target.value); setGroupErr(''); }}/>
+                    <input
+                      autoFocus
+                      placeholder="e.g. CS Study Squad"
+                      value={groupName}
+                      onChange={(e) => {
+                        setGroupName(e.target.value);
+                        setGroupErr("");
+                      }}
+                    />
                   </div>
                   <div className="mfield">
                     <label>Member Emails (comma-separated)</label>
-                    <input placeholder="alice@uni.edu, bob@uni.edu" value={groupEmails}
-                      onChange={e => { setGroupEmails(e.target.value); setGroupErr(''); }}
-                      onKeyDown={e => e.key === 'Enter' && startGroupChat()}/>
+                    <input
+                      placeholder="alice@uni.edu, bob@uni.edu"
+                      value={groupEmails}
+                      onChange={(e) => {
+                        setGroupEmails(e.target.value);
+                        setGroupErr("");
+                      }}
+                      onKeyDown={(e) => e.key === "Enter" && startGroupChat()}
+                    />
                   </div>
-                  <p className="modal-hint">You will be added as the group owner automatically.</p>
+                  <p className="modal-hint">
+                    You will be added as the group owner automatically.
+                  </p>
                 </div>
                 <div className="modal-foot">
-                  <button className="btn-outline-sm" onClick={() => setDmOpen(false)}>Cancel</button>
-                  <button className="btn-fire-sm" onClick={startGroupChat} disabled={!groupName.trim() || groupLoading}>
-                    {groupLoading ? 'Creating…' : 'Create Group Chat →'}
+                  <button
+                    className="btn-outline-sm"
+                    onClick={() => setDmOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="btn-fire-sm"
+                    onClick={startGroupChat}
+                    disabled={!groupName.trim() || groupLoading}
+                  >
+                    {groupLoading ? "Creating…" : "Create Group Chat →"}
                   </button>
                 </div>
               </>

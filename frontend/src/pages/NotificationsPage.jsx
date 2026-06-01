@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth, getInitials } from '../contexts/AuthContext';
-import Layout from '../components/Layout';
-import notificationService from '../services/notificationService';
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth, getInitials } from "../contexts/AuthContext";
+import Layout from "../components/Layout";
+import notificationService from "../services/notificationService";
 
 /* ─── CSS ────────────────────────────────────────────────────────────────── */
 const css = `
@@ -51,7 +51,10 @@ const css = `
   content:'';position:absolute;top:0;left:0;right:0;height:1px;
   background:linear-gradient(90deg,rgba(232,25,44,.22),transparent);
 }
-
+@keyframes toast-up {
+  from { opacity:0; transform:translateX(-50%) translateY(8px); }
+  to   { opacity:1; transform:translateX(-50%) translateY(0); }
+}
 .notif-icon{position:relative;flex-shrink:0;}
 .notif-av{
   width:44px;height:44px;border-radius:11px;
@@ -97,78 +100,153 @@ const css = `
    read but a new fetch returns isRead=true from DB — however the dot logic
    below merges DB state with this local set as the source of truth).
 ──────────────────────────────────────────────────────────────────────────── */
-const READ_KEY = 'learnex_read_notifs';
+const READ_KEY = "learnex_read_notifs";
 
 function getLocalRead() {
-  try { return new Set(JSON.parse(localStorage.getItem(READ_KEY) || '[]')); }
-  catch { return new Set(); }
+  try {
+    return new Set(JSON.parse(localStorage.getItem(READ_KEY) || "[]"));
+  } catch {
+    return new Set();
+  }
 }
 
 function addLocalRead(ids) {
   try {
     const s = getLocalRead();
-    (Array.isArray(ids) ? ids : [ids]).forEach(id => s.add(id));
+    (Array.isArray(ids) ? ids : [ids]).forEach((id) => s.add(id));
     // Keep at most 500 entries to avoid bloat
     const arr = [...s];
     if (arr.length > 500) arr.splice(0, arr.length - 500);
     localStorage.setItem(READ_KEY, JSON.stringify(arr));
-  } catch { /* no-op */ }
+  } catch {
+    /* no-op */
+  }
 }
 
 /* ─── Type metadata ─────────────────────────────────────────────────────── */
 const TYPE_META = {
-  like:               { bg:'rgba(74,158,255,.15)',  color:'#4a9eff', emoji:'👍' },
-  love:               { bg:'rgba(212,83,126,.15)',  color:'#D4537E', emoji:'❤️'  },
-  comment:            { bg:'rgba(239,159,39,.15)',  color:'#EF9F27', emoji:'💬' },
-  mention:            { bg:'rgba(155,89,245,.15)',  color:'#9b59f5', emoji:'@'  },
-  follow:             { bg:'rgba(34,197,94,.15)',   color:'#22c55e', emoji:'➕' },
-  message:            { bg:'rgba(74,158,255,.15)',  color:'#4a9eff', emoji:'✉'  },
-  group_invite:       { bg:'rgba(232,25,44,.15)',   color:'#E8192C', emoji:'👥' },
-  group_join_request: { bg:'rgba(201,168,76,.15)',  color:'#C9A84C', emoji:'🔔' },
-  friend_request:     { bg:'rgba(34,197,94,.15)',   color:'#22c55e', emoji:'🤝' },
-  share:              { bg:'rgba(155,89,245,.15)',  color:'#9b59f5', emoji:'↗'  },
-  poll_ended:         { bg:'rgba(239,159,39,.15)',  color:'#EF9F27', emoji:'📊' },
+  like: { bg: "rgba(74,158,255,.15)", color: "#4a9eff", emoji: "👍" },
+  love: { bg: "rgba(212,83,126,.15)", color: "#D4537E", emoji: "❤️" },
+  comment: { bg: "rgba(239,159,39,.15)", color: "#EF9F27", emoji: "💬" },
+  mention: { bg: "rgba(155,89,245,.15)", color: "#9b59f5", emoji: "@" },
+  follow: { bg: "rgba(34,197,94,.15)", color: "#22c55e", emoji: "➕" },
+  message: { bg: "rgba(74,158,255,.15)", color: "#4a9eff", emoji: "✉" },
+  group_invite: { bg: "rgba(232,25,44,.15)", color: "#E8192C", emoji: "👥" },
+  group_join_request: {
+    bg: "rgba(201,168,76,.15)",
+    color: "#C9A84C",
+    emoji: "🔔",
+  },
+  friend_request: { bg: "rgba(34,197,94,.15)", color: "#22c55e", emoji: "🤝" },
+  share: { bg: "rgba(155,89,245,.15)", color: "#9b59f5", emoji: "↗" },
+  poll_ended: { bg: "rgba(239,159,39,.15)", color: "#EF9F27", emoji: "📊" },
 };
-const DEFAULT_META = { bg:'var(--s3)', color:'var(--t2)', emoji:'🔔' };
+const DEFAULT_META = { bg: "var(--s3)", color: "var(--t2)", emoji: "🔔" };
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 function buildText(n) {
-  const actor = n.payload?.actorName || 'Someone';
+  const actor = n.payload?.actorName || "Someone";
   switch (n.type) {
-    case 'like':               return <><strong>{actor}</strong> reacted to your post</>;
-    case 'love':               return <><strong>{actor}</strong> loved your post</>;
-    case 'comment':            return <><strong>{actor}</strong> commented on your post</>;
-    case 'mention':            return <><strong>{actor}</strong> mentioned you in a {n.payload?.targetType || 'post'}</>;
-    case 'follow':             return <><strong>{actor}</strong> started following you</>;
-    case 'message':            return <><strong>{actor}</strong> sent you a message</>;
-    case 'group_invite':       return <><strong>{actor}</strong> invited you to a group</>;
-    case 'group_join_request': return <><strong>{actor}</strong> requested to join your group</>;
-    case 'friend_request':     return <><strong>{actor}</strong> sent you a connection request</>;
-    case 'share':              return <><strong>{actor}</strong> shared your post</>;
-    case 'poll_ended':         return <>A poll you voted in has ended</>;
-    default:                   return <>{actor} did something</>;
+    case "like":
+      return (
+        <>
+          <strong>{actor}</strong> reacted to your post
+        </>
+      );
+    case "love":
+      return (
+        <>
+          <strong>{actor}</strong> loved your post
+        </>
+      );
+    case "comment":
+      return (
+        <>
+          <strong>{actor}</strong> commented on your post
+        </>
+      );
+    case "mention":
+      return (
+        <>
+          <strong>{actor}</strong> mentioned you in a{" "}
+          {n.payload?.targetType || "post"}
+        </>
+      );
+    case "follow":
+      return (
+        <>
+          <strong>{actor}</strong> started following you
+        </>
+      );
+    case "message":
+      return (
+        <>
+          <strong>{actor}</strong> sent you a message
+        </>
+      );
+    case "group_invite":
+      return (
+        <>
+          <strong>{actor}</strong> invited you to a group
+        </>
+      );
+    case "group_join_request":
+      return (
+        <>
+          <strong>{actor}</strong> requested to join your group
+        </>
+      );
+    case "friend_request":
+      return (
+        <>
+          <strong>{actor}</strong> sent you a connection request
+        </>
+      );
+    case "share":
+      return (
+        <>
+          <strong>{actor}</strong> shared your post
+        </>
+      );
+    case "poll_ended":
+      return <>A poll you voted in has ended</>;
+    default:
+      return <>{actor} did something</>;
   }
 }
 
 function handleNav(n, navigate) {
   const p = n.payload || {};
   switch (n.type) {
-    case 'like': case 'love': case 'comment': case 'mention': case 'share':
-      if (p.postId) navigate(`/post/${p.postId}`); break;
-    case 'follow': case 'friend_request':
-      if (p.actorId) navigate(`/profile/${p.actorId}`); break;
-    case 'message':
-      navigate(p.conversationId ? `/messages/${p.conversationId}` : '/messages'); break;
-    case 'group_invite': case 'group_join_request':
-      navigate('/groups'); break;
-    default: break;
+    case "like":
+    case "love":
+    case "comment":
+    case "mention":
+    case "share":
+      if (p.postId) navigate(`/post/${p.postId}`);
+      break;
+    case "follow":
+    case "friend_request":
+      if (p.actorId) navigate(`/profile/${p.actorId}`);
+      break;
+    case "message":
+      navigate(
+        p.conversationId ? `/messages/${p.conversationId}` : "/messages",
+      );
+      break;
+    case "group_invite":
+    case "group_join_request":
+      navigate("/groups");
+      break;
+    default:
+      break;
   }
 }
 
 function timeAgo(iso) {
-  if (!iso) return '';
+  if (!iso) return "";
   const m = Math.floor((Date.now() - new Date(iso)) / 60000);
-  if (m < 1) return 'just now';
+  if (m < 1) return "just now";
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
@@ -179,12 +257,26 @@ function timeAgo(iso) {
 function Skeleton() {
   return (
     <div className="notif-skel">
-      {[1, 2, 3, 4, 5].map(i => (
+      {[1, 2, 3, 4, 5].map((i) => (
         <div key={i} className="nskel-row">
-          <div className="sk" style={{ width: 44, height: 44, borderRadius: 11, flexShrink: 0 }} />
+          <div
+            className="sk"
+            style={{ width: 44, height: 44, borderRadius: 11, flexShrink: 0 }}
+          />
           <div style={{ flex: 1 }}>
-            <div className="sk" style={{ height: 13, width: '58%', marginBottom: 8, borderRadius: 5 }} />
-            <div className="sk" style={{ height: 10, width: '22%', borderRadius: 4 }} />
+            <div
+              className="sk"
+              style={{
+                height: 13,
+                width: "58%",
+                marginBottom: 8,
+                borderRadius: 5,
+              }}
+            />
+            <div
+              className="sk"
+              style={{ height: 10, width: "22%", borderRadius: 4 }}
+            />
           </div>
         </div>
       ))}
@@ -196,12 +288,12 @@ function Skeleton() {
 export default function NotificationsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-
-  const [notifs,      setNotifs]      = useState([]);
+  const [markAllDone, setMarkAllDone] = useState(false);
+  const [notifs, setNotifs] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [loading,     setLoading]     = useState(true);
-  const [filter,      setFilter]      = useState('all');
-  const [hasNext,     setHasNext]     = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [hasNext, setHasNext] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
   // Local set of IDs the user has read this session + previous sessions
@@ -223,14 +315,16 @@ export default function NotificationsPage() {
     pageRef.current = 0;
     setLoading(true);
     notificationService
-      .getNotifications(0, 20, filter === 'unread')
-      .then(res => {
+      .getNotifications(0, 20, filter === "unread")
+      .then((res) => {
         const data = res?.data ?? res;
         const fetched = data.notifications ?? [];
         setNotifs(fetched);
         // Recalculate unread count accounting for locally-read IDs
         const localReadSet = getLocalRead();
-        const trueUnread = fetched.filter(n => !n.isRead && !localReadSet.has(n.id)).length;
+        const trueUnread = fetched.filter(
+          (n) => !n.isRead && !localReadSet.has(n.id),
+        ).length;
         setUnreadCount(data.unreadCount ?? trueUnread);
         setHasNext(data.hasNext ?? false);
         pageRef.current = 1;
@@ -244,14 +338,19 @@ export default function NotificationsPage() {
     setLoadingMore(true);
     try {
       const res = await notificationService.getNotifications(
-        pageRef.current, 20, filter === 'unread'
+        pageRef.current,
+        20,
+        filter === "unread",
       );
       const data = res?.data ?? res;
-      setNotifs(prev => [...prev, ...(data.notifications ?? [])]);
+      setNotifs((prev) => [...prev, ...(data.notifications ?? [])]);
       setHasNext(data.hasNext ?? false);
       pageRef.current += 1;
-    } catch { /* no-op */ }
-    finally { setLoadingMore(false); }
+    } catch {
+      /* no-op */
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   // Click a notification: mark read on server + locally, then navigate
@@ -259,35 +358,42 @@ export default function NotificationsPage() {
     if (isUnread(n)) {
       // Optimistic local update immediately — no waiting for server
       markLocalRead([n.id]);
-      setNotifs(prev => prev.map(x => x.id === n.id ? { ...x, isRead: true } : x));
-      setUnreadCount(c => Math.max(0, c - 1));
+      setNotifs((prev) =>
+        prev.map((x) => (x.id === n.id ? { ...x, isRead: true } : x)),
+      );
+      setUnreadCount((c) => Math.max(0, c - 1));
       if (displayedUnread - 1 <= 0) {
-  window.dispatchEvent(new Event('learnex:notifications-cleared'));
-}
+        window.dispatchEvent(new Event("learnex:notifications-cleared"));
+      }
       // Fire-and-forget server update
-      notificationService.markAsRead(n.id).catch(() => {/* no-op */});
+      notificationService.markAsRead(n.id).catch(() => {
+        /* no-op */
+      });
     }
     handleNav(n, navigate);
   };
 
   // Mark all read: server + local cache
   const markAll = async () => {
-  try {
-    await notificationService.markAllAsRead();
-    const allIds = notifs.map(n => n.id);
-    markLocalRead(allIds);
-    setNotifs(prev => prev.map(n => ({ ...n, isRead: true })));
-    setUnreadCount(0);
-    window.dispatchEvent(new Event('learnex:notifications-cleared'));
-  } catch { /* no-op */ }
-};
+    try {
+      await notificationService.markAllAsRead();
+      const allIds = notifs.map((n) => n.id);
+      markLocalRead(allIds);
+      setNotifs((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+      window.dispatchEvent(new Event("learnex:notifications-cleared"));
+      setMarkAllDone(true);
+      setTimeout(() => setMarkAllDone(false), 2500);
+    } catch {
+      /* no-op */
+    }
+  };
 
   // Recalculate displayed unread count using merged local+server state
-  const displayedUnread = notifs.filter(n => isUnread(n)).length;
+  const displayedUnread = notifs.filter((n) => isUnread(n)).length;
 
-  const displayed = filter === 'unread'
-    ? notifs.filter(n => isUnread(n))
-    : notifs;
+  const displayed =
+    filter === "unread" ? notifs.filter((n) => isUnread(n)) : notifs;
 
   return (
     <>
@@ -303,17 +409,25 @@ export default function NotificationsPage() {
               )}
             </div>
             {displayedUnread > 0 && (
-              <button className="btn-ghost" onClick={markAll}>✓ Mark all read</button>
+              <button className="btn-ghost" onClick={markAll}>
+                ✓ Mark all read
+              </button>
             )}
           </div>
 
           {/* Filter tabs */}
           <div className="ftabs">
-            <button className={`ftab ${filter === 'all' ? 'on' : ''}`} onClick={() => setFilter('all')}>
+            <button
+              className={`ftab ${filter === "all" ? "on" : ""}`}
+              onClick={() => setFilter("all")}
+            >
               All
             </button>
-            <button className={`ftab ${filter === 'unread' ? 'on' : ''}`} onClick={() => setFilter('unread')}>
-              Unread {displayedUnread > 0 ? `(${displayedUnread})` : ''}
+            <button
+              className={`ftab ${filter === "unread" ? "on" : ""}`}
+              onClick={() => setFilter("unread")}
+            >
+              Unread {displayedUnread > 0 ? `(${displayedUnread})` : ""}
             </button>
           </div>
 
@@ -324,35 +438,43 @@ export default function NotificationsPage() {
             <div className="lx-empty">
               <div className="lx-empty-ic">🔔</div>
               <div className="lx-empty-t">
-                {filter === 'unread' ? 'All Caught Up' : 'No Notifications'}
+                {filter === "unread" ? "All Caught Up" : "No Notifications"}
               </div>
               <p className="lx-empty-s">
-                {filter === 'unread'
-                  ? 'You have no unread notifications.'
-                  : 'Notifications will appear here.'}
+                {filter === "unread"
+                  ? "You have no unread notifications."
+                  : "Notifications will appear here."}
               </p>
             </div>
           ) : (
             <div className="notif-list">
               {displayed.map((n, i) => {
-                const unread    = isUnread(n);
-                const meta      = TYPE_META[n.type] || DEFAULT_META;
-                const actorName = n.payload?.actorName || '';
-                const actorIni  = actorName ? getInitials(actorName, '') : meta.emoji;
+                const unread = isUnread(n);
+                const meta = TYPE_META[n.type] || DEFAULT_META;
+                const actorName = n.payload?.actorName || "";
+                const actorIni = actorName
+                  ? getInitials(actorName, "")
+                  : meta.emoji;
 
                 return (
                   <div
                     key={n.id}
-                    className={`notif ${unread ? 'unread' : ''}`}
+                    className={`notif ${unread ? "unread" : ""}`}
                     style={{ animationDelay: `${Math.min(i, 10) * 40}ms` }}
                     onClick={() => handleClick(n)}
                   >
                     <div className="notif-icon">
-                      <div className="notif-av" style={{ background: meta.bg, color: meta.color }}>
+                      <div
+                        className="notif-av"
+                        style={{ background: meta.bg, color: meta.color }}
+                      >
                         {actorName ? actorIni : meta.emoji}
                       </div>
                       {actorName && (
-                        <div className="notif-badge" style={{ background: meta.bg, color: meta.color }}>
+                        <div
+                          className="notif-badge"
+                          style={{ background: meta.bg, color: meta.color }}
+                        >
                           {meta.emoji}
                         </div>
                       )}
@@ -370,14 +492,41 @@ export default function NotificationsPage() {
 
               {hasNext && (
                 <div className="load-more-row">
-                  <button className="lm-btn" onClick={loadMore} disabled={loadingMore}>
-                    {loadingMore ? 'Loading…' : 'Load more'}
+                  <button
+                    className="lm-btn"
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                  >
+                    {loadingMore ? "Loading…" : "Load more"}
                   </button>
                 </div>
               )}
             </div>
           )}
         </main>
+        {markAllDone && (
+          <div
+            style={{
+              position: "fixed",
+              bottom: 80,
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: "var(--s2)",
+              border: "1px solid var(--b2)",
+              borderRadius: 10,
+              padding: "10px 22px",
+              fontSize: 13,
+              color: "var(--t1)",
+              fontFamily: "var(--fm)",
+              zIndex: 9999,
+              boxShadow: "0 4px 20px rgba(0,0,0,.5)",
+              animation: "toast-up .25s var(--ease)",
+              pointerEvents: "none",
+            }}
+          >
+            ✓ All notifications marked as read
+          </div>
+        )}
       </Layout>
     </>
   );

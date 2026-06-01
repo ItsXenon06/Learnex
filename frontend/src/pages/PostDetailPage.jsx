@@ -222,12 +222,20 @@ function timeAgo(iso) {
   if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
 }
-function renderText(text) {
+function renderText(text, navigate) {
   if (!text) return null;
   return text.split(/(\#\w+|@\w+)/g).map((p, i) => {
     if (p.startsWith("#"))
       return (
-        <span key={i} className="pd-tag">
+        <span
+          key={i}
+          className="pd-tag"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/hashtag/${p.slice(1)}`);
+          }}
+          style={{ cursor: "pointer" }}
+        >
           {p}
         </span>
       );
@@ -691,7 +699,9 @@ export default function PostDetailPage() {
             </div>
 
             {post.content && (
-              <div className="pd-body">{renderText(post.content)}</div>
+              <div className="pd-body">
+                {renderText(post.content, navigate)}
+              </div>
             )}
 
             {attachments.length > 0 && (

@@ -812,6 +812,7 @@ function PostCard({
   showCopyToast,
 }) {
   const navigate = useNavigate();
+  const longPressTimer = useRef(null);
   const [post, setPost] = useState(initPost);
   const [myRx, setMyRx] = useState(initPost.myReaction ?? null);
   const [showCm, setShowCm] = useState(false);
@@ -893,14 +894,13 @@ function PostCard({
 
   const handleCardClick = (e) => {
     const tag = e.target.tagName;
-    if (["BUTTON", "INPUT", "TEXTAREA", "A", "IMG"].includes(tag)) return;
-    if (
-      e.target.closest(".c-more-wrap") ||
-      e.target.closest(".comments") ||
-      e.target.closest(".rx-pick") ||
-      e.target.closest(".rx-trigger")
-    )
-      return;
+    if (["BUTTON", "INPUT", "TEXTAREA", "A"].includes(tag)) return;
+    if (e.target.closest(".c-more-wrap")) return;
+    if (e.target.closest(".comments")) return;
+    if (e.target.closest(".rx-pick")) return;
+    if (e.target.closest(".rx-trigger")) return;
+    if (e.target.closest(".card-media")) return; // lightbox handles its own click
+    if (e.target.closest(".card-tags")) return;
     navigate(`/post/${post.id}`);
   };
 
@@ -1183,6 +1183,17 @@ function PostCard({
               className={`ca-btn ${myRx ? "liked" : ""}`}
               onClick={handleReactClick}
               disabled={rxLoading}
+              onTouchStart={(e) => {
+                longPressTimer.current = setTimeout(() => {
+                  setRxPickerOpen(true);
+                }, 500);
+              }}
+              onTouchEnd={() => {
+                clearTimeout(longPressTimer.current);
+              }}
+              onTouchMove={() => {
+                clearTimeout(longPressTimer.current);
+              }}
             >
               <span style={{ fontSize: 16, lineHeight: 1 }}>
                 {myRx ? (RX_EMOJI[myRx] ?? "👍") : "👍"}
@@ -1296,8 +1307,20 @@ function PostCard({
                 className="cm-go"
                 onClick={(e) => sendComment(e)}
                 disabled={!cmTxt.trim() || cmSending}
+                title={cmSending ? "Sending…" : "Send comment"}
               >
-                ➤
+                {cmSending ? (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      animation: "lx-pulse 1s ease infinite",
+                    }}
+                  >
+                    ⏳
+                  </span>
+                ) : (
+                  "➤"
+                )}
               </button>
             </div>
           </div>
@@ -1425,7 +1448,20 @@ function RightPanel({ followed, onToggleFollow }) {
     <>
       <div className="wg">
         <div className="wg-head">
-          <div className="wg-title">🔥 Trending</div>
+          <div className="wg-title">
+            🔥 Trending{" "}
+            <span
+              style={{
+                fontSize: 9,
+                color: "var(--t4)",
+                fontWeight: 400,
+                letterSpacing: 0,
+                textTransform: "none",
+              }}
+            >
+              (sample)
+            </span>
+          </div>
           <button className="wg-more">See all</button>
         </div>
         {TRENDS.map((t, i) => (
@@ -1456,9 +1492,10 @@ function RightPanel({ followed, onToggleFollow }) {
               fontSize: 12,
               color: "var(--t3)",
               fontFamily: "var(--fm)",
+              lineHeight: 1.7,
             }}
           >
-            No suggestions yet
+            Discover students by searching or exploring posts.
           </div>
         ) : (
           suggestions.map((s) => {
@@ -1860,6 +1897,24 @@ export default function FeedPage() {
               <button className="c-vis" onClick={cycleVisibility}>
                 {visLabel[visibility]}
               </button>
+              {draft.length > 0 && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    color:
+                      draft.length > 900
+                        ? "var(--red)"
+                        : draft.length > 700
+                          ? "#EF9F27"
+                          : "var(--t4)",
+                    fontFamily: "var(--fm)",
+                    marginRight: 4,
+                    transition: "color .2s",
+                  }}
+                >
+                  {draft.length}/1000
+                </span>
+              )}
               <div className="c-gap" />
               {(draft.length > 0 || mediaFiles.length > 0) && (
                 <span className="c-hint">Ctrl+Enter</span>
@@ -1887,13 +1942,38 @@ export default function FeedPage() {
             [1, 2, 3].map((i) => <PostSkeleton key={i} />)
           ) : posts.length === 0 ? (
             <div className="lx-empty">
-              <div className="lx-empty-ic">📭</div>
-              <div className="lx-empty-t">Nothing Here Yet</div>
+              <div className="lx-empty-ic">
+                {tab === "following" ? "👥" : "📭"}
+              </div>
+              <div className="lx-empty-t">
+                {tab === "following" ? "No Posts Yet" : "Nothing Here"}
+              </div>
               <p className="lx-empty-s">
                 {tab === "following"
-                  ? "Follow students to see their posts here."
-                  : "No posts to discover right now."}
+                  ? "Follow students to see their posts, or explore what's trending."
+                  : "No public posts right now. Check back soon."}
               </p>
+              {tab === "following" && (
+                <button
+                  onClick={() => setTab("discover")}
+                  style={{
+                    marginTop: 16,
+                    padding: "10px 24px",
+                    background: "var(--grad-fire)",
+                    border: "none",
+                    borderRadius: 8,
+                    color: "#fff",
+                    fontSize: 13,
+                    fontWeight: 800,
+                    fontFamily: "var(--fb)",
+                    letterSpacing: ".5px",
+                    cursor: "pointer",
+                    boxShadow: "0 3px 14px var(--red-glow)",
+                  }}
+                >
+                  Discover Students →
+                </button>
+              )}
             </div>
           ) : (
             <>

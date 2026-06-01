@@ -2,10 +2,10 @@
  * Layout.jsx — Shared shell for all authenticated pages.
  */
 
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth, getInitials } from '../contexts/AuthContext';
-import { useTranslation } from 'react-i18next';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth, getInitials } from "../contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 
 /* ─── Shared CSS ──────────────────────────────────────────────────────────── */
 export const sharedCss = `
@@ -173,20 +173,44 @@ body{
 
 /* ─── Nav config ─────────────────────────────────────────────────────────── */
 const NAV_ITEMS = [
-  { key: 'feed',          icon: '🏠', labelKey: 'nav.feed',          path: '/feed' },
-  { key: 'notifications', icon: '🔔', labelKey: 'nav.notifications', path: '/notifications', badgeKey: 'unreadNotif' },
-  { key: 'messages',      icon: '💬', labelKey: 'nav.messages',      path: '/messages',      badgeKey: 'unreadMsgs' },
-  { key: 'groups',        icon: '👥', labelKey: 'nav.groups',        path: '/groups' },
-  { key: 'saved',         icon: '🔖', labelKey: 'nav.saved',         path: '/saved' },
-  { key: 'courses',       icon: '🎓', labelKey: 'nav.courses',       path: '/courses' },
+  { key: "feed", icon: "🏠", labelKey: "nav.feed", path: "/feed" },
+  {
+    key: "notifications",
+    icon: "🔔",
+    labelKey: "nav.notifications",
+    path: "/notifications",
+    badgeKey: "unreadNotif",
+  },
+  {
+    key: "messages",
+    icon: "💬",
+    labelKey: "nav.messages",
+    path: "/messages",
+    badgeKey: "unreadMsgs",
+  },
+  { key: "groups", icon: "👥", labelKey: "nav.groups", path: "/groups" },
+  { key: "saved", icon: "🔖", labelKey: "nav.saved", path: "/saved" },
+  { key: "courses", icon: "🎓", labelKey: "nav.courses", path: "/courses" },
 ];
 
 const MOBILE_NAV = [
-  { key: 'feed',          icon: '🏠', labelKey: 'nav.feed',     path: '/feed' },
-  { key: 'notifications', icon: '🔔', labelKey: 'nav.notifications',   path: '/notifications', badgeKey: 'unreadNotif' },
-  { key: 'messages',      icon: '💬', labelKey: 'nav.messages', path: '/messages',      badgeKey: 'unreadMsgs' },
-  { key: 'groups',        icon: '👥', labelKey: 'nav.groups',   path: '/groups' },
-  { key: 'profile',       icon: '👤', labelKey: 'nav.profile' },
+  { key: "feed", icon: "🏠", labelKey: "nav.feed", path: "/feed" },
+  {
+    key: "notifications",
+    icon: "🔔",
+    labelKey: "nav.notifications",
+    path: "/notifications",
+    badgeKey: "unreadNotif",
+  },
+  {
+    key: "messages",
+    icon: "💬",
+    labelKey: "nav.messages",
+    path: "/messages",
+    badgeKey: "unreadMsgs",
+  },
+  { key: "groups", icon: "👥", labelKey: "nav.groups", path: "/groups" },
+  { key: "profile", icon: "👤", labelKey: "nav.profile" },
 ];
 
 /* ─── Layout ─────────────────────────────────────────────────────────────── */
@@ -196,26 +220,26 @@ export default function Layout({
   rightPanel,
   profile,
   unreadNotif = 0,
-  unreadMsgs  = 0,
+  unreadMsgs = 0,
 }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
 
-  const currentLang = i18n.resolvedLanguage || 'en';
+  const currentLang = i18n.resolvedLanguage || "en";
   const setLanguage = (lng) => {
     i18n.changeLanguage(lng);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('learnex_lang', lng);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("learnex_lang", lng);
     }
   };
 
   const uid = user?.userId ?? user?.id;
 
   // ── All state declarations at top level ───────────────────────────────────
-  const [searchVal,      setSearchVal]      = useState('');
+  const [searchVal, setSearchVal] = useState("");
   const [liveUnreadNotif, setLiveUnreadNotif] = useState(unreadNotif);
-  const [ownProfile,     setOwnProfile]     = useState(null);
+  const [ownProfile, setOwnProfile] = useState(null);
 
   // ── Effect 1: sync unreadNotif prop → local state ─────────────────────────
   useEffect(() => {
@@ -226,23 +250,34 @@ export default function Layout({
   useEffect(() => {
     if (!uid) return;
     const token = (() => {
-      try { return JSON.parse(localStorage.getItem('learnex_auth') || '{}')?.token || ''; }
-      catch { return ''; }
+      try {
+        return (
+          JSON.parse(localStorage.getItem("learnex_auth") || "{}")?.token || ""
+        );
+      } catch {
+        return "";
+      }
     })();
     if (!token) return;
     fetch(`/api/users/${uid}`, {
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
     })
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setOwnProfile(data?.data ?? data); })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) setOwnProfile(data?.data ?? data);
+      })
       .catch(() => {});
   }, [uid]);
 
   // ── Effect 3: listen for notifications-cleared event from NotificationsPage
   useEffect(() => {
     const handler = () => setLiveUnreadNotif(0);
-    window.addEventListener('learnex:notifications-cleared', handler);
-    return () => window.removeEventListener('learnex:notifications-cleared', handler);
+    window.addEventListener("learnex:notifications-cleared", handler);
+    return () =>
+      window.removeEventListener("learnex:notifications-cleared", handler);
   }, []);
 
   // ── Effect 4: poll unread notification count every 30s ────────────────────
@@ -250,17 +285,28 @@ export default function Layout({
     if (!uid) return;
     const fetchUnread = () => {
       const token = (() => {
-        try { return JSON.parse(localStorage.getItem('learnex_auth') || '{}')?.token || ''; }
-        catch { return ''; }
+        try {
+          return (
+            JSON.parse(localStorage.getItem("learnex_auth") || "{}")?.token ||
+            ""
+          );
+        } catch {
+          return "";
+        }
       })();
       if (!token) return;
-      fetch('/api/notifications?page=0&size=1&unreadOnly=true', {
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      fetch("/api/notifications?page=0&size=1&unreadOnly=true", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       })
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (!data) return;
           const count = data?.data?.unreadCount ?? data?.unreadCount ?? 0;
-          setLiveUnreadNotif(count);
+          // Only update if count changed — prevents topbar flash on every poll
+          setLiveUnreadNotif((prev) => (prev !== count ? count : prev));
         })
         .catch(() => {});
     };
@@ -271,14 +317,24 @@ export default function Layout({
 
   // ── Derived values ────────────────────────────────────────────────────────
   const activeProfile = ownProfile ?? profile;
-  const avatarUrl     = activeProfile?.avatarUrl ?? null;
-  const displayName   = activeProfile?.displayName || user?.displayName || user?.email?.split('@')[0] || 'Student';
-  const ini           = getInitials(activeProfile?.displayName || user?.displayName, user?.email);
+  const avatarUrl = activeProfile?.avatarUrl ?? null;
+  const displayName =
+    activeProfile?.displayName ||
+    user?.displayName ||
+    user?.email?.split("@")[0] ||
+    "Student";
+  const ini = getInitials(
+    activeProfile?.displayName || user?.displayName,
+    user?.email,
+  );
 
   const badges = { unreadNotif: liveUnreadNotif, unreadMsgs };
-  const cols   = rightPanel ? 'lx-page--3col' : 'lx-page--2col';
+  const cols = rightPanel ? "lx-page--3col" : "lx-page--2col";
 
-  const handleLogout = () => { logout(); navigate('/login'); };
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
   const handleSearch = () => {
     const q = searchVal.trim();
     if (q) navigate(`/search?q=${encodeURIComponent(q)}`);
@@ -290,47 +346,53 @@ export default function Layout({
 
       {/* ── TOPBAR ── */}
       <div className="tb">
-        <span className="tb-logo" onClick={() => navigate('/feed')}>
+        <span className="tb-logo" onClick={() => navigate("/feed")}>
           LEARN<em>EX</em>
         </span>
         <div className="tb-divider" />
         <div className="tb-search">
-          <button className="tb-si" onClick={handleSearch} title={t('app.search')}>⌕</button>
+          <button
+            className="tb-si"
+            onClick={handleSearch}
+            title={t("app.search")}
+          >
+            ⌕
+          </button>
           <input
-            placeholder={t('app.searchPlaceholder')}
+            placeholder={t("app.searchPlaceholder")}
             value={searchVal}
-            onChange={e => setSearchVal(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSearch()}
+            onChange={(e) => setSearchVal(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           />
         </div>
         <div className="tb-gap" />
         <div className="tb-pills">
           <button
-            className={`tb-pill ${active === 'notifications' ? 'tb-pill--active' : ''}`}
-            onClick={() => navigate('/notifications')}
+            className={`tb-pill ${active === "notifications" ? "tb-pill--active" : ""}`}
+            onClick={() => navigate("/notifications")}
           >
-            🔔 {t('nav.notifications')}
+            🔔 {t("nav.notifications")}
             {liveUnreadNotif > 0 && <span className="tb-dot" />}
           </button>
           <button
-            className={`tb-pill ${active === 'messages' ? 'tb-pill--active' : ''}`}
-            onClick={() => navigate('/messages')}
+            className={`tb-pill ${active === "messages" ? "tb-pill--active" : ""}`}
+            onClick={() => navigate("/messages")}
           >
-            💬 {t('nav.messages')}
+            💬 {t("nav.messages")}
             {unreadMsgs > 0 && <span className="tb-dot" />}
           </button>
           <button
-            className={`tb-pill ${active === 'groups' ? 'tb-pill--active' : ''}`}
-            onClick={() => navigate('/groups')}
+            className={`tb-pill ${active === "groups" ? "tb-pill--active" : ""}`}
+            onClick={() => navigate("/groups")}
           >
-            👥 {t('nav.groups')}
+            👥 {t("nav.groups")}
           </button>
         </div>
         <div className="tb-lang">
-          {['en', 'vi'].map(lang => (
+          {["en", "vi"].map((lang) => (
             <button
               key={lang}
-              className={`lang-btn ${currentLang === lang ? 'on' : ''}`}
+              className={`lang-btn ${currentLang === lang ? "on" : ""}`}
               onClick={() => setLanguage(lang)}
               type="button"
             >
@@ -340,26 +402,55 @@ export default function Layout({
         </div>
         <div
           className="tb-av"
-            title={displayName}
-            onClick={() => navigate(`/profile/${uid}`)}
+          title={displayName}
+          role="button"
+          aria-label={`Profile: ${displayName}`}
+          tabIndex={0}
+          onClick={() => navigate(`/profile/${uid}`)}
+          onKeyDown={(e) => e.key === "Enter" && navigate(`/profile/${uid}`)}
+          style={{ position: "relative" }}
+        >
+          <span
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
-            {avatarUrl
-              ? <img src={avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e => { e.currentTarget.style.display = 'none'; }} />
-              : ini
-            }
-          </div>
+            {ini}
+          </span>
+
+          {avatarUrl && (
+            <img
+              src={avatarUrl}
+              alt=""
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                position: "relative",
+                zIndex: 1,
+              }}
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          )}
+        </div>
       </div>
 
       {/* ── PAGE GRID ── */}
       <div className={`lx-page ${cols}`}>
         {/* ── SIDEBAR ── */}
         <nav className="sidebar">
-          <div className="sb-label">{t('nav.navigation')}</div>
+          <div className="sb-label">{t("nav.navigation")}</div>
 
-          {NAV_ITEMS.map(n => (
+          {NAV_ITEMS.map((n) => (
             <button
               key={n.key}
-              className={`nb ${active === n.key ? 'on' : ''}`}
+              className={`nb ${active === n.key ? "on" : ""}`}
               onClick={() => navigate(n.path)}
             >
               <span className="nb-icon">{n.icon}</span>
@@ -373,11 +464,36 @@ export default function Layout({
           {/* Footer: current user */}
           <div className="sb-footer">
             <div className="sb-me" onClick={() => navigate(`/profile/${uid}`)}>
-              <div className="sb-mav">
-                {avatarUrl
-                  ? <img src={avatarUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e => { e.currentTarget.style.display = 'none'; }} />
-                  : ini
-                }
+              <div className="sb-mav" style={{ position: "relative" }}>
+                <span
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontFamily: "var(--fd)",
+                    fontSize: 15,
+                  }}
+                >
+                  {ini}
+                </span>
+                {avatarUrl && (
+                  <img
+                    src={avatarUrl}
+                    alt=""
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      position: "relative",
+                      zIndex: 1,
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                )}
               </div>
               <div className="sb-minfo">
                 <div className="sb-mname">{displayName}</div>
@@ -385,7 +501,7 @@ export default function Layout({
               </div>
             </div>
             <button className="sb-logout" onClick={handleLogout}>
-              <span>⎋</span> {t('app.signOut')}
+              <span>⎋</span> {t("app.signOut")}
             </button>
           </div>
         </nav>
@@ -394,22 +510,21 @@ export default function Layout({
         {children}
 
         {/* ── RIGHT PANEL (optional) ── */}
-        {rightPanel && (
-          <aside className="lx-rp">{rightPanel}</aside>
-        )}
+        {rightPanel && <aside className="lx-rp">{rightPanel}</aside>}
       </div>
 
       {/* ── MOBILE BOTTOM NAV ── */}
       <div className="mob-nav">
         <div className="mn-inner">
-          {MOBILE_NAV.map(n => {
-            const path = n.key === 'profile' ? `/profile/${uid}` : n.path;
-            const isOn = n.key === active || (n.key === 'profile' && active === 'profile');
+          {MOBILE_NAV.map((n) => {
+            const path = n.key === "profile" ? `/profile/${uid}` : n.path;
+            const isOn =
+              n.key === active || (n.key === "profile" && active === "profile");
             const hasDot = n.badgeKey && badges[n.badgeKey] > 0;
             return (
               <button
                 key={n.key}
-                className={`mn-btn ${isOn ? 'on' : ''}`}
+                className={`mn-btn ${isOn ? "on" : ""}`}
                 onClick={() => navigate(path)}
               >
                 <span>{n.icon}</span>

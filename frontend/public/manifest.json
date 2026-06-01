@@ -1,0 +1,16 @@
+{
+  "name": "Learnex",
+  "short_name": "Learnex",
+  "description": "The social platform built for students.",
+  "start_url": "/Learnex/",
+  "display": "standalone",
+  "background_color": "#07070a",
+  "theme_color": "#E8192C",
+  "icons": [
+    {
+      "src": "/Learnex/favicon1.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

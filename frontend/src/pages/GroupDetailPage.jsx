@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth, getInitials } from '../contexts/AuthContext';
-import Layout from '../components/Layout';
-import groupService from '../services/groupService';
-import postService from '../services/postService';
-import conversationService from '../services/conversationService';
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth, getInitials } from "../contexts/AuthContext";
+import Layout from "../components/Layout";
+import groupService from "../services/groupService";
+import postService from "../services/postService";
+import conversationService from "../services/conversationService";
 
 /* ─── CSS ────────────────────────────────────────────────────────────────── */
 const css = `
@@ -130,16 +130,17 @@ const css = `
 `;
 
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
-const AV_BG = ['#0d1f35','#0d2918','#2a0d1e','#1e1a0d','#1a0d2e'];
-const AV_C  = ['#4a9eff','#4adf8a','#df4a8a','#dfb84a','#af4adf'];
+const AV_BG = ["#0d1f35", "#0d2918", "#2a0d1e", "#1e1a0d", "#1a0d2e"];
+const AV_C = ["#4a9eff", "#4adf8a", "#df4a8a", "#dfb84a", "#af4adf"];
 function avStyle(seed) {
-  const i = (typeof seed === 'string' ? seed.charCodeAt(0) : seed || 0) % AV_BG.length;
+  const i =
+    (typeof seed === "string" ? seed.charCodeAt(0) : seed || 0) % AV_BG.length;
   return { background: `linear-gradient(135deg,${AV_BG[i]},${AV_C[i]})` };
 }
 function timeAgo(iso) {
-  if (!iso) return '';
+  if (!iso) return "";
   const m = Math.floor((Date.now() - new Date(iso)) / 60000);
-  if (m < 1) return 'just now';
+  if (m < 1) return "just now";
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
@@ -147,9 +148,9 @@ function timeAgo(iso) {
 }
 
 const TYPE_BADGE = {
-  class:   'class',
-  club:    'club',
-  society: 'society',
+  class: "class",
+  club: "club",
+  society: "society",
 };
 
 /* ─── GroupDetailPage ─────────────────────────────────────────────────────── */
@@ -159,19 +160,19 @@ export default function GroupDetailPage() {
   const navigate = useNavigate();
   const uid = user?.userId ?? user?.id;
   const userIni = getInitials(user?.displayName, user?.email);
-
-  const [group,      setGroup]      = useState(null);
-  const [members,    setMembers]    = useState([]);
-  const [posts,      setPosts]      = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [postsLoad,  setPostsLoad]  = useState(true);
-  const [isMember,   setIsMember]   = useState(false);
-  const [joining,    setJoining]    = useState(false);
-  const [tab,        setTab]        = useState('feed');
-  const [draft,      setDraft]      = useState('');
-  const [posting,    setPosting]    = useState(false);
-  const [postErr,    setPostErr]    = useState('');
-  const [denied,     setDenied]     = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [group, setGroup] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [postsLoad, setPostsLoad] = useState(true);
+  const [isMember, setIsMember] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const [tab, setTab] = useState("feed");
+  const [draft, setDraft] = useState("");
+  const [posting, setPosting] = useState(false);
+  const [postErr, setPostErr] = useState("");
+  const [denied, setDenied] = useState(false);
 
   // Load group info + members
   useEffect(() => {
@@ -180,13 +181,15 @@ export default function GroupDetailPage() {
     Promise.all([
       groupService.getGroup(groupId),
       groupService.getMembers(groupId).catch(() => ({ data: [] })),
-    ]).then(([gRes, mRes]) => {
-      const g = gRes?.data ?? gRes;
-      const m = mRes?.data ?? mRes;
-      setGroup(g);
-      setMembers(Array.isArray(m) ? m : []);
-      setIsMember(g?.isMember ?? false);
-    }).catch(() => navigate('/groups'))
+    ])
+      .then(([gRes, mRes]) => {
+        const g = gRes?.data ?? gRes;
+        const m = mRes?.data ?? mRes;
+        setGroup(g);
+        setMembers(Array.isArray(m) ? m : []);
+        setIsMember(g?.isMember ?? false);
+      })
+      .catch(() => navigate("/groups"))
       .finally(() => setLoading(false));
   }, [groupId]);
 
@@ -216,61 +219,85 @@ export default function GroupDetailPage() {
     try {
       await groupService.joinGroup(groupId);
       setIsMember(true);
-      setGroup(g => ({ ...g, memberCount: (g?.memberCount ?? 0) + 1 }));
+      setGroup((g) => ({ ...g, memberCount: (g?.memberCount ?? 0) + 1 }));
       await loadPosts(); // refresh — now member can see content
     } catch (e) {
-      alert(e?.response?.data?.message || 'Could not join group.');
-    } finally { setJoining(false); }
+      alert(e?.response?.data?.message || "Could not join group.");
+    } finally {
+      setJoining(false);
+    }
   };
 
   const handlePost = async () => {
     if (!draft.trim() || posting) return;
     setPosting(true);
-    setPostErr('');
+    setPostErr("");
     try {
       const res = await postService.createPost({
         content: draft.trim(),
-        visibility: 'group',
+        visibility: "group",
         groupId,
       });
       const saved = res?.data ?? res;
-      setPosts(prev => [saved, ...prev]);
-      setDraft('');
+      setPosts((prev) => [saved, ...prev]);
+      setDraft("");
     } catch (e) {
-      setPostErr(e?.response?.data?.message || 'Failed to post.');
-    } finally { setPosting(false); }
+      setPostErr(e?.response?.data?.message || "Failed to post.");
+    } finally {
+      setPosting(false);
+    }
   };
 
   const openGroupChat = async () => {
-  if (members.length === 0) {
-    alert('Member list is still loading, please try again.');
-    return;
-  }
-  try {
-    const groupTag = `grp:${groupId}`;
-    const memberIds = members.map(m => m.userId).filter(id => id !== uid);
-      const res  = await conversationService.startGroupConversation(group.name, memberIds, groupTag);
+    if (members.length === 0) {
+      alert("Member list is still loading, please try again.");
+      return;
+    }
+    setChatLoading(true);
+    try {
+      const groupTag = `grp:${groupId}`;
+      const memberIds = members.map((m) => m.userId).filter((id) => id !== uid);
+      const res = await conversationService.startGroupConversation(
+        group.name,
+        memberIds,
+        groupTag,
+      );
       const conv = res?.data ?? res;
       navigate(`/messages/${conv.id}`);
-    } catch { navigate('/messages'); }
+    } catch {
+      navigate("/messages");
+    } finally {
+      setChatLoading(false);
+    }
   };
 
-  if (loading) return (
-    <>
-      <style>{css}</style>
-      <Layout active="groups">
-        <div style={{ padding: 40, textAlign: 'center', color: 'var(--t3)', fontFamily: 'var(--fm)', fontSize: 13 }}>
-          Loading group…
-        </div>
-      </Layout>
-    </>
-  );
+  if (loading)
+    return (
+      <>
+        <style>{css}</style>
+        <Layout active="groups">
+          <div
+            style={{
+              padding: 40,
+              textAlign: "center",
+              color: "var(--t3)",
+              fontFamily: "var(--fm)",
+              fontSize: 13,
+            }}
+          >
+            Loading group…
+          </div>
+        </Layout>
+      </>
+    );
 
   if (!group) return null;
 
-  const badgeCls = TYPE_BADGE[group.type] || 'club';
-  const typeLabel = group.type ? group.type.charAt(0).toUpperCase() + group.type.slice(1) : 'Group';
-  const isPrivate = group.isPrivate || group.type === 'class';
+  const badgeCls = TYPE_BADGE[group.type] || "club";
+  const typeLabel = group.type
+    ? group.type.charAt(0).toUpperCase() + group.type.slice(1)
+    : "Group";
+  const isPrivate = group.isPrivate || group.type === "class";
 
   return (
     <>
@@ -279,7 +306,9 @@ export default function GroupDetailPage() {
         <div className="gd-wrap">
           {/* Hero */}
           <div className="gd-hero">
-            <button className="gd-back" onClick={() => navigate('/groups')}>← Groups</button>
+            <button className="gd-back" onClick={() => navigate("/groups")}>
+              ← Groups
+            </button>
             <div className="gd-hero-info">
               <div className="gd-name">{group.name}</div>
               <div className="gd-meta">
@@ -291,8 +320,15 @@ export default function GroupDetailPage() {
             <div className="gd-hero-actions">
               {isMember ? (
                 <>
-                  <button className="gd-btn gd-btn-outline" onClick={openGroupChat}>
-                    💬 Group Chat
+                  <button
+                    className="gd-btn gd-btn-outline"
+                    onClick={openGroupChat}
+                    disabled={chatLoading}
+                    style={
+                      chatLoading ? { opacity: 0.6, cursor: "not-allowed" } : {}
+                    }
+                  >
+                    {chatLoading ? "⏳ Opening…" : "💬 Group Chat"}
                   </button>
                   <button
                     className="gd-btn gd-btn-ghost"
@@ -300,7 +336,10 @@ export default function GroupDetailPage() {
                       if (window.confirm(`Leave ${group.name}?`)) {
                         groupService.leaveGroup(groupId).then(() => {
                           setIsMember(false);
-                          setGroup(g => ({ ...g, memberCount: Math.max(0, (g?.memberCount ?? 1) - 1) }));
+                          setGroup((g) => ({
+                            ...g,
+                            memberCount: Math.max(0, (g?.memberCount ?? 1) - 1),
+                          }));
                         });
                       }
                     }}
@@ -309,8 +348,16 @@ export default function GroupDetailPage() {
                   </button>
                 </>
               ) : (
-                <button className="gd-btn gd-btn-fire" onClick={handleJoin} disabled={joining}>
-                  {joining ? '…' : isPrivate ? '🔒 Request to Join' : '+ Join Group'}
+                <button
+                  className="gd-btn gd-btn-fire"
+                  onClick={handleJoin}
+                  disabled={joining}
+                >
+                  {joining
+                    ? "…"
+                    : isPrivate
+                      ? "🔒 Request to Join"
+                      : "+ Join Group"}
                 </button>
               )}
             </div>
@@ -321,15 +368,21 @@ export default function GroupDetailPage() {
             {/* Feed column */}
             <div className="gd-feed">
               <div className="gd-tabs">
-                <button className={`gd-tab ${tab === 'feed' ? 'on' : ''}`} onClick={() => setTab('feed')}>
+                <button
+                  className={`gd-tab ${tab === "feed" ? "on" : ""}`}
+                  onClick={() => setTab("feed")}
+                >
                   Feed
                 </button>
-                <button className={`gd-tab ${tab === 'members' ? 'on' : ''}`} onClick={() => setTab('members')}>
+                <button
+                  className={`gd-tab ${tab === "members" ? "on" : ""}`}
+                  onClick={() => setTab("members")}
+                >
                   Members ({members.length})
                 </button>
               </div>
 
-              {tab === 'feed' && (
+              {tab === "feed" && (
                 <>
                   {/* Compose — only for members */}
                   {isMember && (
@@ -340,19 +393,41 @@ export default function GroupDetailPage() {
                           className="gd-c-inp"
                           placeholder={`Post something to ${group.name}…`}
                           value={draft}
-                          onChange={e => setDraft(e.target.value)}
+                          onChange={(e) => setDraft(e.target.value)}
                           rows={draft.length > 60 ? 3 : 1}
-                          onKeyDown={e => e.key === 'Enter' && e.ctrlKey && handlePost()}
+                          onKeyDown={(e) =>
+                            e.key === "Enter" && e.ctrlKey && handlePost()
+                          }
                         />
                       </div>
                       {postErr && (
-                        <div style={{ padding: '0 16px 8px', fontSize: 12, color: 'var(--red)' }}>⚠ {postErr}</div>
+                        <div
+                          style={{
+                            padding: "0 16px 8px",
+                            fontSize: 12,
+                            color: "var(--red)",
+                          }}
+                        >
+                          ⚠ {postErr}
+                        </div>
                       )}
                       {draft.trim() && (
                         <div className="gd-c-foot">
-                          <span style={{ fontSize: 10, color: 'var(--t4)', fontFamily: 'var(--fm)' }}>Ctrl+Enter</span>
-                          <button className="gd-post-btn" onClick={handlePost} disabled={posting}>
-                            {posting ? 'Posting…' : 'Post'}
+                          <span
+                            style={{
+                              fontSize: 10,
+                              color: "var(--t4)",
+                              fontFamily: "var(--fm)",
+                            }}
+                          >
+                            Ctrl+Enter
+                          </span>
+                          <button
+                            className="gd-post-btn"
+                            onClick={handlePost}
+                            disabled={posting}
+                          >
+                            {posting ? "Posting…" : "Post"}
                           </button>
                         </div>
                       )}
@@ -370,26 +445,66 @@ export default function GroupDetailPage() {
                       {!isMember && (
                         <button
                           className="gd-btn gd-btn-fire"
-                          style={{ margin: '16px auto 0', display: 'flex' }}
+                          style={{ margin: "16px auto 0", display: "flex" }}
                           onClick={handleJoin}
                           disabled={joining}
                         >
-                          {joining ? '…' : 'Request to Join'}
+                          {joining ? "…" : "Request to Join"}
                         </button>
                       )}
                     </div>
                   ) : postsLoad ? (
-                    [1,2,3].map(i => (
-                      <div key={i} className="gd-card" style={{ padding: 16, cursor: 'default' }}>
-                        <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-                          <div className="sk" style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0 }} />
+                    [1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="gd-card"
+                        style={{ padding: 16, cursor: "default" }}
+                      >
+                        <div
+                          style={{ display: "flex", gap: 12, marginBottom: 12 }}
+                        >
+                          <div
+                            className="sk"
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 10,
+                              flexShrink: 0,
+                            }}
+                          />
                           <div style={{ flex: 1 }}>
-                            <div className="sk" style={{ height: 12, width: '40%', marginBottom: 7, borderRadius: 4 }} />
-                            <div className="sk" style={{ height: 10, width: '25%', borderRadius: 4 }} />
+                            <div
+                              className="sk"
+                              style={{
+                                height: 12,
+                                width: "40%",
+                                marginBottom: 7,
+                                borderRadius: 4,
+                              }}
+                            />
+                            <div
+                              className="sk"
+                              style={{
+                                height: 10,
+                                width: "25%",
+                                borderRadius: 4,
+                              }}
+                            />
                           </div>
                         </div>
-                        <div className="sk" style={{ height: 12, width: '100%', marginBottom: 6, borderRadius: 4 }} />
-                        <div className="sk" style={{ height: 12, width: '80%', borderRadius: 4 }} />
+                        <div
+                          className="sk"
+                          style={{
+                            height: 12,
+                            width: "100%",
+                            marginBottom: 6,
+                            borderRadius: 4,
+                          }}
+                        />
+                        <div
+                          className="sk"
+                          style={{ height: 12, width: "80%", borderRadius: 4 }}
+                        />
                       </div>
                     ))
                   ) : posts.length === 0 ? (
@@ -397,13 +512,21 @@ export default function GroupDetailPage() {
                       <div className="lx-empty-ic">📝</div>
                       <div className="lx-empty-t">No Posts Yet</div>
                       <p className="lx-empty-s">
-                        {isMember ? 'Be the first to post in this group.' : 'Join the group to see and create posts.'}
+                        {isMember
+                          ? "Be the first to post in this group."
+                          : "Join the group to see and create posts."}
                       </p>
                     </div>
                   ) : (
                     posts.map((p, i) => {
-                      const ini = getInitials(p.authorDisplayName, p.authorEmail);
-                      const rxTotal = (p.reactions ?? []).reduce((s, r) => s + (r.count ?? 0), 0);
+                      const ini = getInitials(
+                        p.authorDisplayName,
+                        p.authorEmail,
+                      );
+                      const rxTotal = (p.reactions ?? []).reduce(
+                        (s, r) => s + (r.count ?? 0),
+                        0,
+                      );
                       return (
                         <div
                           key={p.id}
@@ -415,25 +538,41 @@ export default function GroupDetailPage() {
                             <div
                               className="gd-av"
                               style={avStyle(p.authorId)}
-                              onClick={e => { e.stopPropagation(); navigate(`/profile/${p.authorId}`); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/profile/${p.authorId}`);
+                              }}
                             >
                               {ini}
                             </div>
                             <div className="gd-card-meta">
                               <div
                                 className="gd-card-name"
-                                onClick={e => { e.stopPropagation(); navigate(`/profile/${p.authorId}`); }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/profile/${p.authorId}`);
+                                }}
                               >
-                                {p.authorDisplayName || p.authorEmail || 'Unknown'}
+                                {p.authorDisplayName ||
+                                  p.authorEmail ||
+                                  "Unknown"}
                               </div>
-                              <div className="gd-card-sub">{timeAgo(p.createdAt)}</div>
+                              <div className="gd-card-sub">
+                                {timeAgo(p.createdAt)}
+                              </div>
                             </div>
                           </div>
-                          {p.content && <div className="gd-card-body">{p.content}</div>}
+                          {p.content && (
+                            <div className="gd-card-body">{p.content}</div>
+                          )}
                           <div className="gd-card-foot">
                             {rxTotal > 0 && <span>👍 {rxTotal}</span>}
-                            {(p.commentCount ?? 0) > 0 && <span>💬 {p.commentCount}</span>}
-                            <span style={{ marginLeft: 'auto' }}>Read more →</span>
+                            {(p.commentCount ?? 0) > 0 && (
+                              <span>💬 {p.commentCount}</span>
+                            )}
+                            <span style={{ marginLeft: "auto" }}>
+                              Read more →
+                            </span>
                           </div>
                         </div>
                       );
@@ -442,30 +581,47 @@ export default function GroupDetailPage() {
                 </>
               )}
 
-              {tab === 'members' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {tab === "members" && (
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 6 }}
+                >
                   {members.length === 0 ? (
                     <div className="lx-empty">
                       <div className="lx-empty-ic">👥</div>
                       <div className="lx-empty-t">No Members</div>
                     </div>
-                  ) : members.map(m => {
-                    const ini = getInitials(m.displayName, m.email);
-                    return (
-                      <div
-                        key={m.userId}
-                        className="gd-member-row"
-                        style={{ background: 'var(--s1)', border: '1px solid var(--b1)', borderRadius: 10 }}
-                        onClick={() => navigate(`/profile/${m.userId}`)}
-                      >
-                        <div className="gd-member-av" style={avStyle(m.userId)}>{ini}</div>
-                        <span className="gd-member-name">{m.displayName || m.email}</span>
-                        <span className={`gd-member-role ${m.roleName === 'owner' ? 'gd-role-owner' : 'gd-role-member'}`}>
-                          {m.roleName === 'owner' ? '👑 Owner' : 'Member'}
-                        </span>
-                      </div>
-                    );
-                  })}
+                  ) : (
+                    members.map((m) => {
+                      const ini = getInitials(m.displayName, m.email);
+                      return (
+                        <div
+                          key={m.userId}
+                          className="gd-member-row"
+                          style={{
+                            background: "var(--s1)",
+                            border: "1px solid var(--b1)",
+                            borderRadius: 10,
+                          }}
+                          onClick={() => navigate(`/profile/${m.userId}`)}
+                        >
+                          <div
+                            className="gd-member-av"
+                            style={avStyle(m.userId)}
+                          >
+                            {ini}
+                          </div>
+                          <span className="gd-member-name">
+                            {m.displayName || m.email}
+                          </span>
+                          <span
+                            className={`gd-member-role ${m.roleName === "owner" ? "gd-role-owner" : "gd-role-member"}`}
+                          >
+                            {m.roleName === "owner" ? "👑 Owner" : "Member"}
+                          </span>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               )}
             </div>
@@ -476,7 +632,15 @@ export default function GroupDetailPage() {
               <div className="gd-widget">
                 <div className="gd-whead">About</div>
                 {group.description && (
-                  <div style={{ padding: '12px 16px', fontSize: 13, color: 'var(--t2)', lineHeight: 1.7, borderBottom: '1px solid var(--b1)' }}>
+                  <div
+                    style={{
+                      padding: "12px 16px",
+                      fontSize: 13,
+                      color: "var(--t2)",
+                      lineHeight: 1.7,
+                      borderBottom: "1px solid var(--b1)",
+                    }}
+                  >
                     {group.description}
                   </div>
                 )}
@@ -486,7 +650,9 @@ export default function GroupDetailPage() {
                 </div>
                 <div className="gd-info-row">
                   <span className="gd-info-label">Privacy</span>
-                  <span className="gd-info-val">{isPrivate ? '🔒 Private' : '🌍 Public'}</span>
+                  <span className="gd-info-val">
+                    {isPrivate ? "🔒 Private" : "🌍 Public"}
+                  </span>
                 </div>
                 <div className="gd-info-row">
                   <span className="gd-info-label">Members</span>
@@ -498,7 +664,7 @@ export default function GroupDetailPage() {
               {members.length > 0 && (
                 <div className="gd-widget">
                   <div className="gd-whead">Members · {members.length}</div>
-                  {members.slice(0, 5).map(m => {
+                  {members.slice(0, 5).map((m) => {
                     const ini = getInitials(m.displayName, m.email);
                     return (
                       <div
@@ -506,18 +672,30 @@ export default function GroupDetailPage() {
                         className="gd-member-row"
                         onClick={() => navigate(`/profile/${m.userId}`)}
                       >
-                        <div className="gd-member-av" style={avStyle(m.userId)}>{ini}</div>
-                        <span className="gd-member-name">{m.displayName || m.email}</span>
-                        {m.roleName === 'owner' && (
-                          <span className="gd-member-role gd-role-owner">👑</span>
+                        <div className="gd-member-av" style={avStyle(m.userId)}>
+                          {ini}
+                        </div>
+                        <span className="gd-member-name">
+                          {m.displayName || m.email}
+                        </span>
+                        {m.roleName === "owner" && (
+                          <span className="gd-member-role gd-role-owner">
+                            👑
+                          </span>
                         )}
                       </div>
                     );
                   })}
                   {members.length > 5 && (
                     <div
-                      style={{ padding: '10px 16px', fontSize: 12, color: 'var(--t3)', cursor: 'pointer', textAlign: 'center' }}
-                      onClick={() => setTab('members')}
+                      style={{
+                        padding: "10px 16px",
+                        fontSize: 12,
+                        color: "var(--t3)",
+                        cursor: "pointer",
+                        textAlign: "center",
+                      }}
+                      onClick={() => setTab("members")}
                     >
                       + {members.length - 5} more members
                     </div>

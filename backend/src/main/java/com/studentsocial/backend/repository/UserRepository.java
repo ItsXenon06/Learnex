@@ -46,4 +46,14 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findActiveByEmail(@Param("email") String email);
 
     Optional<User> findByPasswordResetToken(@Param("token") String token);
+    // Add after findActiveByEmail
+@Query(value = """
+        SELECT u.* FROM "user" u
+        LEFT JOIN profile p ON p.user_id = u.id
+        WHERE u.deleted_at IS NULL
+          AND u.is_active = TRUE
+        ORDER BY u.created_at DESC
+        LIMIT 10
+        """, nativeQuery = true)
+List<User> findRecentUsers();
 }

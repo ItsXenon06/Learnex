@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useAuth, getInitials } from '../contexts/AuthContext';
-import Layout from '../components/Layout';
-import groupService from '../services/groupService';
-import conversationService from '../services/conversationService';
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useAuth, getInitials } from "../contexts/AuthContext";
+import Layout from "../components/Layout";
+import groupService from "../services/groupService";
+import conversationService from "../services/conversationService";
 
 /* ─── CSS ────────────────────────────────────────────────────────────────── */
 const css = `
@@ -110,30 +110,55 @@ const css = `
 
 /* ─── Group type config (no 'general' type) ──────────────────────────────── */
 const TYPE_STYLE = {
-  class:   { label: 'Class',   cls: 'gc-type-class',   banner: 'linear-gradient(135deg,rgba(74,158,255,.2),rgba(74,158,255,.05))' },
-  club:    { label: 'Club',    cls: 'gc-type-club',    banner: 'linear-gradient(135deg,rgba(34,197,94,.2),rgba(34,197,94,.05))' },
-  society: { label: 'Society', cls: 'gc-type-society', banner: 'linear-gradient(135deg,rgba(155,89,245,.2),rgba(155,89,245,.05))' },
+  class: {
+    label: "Class",
+    cls: "gc-type-class",
+    banner: "linear-gradient(135deg,rgba(74,158,255,.2),rgba(74,158,255,.05))",
+  },
+  club: {
+    label: "Club",
+    cls: "gc-type-club",
+    banner: "linear-gradient(135deg,rgba(34,197,94,.2),rgba(34,197,94,.05))",
+  },
+  society: {
+    label: "Society",
+    cls: "gc-type-society",
+    banner: "linear-gradient(135deg,rgba(155,89,245,.2),rgba(155,89,245,.05))",
+  },
 };
 const DEFAULT_TYPE = TYPE_STYLE.club;
 
 /* ─── Confirm Leave Modal ─────────────────────────────────────────────────── */
 function ConfirmLeaveModal({ groupName, onConfirm, onCancel, loading }) {
   return (
-    <div className="modal-bg" onClick={e => e.target === e.currentTarget && onCancel()}>
+    <div
+      className="modal-bg"
+      onClick={(e) => e.target === e.currentTarget && onCancel()}
+    >
       <div className="modal sm">
         <div className="modal-head">
           <span className="modal-title">Leave Group</span>
-          <button className="modal-close" onClick={onCancel}>✕</button>
+          <button className="modal-close" onClick={onCancel}>
+            ✕
+          </button>
         </div>
         <div className="confirm-body">
           You are about to leave <strong>{groupName}</strong>.
-          <div className="confirm-warn">You can rejoin later if the group is public.</div>
+          <div className="confirm-warn">
+            You can rejoin later if the group is public.
+          </div>
         </div>
         <div className="modal-foot">
-          <button className="btn-outline" onClick={onCancel}>Cancel</button>
-          <button className="btn-fire" onClick={onConfirm} disabled={loading}
-            style={{background:'rgba(232,25,44,.9)'}}>
-            {loading ? 'Leaving…' : 'Leave Group'}
+          <button className="btn-outline" onClick={onCancel}>
+            Cancel
+          </button>
+          <button
+            className="btn-fire"
+            onClick={onConfirm}
+            disabled={loading}
+            style={{ background: "rgba(232,25,44,.9)" }}
+          >
+            {loading ? "Leaving…" : "Leave Group"}
           </button>
         </div>
       </div>
@@ -142,7 +167,14 @@ function ConfirmLeaveModal({ groupName, onConfirm, onCancel, loading }) {
 }
 
 /* ─── GroupCard ───────────────────────────────────────────────────────────── */
-function GroupCard({ group, isMember, onJoin, onLeaveRequest, onChat, joining }) {
+function GroupCard({
+  group,
+  isMember,
+  onJoin,
+  onLeaveRequest,
+  onChat,
+  joining,
+}) {
   const navigate = useNavigate();
   const ts = TYPE_STYLE[group.type] || DEFAULT_TYPE;
 
@@ -156,38 +188,55 @@ function GroupCard({ group, isMember, onJoin, onLeaveRequest, onChat, joining })
   };
 
   return (
-    <div
-      className="gcard"
-      onClick={() => navigate(`/groups/${group.id}`)}
-    >
+    <div className="gcard" onClick={() => navigate(`/groups/${group.id}`)}>
       <div className="gc-banner" style={{ background: ts.banner }}>
         <span className={`gc-type-badge ${ts.cls}`}>{ts.label}</span>
-        {(group.isPrivate || group.type === 'class') && (
-          <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--t4)' }}>🔒</span>
+        {(group.isPrivate || group.type === "class") && (
+          <span style={{ marginLeft: 6, fontSize: 10, color: "var(--t4)" }}>
+            🔒
+          </span>
         )}
       </div>
       <div className="gc-body">
         <div className="gc-name">{group.name}</div>
-        <div className="gc-desc">{group.description || 'No description provided.'}</div>
+        <div className="gc-desc">
+          {group.description || "No description provided."}
+        </div>
         <div className="gc-foot">
-          <span className="gc-members">👥 {group.memberCount ?? 0} member{group.memberCount !== 1 ? 's' : ''}</span>
-          <div style={{ display: 'flex', gap: 6 }}>
+          <span className="gc-members">
+            👥 {group.memberCount ?? 0} member
+            {group.memberCount !== 1 ? "s" : ""}
+          </span>
+          <div style={{ display: "flex", gap: 6 }}>
             {isMember && (
               <button
                 className="join-btn join"
-                style={{ background: 'rgba(155,89,245,.15)', color: '#9b59f5', borderColor: 'rgba(155,89,245,.3)' }}
-                onClick={e => { e.stopPropagation(); onChat(group); }}
+                style={{
+                  background: "rgba(155,89,245,.15)",
+                  color: "#9b59f5",
+                  borderColor: "rgba(155,89,245,.3)",
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChat(group);
+                }}
                 title="Open group chat"
               >
                 💬 Chat
               </button>
             )}
             <button
-              className={`join-btn ${isMember ? 'leave' : 'join'}`}
+              className={`join-btn ${isMember ? "leave" : "join"}`}
               onClick={handleJoinLeave}
               disabled={joining === group.id}
             >
-              {joining === group.id ? '…' : isMember ? '✓ Joined' : (group.isPrivate || group.type === 'class') ? '🔒 Request' : '+ Join'}
+              {joining === group.id
+                ? "…"
+                : isMember
+                  ? "✓ Joined"
+                  : group.isPrivate || group.type === "class"
+                    ? "🔒 Request"
+                    : "+ Join"}
             </button>
           </div>
         </div>
@@ -200,16 +249,52 @@ function GroupCard({ group, isMember, onJoin, onLeaveRequest, onChat, joining })
 function GroupSkeleton() {
   return (
     <div className="group-grid">
-      {[1, 2, 3, 4, 5, 6].map(i => (
+      {[1, 2, 3, 4, 5, 6].map((i) => (
         <div key={i} className="gskel">
-          <div style={{ height: 72, background: 'var(--s2)' }} />
+          <div style={{ height: 72, background: "var(--s2)" }} />
           <div style={{ padding: 14 }}>
-            <div className="sk" style={{ height: 16, width: '65%', marginBottom: 8, borderRadius: 5 }} />
-            <div className="sk" style={{ height: 11, width: '100%', marginBottom: 5, borderRadius: 4 }} />
-            <div className="sk" style={{ height: 11, width: '80%', marginBottom: 14, borderRadius: 4 }} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div className="sk" style={{ height: 10, width: '35%', borderRadius: 4 }} />
-              <div className="sk" style={{ height: 30, width: 70, borderRadius: 7 }} />
+            <div
+              className="sk"
+              style={{
+                height: 16,
+                width: "65%",
+                marginBottom: 8,
+                borderRadius: 5,
+              }}
+            />
+            <div
+              className="sk"
+              style={{
+                height: 11,
+                width: "100%",
+                marginBottom: 5,
+                borderRadius: 4,
+              }}
+            />
+            <div
+              className="sk"
+              style={{
+                height: 11,
+                width: "80%",
+                marginBottom: 14,
+                borderRadius: 4,
+              }}
+            />
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <div
+                className="sk"
+                style={{ height: 10, width: "35%", borderRadius: 4 }}
+              />
+              <div
+                className="sk"
+                style={{ height: 30, width: 70, borderRadius: 7 }}
+              />
             </div>
           </div>
         </div>
@@ -221,27 +306,41 @@ function GroupSkeleton() {
 /* ─── CreateModal ─────────────────────────────────────────────────────────── */
 function CreateModal({ onClose, onCreate, creating }) {
   const [form, setForm] = useState({
-    name: '', description: '', type: 'club', isPrivate: false,
+    name: "",
+    description: "",
+    type: "club",
+    isPrivate: false,
   });
-  const [err, setErr] = useState('');
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const [err, setErr] = useState("");
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   // class type is always private
-  const effectivePrivate = form.type === 'class' ? true : form.isPrivate;
+  const effectivePrivate = form.type === "class" ? true : form.isPrivate;
 
   const submit = async () => {
-    if (!form.name.trim()) { setErr('Group name is required.'); return; }
-    setErr('');
-    try { await onCreate({ ...form, isPrivate: effectivePrivate }); }
-    catch (e) { setErr(e?.response?.data?.message || 'Failed to create group.'); }
+    if (!form.name.trim()) {
+      setErr("Group name is required.");
+      return;
+    }
+    setErr("");
+    try {
+      await onCreate({ ...form, isPrivate: effectivePrivate });
+    } catch (e) {
+      setErr(e?.response?.data?.message || "Failed to create group.");
+    }
   };
 
   return (
-    <div className="modal-bg" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div
+      className="modal-bg"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="modal">
         <div className="modal-head">
           <span className="modal-title">Create Group</span>
-          <button className="modal-close" onClick={onClose}>✕</button>
+          <button className="modal-close" onClick={onClose}>
+            ✕
+          </button>
         </div>
         <div className="modal-body">
           {err && <div className="modal-err">⚠ {err}</div>}
@@ -250,7 +349,7 @@ function CreateModal({ onClose, onCreate, creating }) {
             <input
               autoFocus
               value={form.name}
-              onChange={e => set('name', e.target.value)}
+              onChange={(e) => set("name", e.target.value)}
               placeholder="e.g. CS Algorithm Study Group"
             />
           </div>
@@ -259,14 +358,17 @@ function CreateModal({ onClose, onCreate, creating }) {
             <textarea
               rows={3}
               value={form.description}
-              onChange={e => set('description', e.target.value)}
+              onChange={(e) => set("description", e.target.value)}
               placeholder="What is this group about?"
             />
           </div>
           <div className="mfield-row">
             <div className="mfield">
               <label>Type</label>
-              <select value={form.type} onChange={e => set('type', e.target.value)}>
+              <select
+                value={form.type}
+                onChange={(e) => set("type", e.target.value)}
+              >
                 <option value="club">Club</option>
                 <option value="class">Class (invite-only)</option>
                 <option value="society">Society</option>
@@ -274,7 +376,7 @@ function CreateModal({ onClose, onCreate, creating }) {
             </div>
           </div>
           {/* Only show private toggle for non-class types */}
-          {form.type !== 'class' && (
+          {form.type !== "class" && (
             <div className="toggle-row">
               <div>
                 <div className="toggle-label">Private Group</div>
@@ -284,22 +386,32 @@ function CreateModal({ onClose, onCreate, creating }) {
                 <input
                   type="checkbox"
                   checked={form.isPrivate}
-                  onChange={e => set('isPrivate', e.target.checked)}
+                  onChange={(e) => set("isPrivate", e.target.checked)}
                 />
                 <span className="toggle-slider" />
               </label>
             </div>
           )}
-          {form.type === 'class' && (
-            <div style={{ fontSize: 12, color: 'var(--t3)', fontFamily: 'var(--fm)', padding: '4px 0' }}>
-              🔒 Class groups are always private — only invited members can view content.
+          {form.type === "class" && (
+            <div
+              style={{
+                fontSize: 12,
+                color: "var(--t3)",
+                fontFamily: "var(--fm)",
+                padding: "4px 0",
+              }}
+            >
+              🔒 Class groups are always private — only invited members can view
+              content.
             </div>
           )}
         </div>
         <div className="modal-foot">
-          <button className="btn-outline" onClick={onClose}>Cancel</button>
+          <button className="btn-outline" onClick={onClose}>
+            Cancel
+          </button>
           <button className="btn-fire" onClick={submit} disabled={creating}>
-            {creating ? 'Creating…' : 'Create Group'}
+            {creating ? "Creating…" : "Create Group"}
           </button>
         </div>
       </div>
@@ -313,17 +425,17 @@ export default function GroupsPage() {
   const navigate = useNavigate();
   const uid = user?.userId ?? user?.id;
 
-  const [tab,          setTab]          = useState('discover');
-  const [groups,       setGroups]       = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [joined,       setJoined]       = useState(new Set());
-  const [joining,      setJoining]      = useState(null);
-  const [createOpen,   setCreateOpen]   = useState(false);
-  const [creating,     setCreating]     = useState(false);
-  const [error,        setError]        = useState('');
+  const [tab, setTab] = useState("discover");
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [joined, setJoined] = useState(new Set());
+  const [joining, setJoining] = useState(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState("");
   // Leave confirm modal state
-  const [leaveTarget,  setLeaveTarget]  = useState(null); // group object
-  const [leavingId,    setLeavingId]    = useState(null);
+  const [leaveTarget, setLeaveTarget] = useState(null); // group object
+  const [leavingId, setLeavingId] = useState(null);
 
   useEffect(() => {
     if (!uid) return;
@@ -331,27 +443,41 @@ export default function GroupsPage() {
     Promise.all([
       groupService.getGroups().catch(() => ({ data: [] })),
       groupService.getMyGroups().catch(() => ({ data: [] })),
-    ]).then(([allRes, myRes]) => {
-      const all = allRes?.data ?? allRes;
-      const my  = myRes?.data  ?? myRes;
-      const allGroups = Array.isArray(all) ? all : (all?.content ?? []);
-      const myList    = Array.isArray(my)  ? my  : (my?.content  ?? []);
-      setGroups(allGroups);
-      setJoined(new Set(myList.map(g => g.id)));
-    }).finally(() => setLoading(false));
+    ])
+      .then(([allRes, myRes]) => {
+        const all = allRes?.data ?? allRes;
+        const my = myRes?.data ?? myRes;
+        const allGroups = Array.isArray(all) ? all : (all?.content ?? []);
+        const myList = Array.isArray(my) ? my : (my?.content ?? []);
+        setGroups(allGroups);
+        setJoined(new Set(myList.map((g) => g.id)));
+      })
+      .finally(() => setLoading(false));
   }, [uid]);
 
   const handleJoin = async (groupId) => {
     setJoining(groupId);
     try {
       await groupService.joinGroup(groupId);
-      setJoined(prev => new Set([...prev, groupId]));
-      setGroups(prev => prev.map(g =>
-        g.id === groupId ? { ...g, memberCount: (g.memberCount ?? 0) + 1 } : g
-      ));
+      setJoined((prev) => new Set([...prev, groupId]));
+      setGroups((prev) =>
+        prev.map((g) =>
+          g.id === groupId
+            ? { ...g, memberCount: (g.memberCount ?? 0) + 1 }
+            : g,
+        ),
+      );
     } catch (e) {
-      setError(e?.response?.data?.message || 'Could not join group.');
-    } finally { setJoining(null); }
+      // Rollback optimistic state
+      setJoined((prev) => {
+        const s = new Set(prev);
+        s.delete(groupId);
+        return s;
+      });
+      setError(e?.response?.data?.message || "Could not join group.");
+    } finally {
+      setJoining(null);
+    }
   };
 
   const handleLeaveRequest = (group) => {
@@ -363,14 +489,24 @@ export default function GroupsPage() {
     setLeavingId(leaveTarget.id);
     try {
       await groupService.leaveGroup(leaveTarget.id);
-      setJoined(prev => { const s = new Set(prev); s.delete(leaveTarget.id); return s; });
-      setGroups(prev => prev.map(g =>
-        g.id === leaveTarget.id ? { ...g, memberCount: Math.max(0, (g.memberCount ?? 1) - 1) } : g
-      ));
+      setJoined((prev) => {
+        const s = new Set(prev);
+        s.delete(leaveTarget.id);
+        return s;
+      });
+      setGroups((prev) =>
+        prev.map((g) =>
+          g.id === leaveTarget.id
+            ? { ...g, memberCount: Math.max(0, (g.memberCount ?? 1) - 1) }
+            : g,
+        ),
+      );
       setLeaveTarget(null);
     } catch (e) {
-      setError(e?.response?.data?.message || 'Could not leave group.');
-    } finally { setLeavingId(null); }
+      setError(e?.response?.data?.message || "Could not leave group.");
+    } finally {
+      setLeavingId(null);
+    }
   };
 
   const handleCreate = async (form) => {
@@ -378,10 +514,12 @@ export default function GroupsPage() {
     try {
       const res = await groupService.createGroup(form);
       const created = res?.data ?? res;
-      setGroups(prev => [created, ...prev]);
-      setJoined(prev => new Set([...prev, created.id]));
+      setGroups((prev) => [created, ...prev]);
+      setJoined((prev) => new Set([...prev, created.id]));
       setCreateOpen(false);
-    } finally { setCreating(false); }
+    } finally {
+      setCreating(false);
+    }
   };
 
   // Open group chat — use groupTag for dedup so pressing the button
@@ -392,20 +530,23 @@ export default function GroupsPage() {
       const membersRes = await groupService.getMembers(group.id);
       const members = membersRes?.data ?? membersRes;
       const memberIds = (Array.isArray(members) ? members : [])
-        .map(m => m.userId)
-        .filter(id => id !== uid);
+        .map((m) => m.userId)
+        .filter((id) => id !== uid);
 
-      const res  = await conversationService.startGroupConversation(group.name, memberIds, groupTag);
+      const res = await conversationService.startGroupConversation(
+        group.name,
+        memberIds,
+        groupTag,
+      );
       const conv = res?.data ?? res;
       navigate(`/messages/${conv.id}`);
     } catch {
-      navigate('/messages');
+      navigate("/messages");
     }
   };
 
-  const displayed = tab === 'mine'
-    ? groups.filter(g => joined.has(g.id))
-    : groups;
+  const displayed =
+    tab === "mine" ? groups.filter((g) => joined.has(g.id)) : groups;
 
   return (
     <>
@@ -420,34 +561,57 @@ export default function GroupsPage() {
           </div>
 
           {error && (
-            <div style={{ background: 'rgba(232,25,44,.1)', border: '1px solid var(--red-border)', borderRadius: 8, padding: '10px 14px', marginBottom: 14, color: 'var(--red)', fontSize: 13 }}>
+            <div
+              style={{
+                background: "rgba(232,25,44,.1)",
+                border: "1px solid var(--red-border)",
+                borderRadius: 8,
+                padding: "10px 14px",
+                marginBottom: 14,
+                color: "var(--red)",
+                fontSize: 13,
+              }}
+            >
               ⚠ {error}
             </div>
           )}
 
           <div className="gtabs">
-            <button className={`gtab ${tab === 'discover' ? 'on' : ''}`} onClick={() => setTab('discover')}>
+            <button
+              className={`gtab ${tab === "discover" ? "on" : ""}`}
+              onClick={() => setTab("discover")}
+            >
               Discover
             </button>
-            <button className={`gtab ${tab === 'mine' ? 'on' : ''}`} onClick={() => setTab('mine')}>
+            <button
+              className={`gtab ${tab === "mine" ? "on" : ""}`}
+              onClick={() => setTab("mine")}
+            >
               My Groups {joined.size > 0 && `(${joined.size})`}
             </button>
           </div>
 
-          {loading ? <GroupSkeleton /> : displayed.length === 0 ? (
+          {loading ? (
+            <GroupSkeleton />
+          ) : displayed.length === 0 ? (
             <div className="lx-empty">
-              <div className="lx-empty-ic">{tab === 'mine' ? '👥' : '🔍'}</div>
-              <div className="lx-empty-t">{tab === 'mine' ? 'No Groups Yet' : 'No Groups Found'}</div>
+              <div className="lx-empty-ic">{tab === "mine" ? "👥" : "🔍"}</div>
+              <div className="lx-empty-t">
+                {tab === "mine" ? "No Groups Yet" : "No Groups Found"}
+              </div>
               <p className="lx-empty-s">
-                {tab === 'mine'
-                  ? 'Join a group from the Discover tab or create your own.'
-                  : 'No groups have been created yet. Be the first!'}
+                {tab === "mine"
+                  ? "Join a group from the Discover tab or create your own."
+                  : "No groups have been created yet. Be the first!"}
               </p>
             </div>
           ) : (
             <div className="group-grid">
               {displayed.map((g, i) => (
-                <div key={g.id} style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}>
+                <div
+                  key={g.id}
+                  style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
+                >
                   <GroupCard
                     group={g}
                     isMember={joined.has(g.id)}

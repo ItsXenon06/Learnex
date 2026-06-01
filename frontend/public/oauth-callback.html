@@ -1,33 +1,134 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>OAuth Callback</title>
+  <meta charset="UTF-8" />
+  <title>Learnex – Signing in…</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #07070a;
+      font-family: 'Syne', 'DM Sans', sans-serif;
+      color: #F0F0F5;
+    }
+    .box {
+      text-align: center;
+      padding: 40px 32px;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      background: #0e0e12;
+      min-width: 280px;
+    }
+    .logo {
+      font-size: 28px;
+      letter-spacing: 5px;
+      font-weight: 900;
+      margin-bottom: 20px;
+    }
+    .logo span { color: #E8192C; }
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(232,25,44,.2);
+      border-top-color: #E8192C;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .msg { font-size: 14px; color: #55556a; }
+    .err { color: #ff6b7a; font-size: 13px; margin-top: 12px; display: none; }
+  </style>
 </head>
 <body>
-<script>
-(function(){
-  // Parse hash or query for access_token or id_token
-  const params = {};
-  const hash = window.location.hash.substring(1);
-  hash.split('&').forEach(pair => { if (!pair) return; const [k,v] = pair.split('='); params[k]=decodeURIComponent(v); });
-  const qp = window.location.search.substring(1);
-  qp.split('&').forEach(pair => { if (!pair) return; const [k,v] = pair.split('='); params[k]=decodeURIComponent(v); });
+  <div class="box">
+    <div class="logo">LEARN<span>EX</span></div>
+    <div class="spinner"></div>
+    <div class="msg">Completing sign-in…</div>
+    <div class="err" id="err">Something went wrong. You can close this window.</div>
+  </div>
 
-  const provider = (new URLSearchParams(window.location.search)).get('provider') || params.provider;
-  let token = params['access_token'] || params['id_token'] || null;
+  <script>
+    (function () {
+      function showError(msg) {
+        document.querySelector('.spinner').style.display = 'none';
+        document.querySelector('.msg').style.display = 'none';
+        var el = document.getElementById('err');
+        if (msg) el.textContent = msg;
+        el.style.display = 'block';
+      }
 
-  if (!token) {
-    // send error back
-    window.opener.postMessage({ source: 'learnex_oauth', error: 'no_token' }, window.location.origin);
-    window.close();
-    return;
-  }
+      // Determine provider from query string (?provider=google|facebook)
+      var params = new URLSearchParams(window.location.search);
+      var provider = params.get('provider') || 'google';
 
-  window.opener.postMessage({ source: 'learnex_oauth', provider, token }, window.location.origin);
-  // close the popup
-  window.close();
-})();
-</script>
+      // Parse token from URL fragment (#access_token=... or #id_token=...)
+      var hash = window.location.hash.substring(1); // strip leading '#'
+      var hashParams = new URLSearchParams(hash);
+
+      var token = null;
+
+      if (provider === 'google') {
+        // Google implicit flow returns id_token in the fragment
+        token = hashParams.get('id_token') || hashParams.get('access_token');
+      } else if (provider === 'facebook') {
+        // Facebook returns access_token in the fragment
+        token = hashParams.get('access_token');
+      }
+
+      // Also handle error responses from providers
+      var error = hashParams.get('error') || params.get('error');
+      if (error) {
+        var errorDesc = hashParams.get('error_description') || params.get('error_description') || error;
+        if (window.opener) {
+          try {
+            window.opener.postMessage(
+              { source: 'learnex_oauth', provider: provider, error: errorDesc },
+              window.location.origin
+            );
+          } catch (e) {}
+        }
+        showError('Sign-in was cancelled or denied.');
+        setTimeout(function () { window.close(); }, 2000);
+        return;
+      }
+
+      if (!token) {
+        showError('No token received from provider.');
+        if (window.opener) {
+          try {
+            window.opener.postMessage(
+              { source: 'learnex_oauth', provider: provider, error: 'no_token' },
+              window.location.origin
+            );
+          } catch (e) {}
+        }
+        setTimeout(function () { window.close(); }, 2500);
+        return;
+      }
+
+      // Post token back to the opener (LoginPage listener)
+      if (window.opener) {
+        try {
+          window.opener.postMessage(
+            { source: 'learnex_oauth', provider: provider, token: token },
+            window.location.origin
+          );
+        } catch (e) {
+          showError('Could not communicate with the main window.');
+          return;
+        }
+        // Window will be closed by the opener listener after it processes the token.
+        // Add a fallback close in case the message was missed.
+        setTimeout(function () { window.close(); }, 5000);
+      } else {
+        // Popup was opened without an opener (direct navigation) — just close.
+        showError('No opener window found. You can close this tab.');
+      }
+    })();
+  </script>
 </body>
 </html>

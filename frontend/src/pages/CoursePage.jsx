@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth, getInitials } from '../contexts/AuthContext';
-import Layout from '../components/Layout';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth, getInitials } from "../contexts/AuthContext";
+import Layout from "../components/Layout";
+import courseService from "../services/courseService";
 
 const css = `
 .courses-main{min-width:0;padding:24px 28px 90px;}
@@ -77,38 +78,49 @@ const css = `
 `;
 
 // Placeholder course data — swap out when CourseService is implemented
-const MOCK_COURSES = [
-  { id: '1', code: 'CS301',  title: 'Data Structures & Algorithms', description: 'Fundamental algorithms, complexity analysis, and data structure design patterns.', dept: 'Computer Science', enrolled: 142, color: 'rgba(74,158,255,.2)', accent: '#4a9eff' },
-  { id: '2', code: 'MATH201', title: 'Linear Algebra',               description: 'Vector spaces, matrices, eigenvalues, and applications to machine learning.',    dept: 'Mathematics',      enrolled: 89,  color: 'rgba(34,197,94,.2)',  accent: '#22c55e' },
-  { id: '3', code: 'CS401',  title: 'Operating Systems',             description: 'Process management, memory, file systems, and concurrency primitives.',           dept: 'Computer Science', enrolled: 98,  color: 'rgba(155,89,245,.2)', accent: '#9b59f5' },
-  { id: '4', code: 'ENG102', title: 'Technical Writing',             description: 'Clear communication for engineers: documentation, reports, and presentations.',   dept: 'English',          enrolled: 56,  color: 'rgba(239,159,39,.2)', accent: '#EF9F27' },
-  { id: '5', code: 'CS201',  title: 'Computer Networks',             description: 'TCP/IP stack, routing, protocols, and distributed systems fundamentals.',         dept: 'Computer Science', enrolled: 74,  color: 'rgba(232,25,44,.2)',  accent: '#E8192C' },
-  { id: '6', code: 'STAT301', title: 'Probability & Statistics',     description: 'Statistical inference, hypothesis testing, regression, and Bayesian methods.',    dept: 'Statistics',       enrolled: 61,  color: 'rgba(201,168,76,.2)', accent: '#C9A84C' },
-];
 
 export default function CoursePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [tab,       setTab]       = useState('all');
+  const [tab, setTab] = useState("all");
+  const starKey = `learnex_starred_courses_${user?.userId ?? user?.id ?? "guest"}`;
   const [starred, setStarred] = useState(() => {
-  try {
-    const saved = localStorage.getItem('learnex_starred_courses');
-    return saved ? new Set(JSON.parse(saved)) : new Set();
-  } catch { return new Set(); }
-});
-  const [reqOpen,   setReqOpen]   = useState(false);
-  const [reqSent,   setReqSent]   = useState(false);
-  const [reqForm,   setReqForm]   = useState({ courseName: '', reason: '' });
-  const [sending,   setSending]   = useState(false);
-  const courses = MOCK_COURSES; // swap: await courseService.getCourses()
+    try {
+      const saved = localStorage.getItem(starKey);
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+  const [reqOpen, setReqOpen] = useState(false);
+  const [reqSent, setReqSent] = useState(false);
+  const [reqForm, setReqForm] = useState({ courseName: "", reason: "" });
+  const [sending, setSending] = useState(false);
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState("");
+  useEffect(() => {
+    courseService
+      .getCourses()
+      .then((res) => {
+        const data = res?.data ?? res;
+        setCourses(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        setApiError("Failed to load courses.");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
 
   const toggleStar = (e, id) => {
   e.stopPropagation();
   setStarred(prev => {
     const next = new Set(prev);
     next.has(id) ? next.delete(id) : next.add(id);
-    try { localStorage.setItem('learnex_starred_courses', JSON.stringify([...next])); } 
+    try { localStorage.setItem(starKey, JSON.stringify([...next])); }
     catch { /* no-op */ }
     return next;
   });
@@ -116,20 +128,31 @@ export default function CoursePage() {
 
   const sendRequest = async () => {
     if (!reqForm.courseName.trim()) return;
+
     setSending(true);
-    // TODO: call courseService.requestCourse(reqForm) when backend is ready
-    // For now simulate with mailto
-    const subject = encodeURIComponent(`Course Request: ${reqForm.courseName}`);
-    const body    = encodeURIComponent(`Course: ${reqForm.courseName}\n\nReason: ${reqForm.reason}`);
-    setTimeout(() => {
+
+    try {
+      await courseService.requestCourse(reqForm.courseName, reqForm.reason);
+
       setSending(false);
       setReqSent(true);
-    }, 800);
-  };
+    } catch (e) {
+      setSending(false);
 
-  const displayed = tab === 'starred'
-    ? courses.filter(c => starred.has(c.id))
-    : courses;
+      alert(e?.response?.data?.message || "Failed to submit request.");
+    }
+  };
+  if (loading) {
+    return (
+      <Layout active="courses">
+        <main className="courses-main">
+          <h2>Loading courses...</h2>
+        </main>
+      </Layout>
+    );
+  }
+  const displayed =
+    tab === "starred" ? courses.filter((c) => starred.has(c.id)) : courses;
 
   return (
     <>
@@ -138,25 +161,95 @@ export default function CoursePage() {
         <main className="courses-main">
           <div className="ph">
             <span className="ph-title">Courses</span>
-            <button className="btn-fire" onClick={() => { setReqOpen(true); setReqSent(false); setReqForm({ courseName: '', reason: '' }); }}>
+            <button
+              className="btn-fire"
+              onClick={() => {
+                setReqOpen(true);
+                setReqSent(false);
+                setReqForm({ courseName: "", reason: "" });
+              }}
+            >
               + Request Course
             </button>
           </div>
 
           <div className="ctabs">
-            <button className={`ctab ${tab === 'all' ? 'on' : ''}`} onClick={() => setTab('all')}>
+            <button
+              className={`ctab ${tab === "all" ? "on" : ""}`}
+              onClick={() => setTab("all")}
+            >
               All Courses
             </button>
-            <button className={`ctab ${tab === 'starred' ? 'on' : ''}`} onClick={() => setTab('starred')}>
+            <button
+              className={`ctab ${tab === "starred" ? "on" : ""}`}
+              onClick={() => setTab("starred")}
+            >
               Starred {starred.size > 0 && `(${starred.size})`}
             </button>
           </div>
-
-          {displayed.length === 0 ? (
+          {apiError && (
+            <div
+              style={{
+                padding: "12px",
+                marginBottom: "16px",
+                border: "1px solid #E8192C",
+                borderRadius: "8px",
+                color: "#E8192C",
+              }}
+            >
+              {apiError}
+            </div>
+          )}
+          {/* REPLACE the grid rendering block */}
+          {apiError ? (
+            <div style={{ color: "var(--red)", padding: 20 }}>⚠ {apiError}</div>
+          ) : loading ? (
+            <div className="course-grid">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div
+                  key={i}
+                  className="course-card"
+                  style={{ cursor: "default", minHeight: 180 }}
+                >
+                  <div
+                    className="cc-banner"
+                    style={{ background: "var(--s3)" }}
+                  />
+                  <div className="cc-body">
+                    <div
+                      className="sk"
+                      style={{
+                        height: 14,
+                        width: "60%",
+                        marginBottom: 8,
+                        borderRadius: 5,
+                      }}
+                    />
+                    <div
+                      className="sk"
+                      style={{
+                        height: 10,
+                        width: "100%",
+                        marginBottom: 5,
+                        borderRadius: 4,
+                      }}
+                    />
+                    <div
+                      className="sk"
+                      style={{ height: 10, width: "80%", borderRadius: 4 }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : displayed.length === 0 ? (
             <div className="cs-banner">
               <div className="cs-ic">⭐</div>
               <div className="cs-t">No Starred Courses</div>
-              <p className="cs-s">Star courses from the All tab to bookmark them here for quick access.</p>
+              <p className="cs-s">
+                Star courses from the All tab to bookmark them here for quick
+                access.
+              </p>
             </div>
           ) : (
             <div className="course-grid">
@@ -167,8 +260,20 @@ export default function CoursePage() {
                   style={{ animationDelay: `${i * 40}ms` }}
                   onClick={() => navigate(`/courses/${c.id}`)}
                 >
-                  <div className="cc-banner" style={{ background: `linear-gradient(135deg,${c.color},transparent)` }}>
-                    <span className="cc-code" style={{ background: `${c.color}`, color: c.accent, border: `1px solid ${c.accent}30` }}>
+                  <div
+                    className="cc-banner"
+                    style={{
+                      background: `linear-gradient(135deg,${c.color},transparent)`,
+                    }}
+                  >
+                    <span
+                      className="cc-code"
+                      style={{
+                        background: `${c.color}`,
+                        color: c.accent,
+                        border: `1px solid ${c.accent}30`,
+                      }}
+                    >
                       {c.code}
                     </span>
                   </div>
@@ -182,11 +287,13 @@ export default function CoursePage() {
                         <span>{c.dept}</span>
                       </div>
                       <button
-                        className={`cc-star ${starred.has(c.id) ? 'starred' : ''}`}
-                        onClick={e => toggleStar(e, c.id)}
-                        title={starred.has(c.id) ? 'Unstar' : 'Star this course'}
+                        className={`cc-star ${starred.has(c.id) ? "starred" : ""}`}
+                        onClick={(e) => toggleStar(e, c.id)}
+                        title={
+                          starred.has(c.id) ? "Unstar" : "Star this course"
+                        }
                       >
-                        {starred.has(c.id) ? '⭐' : '☆'}
+                        {starred.has(c.id) ? "⭐" : "☆"}
                       </button>
                     </div>
                   </div>
@@ -199,19 +306,33 @@ export default function CoursePage() {
 
       {/* Request Course Modal */}
       {reqOpen && (
-        <div className="modal-bg" onClick={e => e.target === e.currentTarget && setReqOpen(false)}>
+        <div
+          className="modal-bg"
+          onClick={(e) => e.target === e.currentTarget && setReqOpen(false)}
+        >
           <div className="modal">
             <div className="modal-head">
               <span className="modal-title">Request Course</span>
-              <button className="modal-close" onClick={() => setReqOpen(false)}>✕</button>
+              <button className="modal-close" onClick={() => setReqOpen(false)}>
+                ✕
+              </button>
             </div>
             {reqSent ? (
               <div className="modal-success">
                 <div className="ms-ic">✅</div>
                 <div className="ms-t">Request Sent!</div>
-                <p className="ms-s">Your course request has been submitted. An admin will review it and add the course to the platform.</p>
+                <p className="ms-s">
+                  Your course request has been submitted. An admin will review
+                  it and add the course to the platform.
+                </p>
                 <br />
-                <button className="btn-fire" style={{margin:'0 auto'}} onClick={() => setReqOpen(false)}>Done</button>
+                <button
+                  className="btn-fire"
+                  style={{ margin: "0 auto" }}
+                  onClick={() => setReqOpen(false)}
+                >
+                  Done
+                </button>
               </div>
             ) : (
               <>
@@ -221,7 +342,12 @@ export default function CoursePage() {
                     <input
                       autoFocus
                       value={reqForm.courseName}
-                      onChange={e => setReqForm(f => ({ ...f, courseName: e.target.value }))}
+                      onChange={(e) =>
+                        setReqForm((f) => ({
+                          ...f,
+                          courseName: e.target.value,
+                        }))
+                      }
                       placeholder="e.g. Advanced Machine Learning"
                     />
                   </div>
@@ -230,15 +356,26 @@ export default function CoursePage() {
                     <textarea
                       rows={3}
                       value={reqForm.reason}
-                      onChange={e => setReqForm(f => ({ ...f, reason: e.target.value }))}
+                      onChange={(e) =>
+                        setReqForm((f) => ({ ...f, reason: e.target.value }))
+                      }
                       placeholder="Describe the course and why the community would benefit…"
                     />
                   </div>
                 </div>
                 <div className="modal-foot">
-                  <button className="btn-outline" onClick={() => setReqOpen(false)}>Cancel</button>
-                  <button className="btn-fire" onClick={sendRequest} disabled={!reqForm.courseName.trim() || sending}>
-                    {sending ? 'Sending…' : 'Send Request →'}
+                  <button
+                    className="btn-outline"
+                    onClick={() => setReqOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="btn-fire"
+                    onClick={sendRequest}
+                    disabled={!reqForm.courseName.trim() || sending}
+                  >
+                    {sending ? "Sending…" : "Send Request →"}
                   </button>
                 </div>
               </>

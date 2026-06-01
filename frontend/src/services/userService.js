@@ -33,7 +33,7 @@ const search = (q) =>
 
 // GET /api/users/me → ProfileResponse for the logged-in user
 const getMe = () => api.get('/users/me');
-
+const getSuggestions = () => api.get('/users/suggestions');
 export default {
   getProfile,
   updateProfile,
@@ -44,4 +44,5 @@ export default {
   searchByEmail,
   search,
   getMe,
+  getSuggestions
 };

@@ -77,7 +77,7 @@
     "campusFeed": "Campus Feed",
     "campusFeedDesc": "Stay updated on events, posts & announcements."
   },
-  ,"search": {
+  "search": {
     "title": "Search",
     "placeholder": "Search students, posts, topics…",
     "emptyHeading": "Find People & Posts",
@@ -90,7 +90,7 @@
     "noPeopleDescription": "No students match \"{{query}}\". Try a different name or email.",
     "noPostsTitle": "No Posts Found",
     "noPostsDescription": "No posts mention \"{{query}}\". Try a different term or hashtag."
-  }
+  },
   "messages": {
     "resetLinkSent": "If the email exists, a reset link was sent.",
     "passwordResetSuccess": "Password reset successful — you can now sign in.",

@@ -34,4 +34,17 @@ public class EmailService {
             throw new RuntimeException("Failed to send email", ex);
         }
     }
+    public void sendEmail(String to, String subject, String text) {
+    try {
+        MimeMessage msg = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(msg, false, "UTF-8");
+        helper.setFrom(fromAddress.isEmpty() ? "no-reply@learnex.app" : fromAddress);
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setText(text, false);
+        mailSender.send(msg);
+    } catch (MessagingException ex) {
+        throw new RuntimeException("Failed to send email", ex);
+    }
+}
 }

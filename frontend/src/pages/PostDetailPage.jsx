@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth, getInitials } from '../contexts/AuthContext';
-import Layout from '../components/Layout';
-import postService from '../services/postService';
-import commentService from '../services/commentService';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth, getInitials } from "../contexts/AuthContext";
+import Layout from "../components/Layout";
+import postService from "../services/postService";
+import commentService from "../services/commentService";
 
 /* ─── CSS ─────────────────────────────────────────────────────────────────── */
 const css = `
@@ -185,24 +185,38 @@ const css = `
 
 /* ─── Constants ───────────────────────────────────────────────────────────── */
 const RX_TYPES = [
-  { emoji: '👍', type: 'like',       label: 'Like' },
-  { emoji: '❤️',  type: 'love',       label: 'Love' },
-  { emoji: '💡', type: 'insightful', label: 'Insightful' },
-  { emoji: '🎉', type: 'celebrate',  label: 'Celebrate' },
-  { emoji: '🤝', type: 'support',    label: 'Support' },
+  { emoji: "👍", type: "like", label: "Like" },
+  { emoji: "❤️", type: "love", label: "Love" },
+  { emoji: "💡", type: "insightful", label: "Insightful" },
+  { emoji: "🎉", type: "celebrate", label: "Celebrate" },
+  { emoji: "🤝", type: "support", label: "Support" },
 ];
-const RX_EMOJI = { like:'👍', love:'❤️', insightful:'💡', celebrate:'🎉', support:'🤝' };
+const RX_EMOJI = {
+  like: "👍",
+  love: "❤️",
+  insightful: "💡",
+  celebrate: "🎉",
+  support: "🤝",
+};
 
-const AV_BG = ['#0d1f35','#0d2918','#2a0d1e','#1e1a0d','#1a0d2e','#1a1a0d'];
-const AV_C  = ['#4a9eff','#4adf8a','#df4a8a','#dfb84a','#af4adf','#df9a4a'];
+const AV_BG = [
+  "#0d1f35",
+  "#0d2918",
+  "#2a0d1e",
+  "#1e1a0d",
+  "#1a0d2e",
+  "#1a1a0d",
+];
+const AV_C = ["#4a9eff", "#4adf8a", "#df4a8a", "#dfb84a", "#af4adf", "#df9a4a"];
 function avatarStyle(seed) {
-  const i = (typeof seed === 'string' ? seed.charCodeAt(0) : seed || 0) % AV_BG.length;
+  const i =
+    (typeof seed === "string" ? seed.charCodeAt(0) : seed || 0) % AV_BG.length;
   return { bg: AV_BG[i], c: AV_C[i] };
 }
 function timeAgo(iso) {
-  if (!iso) return '';
+  if (!iso) return "";
   const m = Math.floor((Date.now() - new Date(iso)) / 60000);
-  if (m < 1) return 'just now';
+  if (m < 1) return "just now";
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
@@ -211,8 +225,18 @@ function timeAgo(iso) {
 function renderText(text) {
   if (!text) return null;
   return text.split(/(\#\w+|@\w+)/g).map((p, i) => {
-    if (p.startsWith('#')) return <span key={i} className="pd-tag">{p}</span>;
-    if (p.startsWith('@')) return <span key={i} className="pd-mention">{p}</span>;
+    if (p.startsWith("#"))
+      return (
+        <span key={i} className="pd-tag">
+          {p}
+        </span>
+      );
+    if (p.startsWith("@"))
+      return (
+        <span key={i} className="pd-mention">
+          {p}
+        </span>
+      );
     return <span key={i}>{p}</span>;
   });
 }
@@ -222,25 +246,38 @@ function Lightbox({ images, startIndex, onClose }) {
   const [idx, setIdx] = useState(startIndex);
   useEffect(() => {
     const handler = (e) => {
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowLeft')  setIdx(i => (i - 1 + images.length) % images.length);
-      if (e.key === 'ArrowRight') setIdx(i => (i + 1) % images.length);
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft")
+        setIdx((i) => (i - 1 + images.length) % images.length);
+      if (e.key === "ArrowRight") setIdx((i) => (i + 1) % images.length);
     };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
   }, [images.length, onClose]);
 
   return (
     <div className="lbox" onClick={onClose}>
-      <button className="lbox-close" onClick={onClose}>✕</button>
+      <button className="lbox-close" onClick={onClose}>
+        ✕
+      </button>
       {images.length > 1 && (
         <>
-          <button className="lbox-nav lbox-prev"
-            onClick={e => { e.stopPropagation(); setIdx(i => (i - 1 + images.length) % images.length); }}>
+          <button
+            className="lbox-nav lbox-prev"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIdx((i) => (i - 1 + images.length) % images.length);
+            }}
+          >
             ‹
           </button>
-          <button className="lbox-nav lbox-next"
-            onClick={e => { e.stopPropagation(); setIdx(i => (i + 1) % images.length); }}>
+          <button
+            className="lbox-nav lbox-next"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIdx((i) => (i + 1) % images.length);
+            }}
+          >
             ›
           </button>
         </>
@@ -249,7 +286,7 @@ function Lightbox({ images, startIndex, onClose }) {
         className="lbox-img"
         src={images[idx].url}
         alt=""
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       />
     </div>
   );
@@ -258,7 +295,9 @@ function Lightbox({ images, startIndex, onClose }) {
 /* ─── AttachmentGrid ──────────────────────────────────────────────────────── */
 function AttachmentGrid({ attachments }) {
   const [lightbox, setLightbox] = useState(null);
-  const images = attachments.filter(a => a.type === 'image' || a.mimeType?.startsWith('image/'));
+  const images = attachments.filter(
+    (a) => a.type === "image" || a.mimeType?.startsWith("image/"),
+  );
   if (images.length === 0) return null;
   const cls = `pd-media n${Math.min(images.length, 4)}`;
   return (
@@ -275,17 +314,25 @@ function AttachmentGrid({ attachments }) {
         ))}
       </div>
       {lightbox !== null && (
-        <Lightbox images={images} startIndex={lightbox} onClose={() => setLightbox(null)} />
+        <Lightbox
+          images={images}
+          startIndex={lightbox}
+          onClose={() => setLightbox(null)}
+        />
       )}
     </>
   );
 }
 
 /* ─── CommentReactionBar ──────────────────────────────────────────────────── */
-function CommentReactionBar({ commentId, reactions: initRx, myReaction: initMy }) {
+function CommentReactionBar({
+  commentId,
+  reactions: initRx,
+  myReaction: initMy,
+}) {
   const [reactions, setReactions] = useState(initRx ?? []);
-  const [myRx, setMyRx]           = useState(initMy ?? null);
-  const [busy, setBusy]           = useState(false);
+  const [myRx, setMyRx] = useState(initMy ?? null);
+  const [busy, setBusy] = useState(false);
 
   const handle = async (type) => {
     if (busy) return;
@@ -294,37 +341,48 @@ function CommentReactionBar({ commentId, reactions: initRx, myReaction: initMy }
       let updated;
       if (myRx === type) {
         const res = await commentService.removeCommentReaction(commentId);
-        updated   = res?.data ?? res;
+        updated = res?.data ?? res;
         setMyRx(null);
       } else {
         const res = await commentService.reactToComment(commentId, type);
-        updated   = res?.data ?? res;
+        updated = res?.data ?? res;
         setMyRx(type);
       }
       if (Array.isArray(updated)) setReactions(updated);
-    } catch { /* no-op */ }
-    finally { setBusy(false); }
+    } catch {
+      /* no-op */
+    } finally {
+      setBusy(false);
+    }
   };
 
   const total = reactions.reduce((s, r) => s + (r.count ?? 0), 0);
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        flexWrap: "wrap",
+      }}
+    >
       {/* Hover-to-pick trigger */}
       <div className="pdc-rx-wrap">
-        <button
-          className={`pdc-act ${myRx ? 'liked' : ''}`}
-          disabled={busy}
-        >
-          {myRx ? (RX_EMOJI[myRx] ?? '👍') : '👍'}
+        <button className={`pdc-act ${myRx ? "liked" : ""}`} disabled={busy}>
+          {myRx ? (RX_EMOJI[myRx] ?? "👍") : "👍"}
           {total > 0 && <span style={{ fontSize: 10 }}>{total}</span>}
-          <div className="pdc-rx-pick" onMouseDown={e => e.stopPropagation()}>
-            {RX_TYPES.map(r => (
+          <div className="pdc-rx-pick" onMouseDown={(e) => e.stopPropagation()}>
+            {RX_TYPES.map((r) => (
               <button
                 key={r.type}
                 className="pdc-rx-e"
                 title={r.label}
-                onMouseDown={e => { e.stopPropagation(); e.preventDefault(); handle(r.type); }}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  handle(r.type);
+                }}
               >
                 {r.emoji}
               </button>
@@ -333,40 +391,42 @@ function CommentReactionBar({ commentId, reactions: initRx, myReaction: initMy }
         </button>
       </div>
       {/* Chips for each type with count */}
-      {reactions.filter(r => r.count > 0).map(r => (
-        <span
-          key={r.name}
-          className={`pdc-rx-chip ${myRx === r.name ? 'mine' : ''}`}
-          onClick={() => handle(r.name)}
-        >
-          {RX_EMOJI[r.name] ?? r.emoji} {r.count}
-        </span>
-      ))}
+      {reactions
+        .filter((r) => r.count > 0)
+        .map((r) => (
+          <span
+            key={r.name}
+            className={`pdc-rx-chip ${myRx === r.name ? "mine" : ""}`}
+            onClick={() => handle(r.name)}
+          >
+            {RX_EMOJI[r.name] ?? r.emoji} {r.count}
+          </span>
+        ))}
     </div>
   );
 }
 
 /* ─── CommentItem (detail page) ───────────────────────────────────────────── */
 function DetailCommentItem({ comment, postId, currentUserIni, depth = 0 }) {
-  const navigate       = useNavigate();
+  const navigate = useNavigate();
   const [showReply, setShowReply] = useState(false);
-  const [replyTxt, setReplyTxt]   = useState('');
+  const [replyTxt, setReplyTxt] = useState("");
   const [replySending, setReplySending] = useState(false);
-  const [replies, setReplies]     = useState(comment.replies ?? []);
+  const [replies, setReplies] = useState(comment.replies ?? []);
   const replyRef = useRef(null);
 
   const { bg, c } = avatarStyle(comment.authorId?.toString());
-  const ini       = getInitials(comment.authorDisplayName, comment.authorEmail);
+  const ini = getInitials(comment.authorDisplayName, comment.authorEmail);
 
   const sendReply = async () => {
     if (!replyTxt.trim() || replySending) return;
     setReplySending(true);
     const text = replyTxt.trim();
-    setReplyTxt('');
+    setReplyTxt("");
     try {
-      const res   = await commentService.createComment(postId, text, comment.id);
+      const res = await commentService.createComment(postId, text, comment.id);
       const saved = res?.data ?? res;
-      setReplies(prev => [...prev, saved]);
+      setReplies((prev) => [...prev, saved]);
       setShowReply(false);
     } catch {
       setReplyTxt(text);
@@ -386,10 +446,10 @@ function DetailCommentItem({ comment, postId, currentUserIni, depth = 0 }) {
         <div className="pdc-bub">
           <div className="pdc-who">
             <span
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: "pointer" }}
               onClick={() => navigate(`/profile/${comment.authorId}`)}
             >
-              {comment.authorDisplayName || comment.authorEmail || 'User'}
+              {comment.authorDisplayName || comment.authorEmail || "User"}
             </span>
             <span className="pdc-when">{timeAgo(comment.createdAt)}</span>
           </div>
@@ -407,7 +467,7 @@ function DetailCommentItem({ comment, postId, currentUserIni, depth = 0 }) {
             <button
               className="pdc-act"
               onClick={() => {
-                setShowReply(v => !v);
+                setShowReply((v) => !v);
                 setTimeout(() => replyRef.current?.focus(), 100);
               }}
             >
@@ -424,21 +484,23 @@ function DetailCommentItem({ comment, postId, currentUserIni, depth = 0 }) {
               className="pdc-reply-field"
               placeholder="Write a reply…"
               value={replyTxt}
-              onChange={e => setReplyTxt(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && sendReply()}
+              onChange={(e) => setReplyTxt(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && sendReply()}
             />
             <button
               className="pdc-reply-go"
               onClick={sendReply}
               disabled={!replyTxt.trim() || replySending}
-            >➤</button>
+            >
+              ➤
+            </button>
           </div>
         )}
 
         {/* Nested replies */}
         {replies.length > 0 && (
           <div className="pdc-replies">
-            {replies.map(r => (
+            {replies.map((r) => (
               <DetailCommentItem
                 key={r.id}
                 comment={r}
@@ -456,35 +518,36 @@ function DetailCommentItem({ comment, postId, currentUserIni, depth = 0 }) {
 
 /* ─── PostDetailPage ──────────────────────────────────────────────────────── */
 export default function PostDetailPage() {
-  const { postId }  = useParams();
-  const navigate    = useNavigate();
-  const { user }    = useAuth();
+  const { postId } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const uid        = user?.userId ?? user?.id;
-  const userIni    = getInitials(user?.displayName, user?.email);
+  const uid = user?.userId ?? user?.id;
+  const userIni = getInitials(user?.displayName, user?.email);
 
-  const [post,       setPost]       = useState(null);
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState('');
-  const [comments,   setComments]   = useState([]);
-  const [cmLoading,  setCmLoading]  = useState(true);
-  const [cmTxt,      setCmTxt]      = useState('');
-  const [cmSending,  setCmSending]  = useState(false);
-  const [myRx,       setMyRx]       = useState(null);
-  const [rxLoading,  setRxLoading]  = useState(false);
+  const [post, setPost] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [comments, setComments] = useState([]);
+  const [cmLoading, setCmLoading] = useState(true);
+  const [cmTxt, setCmTxt] = useState("");
+  const [cmSending, setCmSending] = useState(false);
+  const [myRx, setMyRx] = useState(null);
+  const [rxLoading, setRxLoading] = useState(false);
   const cmRef = useRef(null);
 
   // Load post
   useEffect(() => {
     if (!postId) return;
     setLoading(true);
-    postService.getPost(postId)
-      .then(res => {
+    postService
+      .getPost(postId)
+      .then((res) => {
         const data = res?.data ?? res;
         setPost(data);
         setMyRx(data?.myReaction ?? null);
       })
-      .catch(() => setError('Post not found or unavailable.'))
+      .catch(() => setError("Post not found or unavailable."))
       .finally(() => setLoading(false));
   }, [postId]);
 
@@ -492,8 +555,9 @@ export default function PostDetailPage() {
   useEffect(() => {
     if (!postId) return;
     setCmLoading(true);
-    commentService.getComments(postId)
-      .then(res => {
+    commentService
+      .getComments(postId)
+      .then((res) => {
         const data = res?.data ?? res;
         setComments(Array.isArray(data) ? data : []);
       })
@@ -508,28 +572,32 @@ export default function PostDetailPage() {
       let updated;
       if (myRx === type) {
         const res = await postService.removePostReaction(post.id);
-        updated   = res?.data ?? res;
+        updated = res?.data ?? res;
         setMyRx(null);
       } else {
         const res = await postService.reactToPost(post.id, type);
-        updated   = res?.data ?? res;
+        updated = res?.data ?? res;
         setMyRx(type);
       }
-      if (Array.isArray(updated)) setPost(p => ({ ...p, reactions: updated }));
-    } catch { /* no-op */ }
-    finally { setRxLoading(false); }
+      if (Array.isArray(updated))
+        setPost((p) => ({ ...p, reactions: updated }));
+    } catch {
+      /* no-op */
+    } finally {
+      setRxLoading(false);
+    }
   };
 
   const sendComment = async () => {
     if (!cmTxt.trim() || cmSending) return;
     setCmSending(true);
     const text = cmTxt.trim();
-    setCmTxt('');
+    setCmTxt("");
     try {
-      const res   = await commentService.createComment(postId, text);
+      const res = await commentService.createComment(postId, text);
       const saved = res?.data ?? res;
-      setComments(prev => [...prev, saved]);
-      setPost(p => ({ ...p, commentCount: (p.commentCount ?? 0) + 1 }));
+      setComments((prev) => [...prev, saved]);
+      setPost((p) => ({ ...p, commentCount: (p.commentCount ?? 0) + 1 }));
     } catch {
       setCmTxt(text);
     } finally {
@@ -538,38 +606,44 @@ export default function PostDetailPage() {
   };
 
   /* ── Render states ── */
-  if (loading) return (
-    <>
-      <style>{css}</style>
-      <Layout active="feed">
-        <div className="pd-wrap">
-          <div className="pd-loading">Loading post…</div>
-        </div>
-      </Layout>
-    </>
-  );
-
-  if (error || !post) return (
-    <>
-      <style>{css}</style>
-      <Layout active="feed">
-        <div className="pd-wrap">
-          <div className="pd-err">
-            <div className="pd-err-ic">🔍</div>
-            <div className="pd-err-t">Not Found</div>
-            <div className="pd-err-s">{error || 'This post does not exist.'}</div>
+  if (loading)
+    return (
+      <>
+        <style>{css}</style>
+        <Layout active="feed">
+          <div className="pd-wrap">
+            <div className="pd-loading">Loading post…</div>
           </div>
-        </div>
-      </Layout>
-    </>
-  );
+        </Layout>
+      </>
+    );
 
-  const reactions    = Array.isArray(post.reactions) ? post.reactions : [];
-  const totalRx      = reactions.reduce((s, r) => s + (r.count ?? 0), 0);
-  const topRx        = [...reactions].sort((a, b) => (b.count ?? 0) - (a.count ?? 0)).slice(0, 3);
-  const authorIni    = getInitials(post.authorDisplayName, post.authorEmail);
-  const { bg, c }    = avatarStyle(post.authorId);
-  const attachments  = post.attachments ?? [];
+  if (error || !post)
+    return (
+      <>
+        <style>{css}</style>
+        <Layout active="feed">
+          <div className="pd-wrap">
+            <div className="pd-err">
+              <div className="pd-err-ic">🔍</div>
+              <div className="pd-err-t">Not Found</div>
+              <div className="pd-err-s">
+                {error || "This post does not exist."}
+              </div>
+            </div>
+          </div>
+        </Layout>
+      </>
+    );
+
+  const reactions = Array.isArray(post.reactions) ? post.reactions : [];
+  const totalRx = reactions.reduce((s, r) => s + (r.count ?? 0), 0);
+  const topRx = [...reactions]
+    .sort((a, b) => (b.count ?? 0) - (a.count ?? 0))
+    .slice(0, 3);
+  const authorIni = getInitials(post.authorDisplayName, post.authorEmail);
+  const { bg, c } = avatarStyle(post.authorId);
+  const attachments = post.attachments ?? [];
 
   return (
     <>
@@ -592,15 +666,25 @@ export default function PostDetailPage() {
                 {authorIni}
               </div>
               <div className="pd-meta">
-                <div className="pd-name" onClick={() => navigate(`/profile/${post.authorId}`)}>
-                  {post.authorDisplayName || post.authorEmail || 'Unknown'}
+                <div
+                  className="pd-name"
+                  onClick={() => navigate(`/profile/${post.authorId}`)}
+                >
+                  {post.authorDisplayName || post.authorEmail || "Unknown"}
                 </div>
                 <div className="pd-sub">
-                  {post.authorHeadline && <><span>{post.authorHeadline}</span><span className="pd-dot">·</span></>}
+                  {post.authorHeadline && (
+                    <>
+                      <span>{post.authorHeadline}</span>
+                      <span className="pd-dot">·</span>
+                    </>
+                  )}
                   <span>{timeAgo(post.createdAt)}</span>
-                  {post.visibility && post.visibility !== 'public' && (
-                    <><span className="pd-dot">·</span>
-                    <span>{post.visibility === 'private' ? '🔒' : '🔗'}</span></>
+                  {post.visibility && post.visibility !== "public" && (
+                    <>
+                      <span className="pd-dot">·</span>
+                      <span>{post.visibility === "private" ? "🔒" : "🔗"}</span>
+                    </>
                   )}
                 </div>
               </div>
@@ -618,15 +702,26 @@ export default function PostDetailPage() {
             {(totalRx > 0 || (post.commentCount ?? 0) > 0) && (
               <div className="pd-stats">
                 <div className="pd-rx-row">
-                  {topRx.map(r => (
+                  {topRx.map((r) => (
                     <span key={r.name ?? r.type} className="pd-em">
-                      {RX_EMOJI[r.name ?? r.type] ?? '👍'}
+                      {RX_EMOJI[r.name ?? r.type] ?? "👍"}
                     </span>
                   ))}
-                  {totalRx > 0 && <span style={{ marginLeft: 4, fontSize: 12 }}>{totalRx}</span>}
+                  {totalRx > 0 && (
+                    <span style={{ marginLeft: 4, fontSize: 12 }}>
+                      {totalRx}
+                    </span>
+                  )}
                 </div>
-                <span style={{ fontSize: 12, color: 'var(--t3)', fontFamily: 'var(--fm)' }}>
-                  {post.commentCount ?? comments.length} comment{(post.commentCount ?? comments.length) !== 1 ? 's' : ''}
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: "var(--t3)",
+                    fontFamily: "var(--fm)",
+                  }}
+                >
+                  {post.commentCount ?? comments.length} comment
+                  {(post.commentCount ?? comments.length) !== 1 ? "s" : ""}
                 </span>
               </div>
             )}
@@ -634,19 +729,30 @@ export default function PostDetailPage() {
             {/* Actions */}
             <div className="pd-actions">
               <button
-                className={`pda ${myRx ? 'liked' : ''}`}
-                onClick={() => handleReact(myRx || 'like')}
+                className={`pda ${myRx ? "liked" : ""}`}
+                onClick={() => handleReact(myRx || "like")}
                 disabled={rxLoading}
               >
-                <span className="pda-i">{myRx ? (RX_EMOJI[myRx] ?? '👍') : '👍'}</span>
-                {myRx ? (RX_TYPES.find(r => r.type === myRx)?.label ?? 'Liked') : 'Like'}
-                <div className="pd-rx-pick" onMouseDown={e => e.stopPropagation()}>
-                  {RX_TYPES.map(r => (
+                <span className="pda-i">
+                  {myRx ? (RX_EMOJI[myRx] ?? "👍") : "👍"}
+                </span>
+                {myRx
+                  ? (RX_TYPES.find((r) => r.type === myRx)?.label ?? "Liked")
+                  : "Like"}
+                <div
+                  className="pd-rx-pick"
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  {RX_TYPES.map((r) => (
                     <button
                       key={r.type}
                       className="pd-rx-e"
                       title={r.label}
-                      onMouseDown={e => { e.stopPropagation(); e.preventDefault(); handleReact(r.type); }}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleReact(r.type);
+                      }}
                     >
                       {r.emoji}
                     </button>
@@ -658,28 +764,33 @@ export default function PostDetailPage() {
                 <span className="pda-i">💬</span>Comment
               </button>
 
-              <button className="pda" onClick={() => {
-                navigator.clipboard?.writeText(window.location.href);
-              }}>
+              <button
+                className="pda"
+                onClick={() => {
+                  navigator.clipboard?.writeText(window.location.href);
+                }}
+              >
                 <span className="pda-i">🔗</span>Copy Link
               </button>
 
               <button
-                className={`pda ${post.saved ? 'saved' : ''}`}
+                className={`pda ${post.saved ? "saved" : ""}`}
                 onClick={async () => {
                   try {
                     if (post.saved) {
                       await postService.unsavePost(post.id);
-                      setPost(p => ({ ...p, saved: false }));
+                      setPost((p) => ({ ...p, saved: false }));
                     } else {
                       await postService.savePost(post.id);
-                      setPost(p => ({ ...p, saved: true }));
+                      setPost((p) => ({ ...p, saved: true }));
                     }
-                  } catch { /* no-op */ }
+                  } catch {
+                    /* no-op */
+                  }
                 }}
               >
-                <span className="pda-i">{post.saved ? '🔖' : '🏷'}</span>
-                {post.saved ? 'Saved' : 'Save'}
+                <span className="pda-i">{post.saved ? "🔖" : "🏷"}</span>
+                {post.saved ? "Saved" : "Save"}
               </button>
             </div>
           </div>
@@ -696,7 +807,7 @@ export default function PostDetailPage() {
               <div className="pd-cm-empty">No comments yet — be the first.</div>
             ) : (
               <div className="pd-cm-list">
-                {comments.map(cm => (
+                {comments.map((cm) => (
                   <DetailCommentItem
                     key={cm.id}
                     comment={cm}
@@ -710,7 +821,22 @@ export default function PostDetailPage() {
 
             {/* Compose comment */}
             <div className="pd-compose">
-              <div className="pdc-av" style={{ background: 'var(--grad-fire)', flexShrink: 0, width: 34, height: 34, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--fd)', fontSize: 13, color: '#fff' }}>
+              <div
+                className="pdc-av"
+                style={{
+                  background: "var(--grad-fire)",
+                  flexShrink: 0,
+                  width: 34,
+                  height: 34,
+                  borderRadius: 9,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontFamily: "var(--fd)",
+                  fontSize: 13,
+                  color: "#fff",
+                }}
+              >
                 {userIni}
               </div>
               <input
@@ -718,8 +844,8 @@ export default function PostDetailPage() {
                 className="pd-cm-inp"
                 placeholder="Write a comment…"
                 value={cmTxt}
-                onChange={e => setCmTxt(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && sendComment()}
+                onChange={(e) => setCmTxt(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendComment()}
               />
               <button
                 className="pd-cm-go"

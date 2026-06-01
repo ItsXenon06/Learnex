@@ -29,6 +29,7 @@ public class UserController {
     private final SavedPostRepository savedPostRepository;
     private final UserRepository userRepository;
     private final PostService    postService;
+    private final com.studentsocial.backend.repository.ProfileRepository profileRepository;
     private final GroupMemberRepository   groupMemberRepository;
     // ── Resolve UUID from JWT principal ───────────────────────────────────
     private UUID resolveUserId(UserDetails principal) {
@@ -67,6 +68,11 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(List.of()));
     }
 
+    // GET /api/users/suggestions — returns recent users for the suggested panel
+@GetMapping("/suggestions")
+public ResponseEntity<ApiResponse<List<ProfileResponse>>> getSuggestions() {
+    return ResponseEntity.ok(ApiResponse.success(userService.getSuggestions()));
+}
     // ── GET /api/users/{id} ───────────────────────────────────────────────
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ProfileResponse>> getProfile(@PathVariable UUID id) {
@@ -127,11 +133,37 @@ public class UserController {
     return ResponseEntity.ok(ApiResponse.success(postService.getUserPosts(id, page, size)));
 }
 @GetMapping("/me/groups")
-public ResponseEntity<ApiResponse<List<com.studentsocial.backend.model.StudyGroup>>> getMyGroups(
+public ResponseEntity<ApiResponse<List<com.studentsocial.backend.dto.response.StudyGroupResponse>>> getMyGroups(
         @AuthenticationPrincipal UserDetails principal) {
     UUID userId = resolveUserId(principal);
-    return ResponseEntity.ok(ApiResponse.success(
-            groupMemberRepository.findGroupsByUserId(userId)));
+    List<com.studentsocial.backend.model.StudyGroup> groups =
+            groupMemberRepository.findGroupsByUserId(userId);
+    // Map to DTO via GroupController-style mapping to avoid ByteBuddyInterceptor crash
+    List<com.studentsocial.backend.dto.response.StudyGroupResponse> dtos = groups.stream()
+            .map(g -> {
+                String displayName = null;
+                if (g.getCreatedBy() != null) {
+                    displayName = profileRepository
+                            .findByUserId(g.getCreatedBy().getId())
+                            .map(com.studentsocial.backend.model.Profile::getDisplayName)
+                            .orElse(null);
+                }
+                return com.studentsocial.backend.dto.response.StudyGroupResponse.builder()
+                        .id(g.getId())
+                        .name(g.getName())
+                        .description(g.getDescription())
+                        .type(g.getType())
+                        .isPrivate(g.getIsPrivate())
+                        .memberCount(g.getMemberCount())
+                        .createdById(g.getCreatedBy() != null ? g.getCreatedBy().getId() : null)
+                        .createdByEmail(g.getCreatedBy() != null ? g.getCreatedBy().getEmail() : null)
+                        .createdByDisplayName(displayName)
+                        .createdAt(g.getCreatedAt())
+                        .isMember(true)
+                        .build();
+            })
+            .toList();
+    return ResponseEntity.ok(ApiResponse.success(dtos));
 }
 // GET /api/users/me/saved-posts
 // Returns all posts the authenticated user has saved, newest save first.

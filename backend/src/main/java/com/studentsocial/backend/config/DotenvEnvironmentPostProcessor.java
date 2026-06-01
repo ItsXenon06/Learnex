@@ -18,44 +18,53 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Loads key/value pairs from a .env file into the Spring Environment early during startup.
- * Supports a few locations (working dir, project root, classpath) so IDE run configurations
- * that change the working directory still pick up the file.
+ * Loads .env from several candidate locations so the app works whether
+ * run from the repo root, from backend/, or from an IDE with a custom
+ * working directory.
+ *
+ * Priority (first file found wins):
+ *   1. {cwd}/.env               e.g. backend/.env  when run with mvn spring-boot:run
+ *   2. {cwd}/../.env             e.g. root .env     when cwd is backend/
+ *   3. classpath .env            fallback for packaged JARs
  */
 public class DotenvEnvironmentPostProcessor implements EnvironmentPostProcessor {
 
-    private static final String PROPERTY_SOURCE_NAME = "dotenvProperties";
+    private static final String SOURCE_NAME = "dotenvProperties";
 
     @Override
-    public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
-        System.out.println("Looking for .env at: " + Paths.get(System.getProperty("user.dir"), ".env").toAbsolutePath());
+    public void postProcessEnvironment(ConfigurableEnvironment environment,
+                                       SpringApplication application) {
         Map<String, Object> map = new HashMap<>();
 
         List<Path> candidates = new ArrayList<>();
-        candidates.add(Paths.get(System.getProperty("user.dir"), ".env"));
-        candidates.add(Paths.get("./.env"));
+        String cwd = System.getProperty("user.dir");
+        candidates.add(Paths.get(cwd, ".env"));
+        candidates.add(Paths.get(cwd, "..", ".env").normalize());
 
         for (Path p : candidates) {
             if (Files.exists(p)) {
                 try (BufferedReader br = Files.newBufferedReader(p)) {
                     br.lines().forEach(line -> parseAndPut(line, map));
-                } catch (IOException ignored) {
-                }
+                } catch (IOException ignored) {}
+                break; // first match wins
             }
         }
 
-        // try classpath resource .env as a fallback
-        try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(".env")) {
-            if (is != null) {
-                try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
-                    br.lines().forEach(line -> parseAndPut(line, map));
+        // Classpath fallback
+        if (map.isEmpty()) {
+            try (InputStream is = Thread.currentThread()
+                    .getContextClassLoader().getResourceAsStream(".env")) {
+                if (is != null) {
+                    try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
+                        br.lines().forEach(line -> parseAndPut(line, map));
+                    }
                 }
-            }
-        } catch (IOException ignored) {
+            } catch (IOException ignored) {}
         }
 
         if (!map.isEmpty()) {
-            environment.getPropertySources().addFirst(new MapPropertySource(PROPERTY_SOURCE_NAME, map));
+            environment.getPropertySources()
+                    .addFirst(new MapPropertySource(SOURCE_NAME, map));
         }
     }
 
@@ -67,10 +76,12 @@ public class DotenvEnvironmentPostProcessor implements EnvironmentPostProcessor 
         if (idx <= 0) return;
         String key = line.substring(0, idx).trim();
         String val = line.substring(idx + 1).trim();
-        if ((val.startsWith("\"") && val.endsWith("\"")) || (val.startsWith("'") && val.endsWith("'"))) {
+        // Strip surrounding quotes
+        if (val.length() >= 2 &&
+            ((val.startsWith("\"") && val.endsWith("\"")) ||
+             (val.startsWith("'")  && val.endsWith("'")))) {
             val = val.substring(1, val.length() - 1);
         }
         map.put(key, val);
     }
-
 }

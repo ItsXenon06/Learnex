@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth, getInitials } from '../contexts/AuthContext';
-import Layout from '../components/Layout';
-import postService from '../services/postService';
-import commentService from '../services/commentService';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth, getInitials } from "../contexts/AuthContext";
+import Layout from "../components/Layout";
+import postService from "../services/postService";
+import commentService from "../services/commentService";
 
 /* ─── Page-specific CSS ───────────────────────────────────────────────────── */
 const css = `
@@ -348,41 +348,55 @@ position:relative;cursor:pointer;
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
 const RX_TYPES = [
-  { emoji: '👍', type: 'like',       label: 'Like' },
-  { emoji: '❤️',  type: 'love',       label: 'Love' },
-  { emoji: '💡', type: 'insightful', label: 'Insightful' },
-  { emoji: '🎉', type: 'celebrate',  label: 'Celebrate' },
-  { emoji: '🤝', type: 'support',    label: 'Support' },
+  { emoji: "👍", type: "like", label: "Like" },
+  { emoji: "❤️", type: "love", label: "Love" },
+  { emoji: "💡", type: "insightful", label: "Insightful" },
+  { emoji: "🎉", type: "celebrate", label: "Celebrate" },
+  { emoji: "🤝", type: "support", label: "Support" },
 ];
-const RX_EMOJI = { like: '👍', love: '❤️', insightful: '💡', celebrate: '🎉', support: '🤝' };
+const RX_EMOJI = {
+  like: "👍",
+  love: "❤️",
+  insightful: "💡",
+  celebrate: "🎉",
+  support: "🤝",
+};
 
 const SORT_OPTIONS = [
-  { key: 'latest',      label: '🕐 Latest',       sort: 'latest' },
-  { key: 'likes_day',   label: '🔥 Top — 24h',    sort: 'likes', window: '24h' },
-  { key: 'likes_month', label: '📅 Top — Month',  sort: 'likes', window: '30d' },
-  { key: 'likes_year',  label: '🗓 Top — Year',   sort: 'likes', window: '365d' },
+  { key: "latest", label: "🕐 Latest", sort: "latest" },
+  { key: "likes_day", label: "🔥 Top — 24h", sort: "likes", window: "24h" },
+  { key: "likes_month", label: "📅 Top — Month", sort: "likes", window: "30d" },
+  { key: "likes_year", label: "🗓 Top — Year", sort: "likes", window: "365d" },
 ];
 
 const TRENDS = [
-  { tag: '#FinalExams',   sub: 'Trending in Education', cnt: '2.4k' },
-  { tag: '#CampusLife',   sub: 'Trending near you',     cnt: '1.8k' },
-  { tag: '#StudyGroup',   sub: 'Popular today',         cnt: '943'  },
-  { tag: '#InternSeason', sub: 'Career & Jobs',         cnt: '712'  },
-  { tag: '#LearnexTips',  sub: 'Community picks',       cnt: '500'  },
+  { tag: "#FinalExams", sub: "Trending in Education", cnt: "2.4k" },
+  { tag: "#CampusLife", sub: "Trending near you", cnt: "1.8k" },
+  { tag: "#StudyGroup", sub: "Popular today", cnt: "943" },
+  { tag: "#InternSeason", sub: "Career & Jobs", cnt: "712" },
+  { tag: "#LearnexTips", sub: "Community picks", cnt: "500" },
 ];
 
 /* ─── Avatar helpers ─────────────────────────────────────────────────────── */
-const AV_BG = ['#0d1f35','#0d2918','#2a0d1e','#1e1a0d','#1a0d2e','#1a1a0d'];
-const AV_C  = ['#4a9eff','#4adf8a','#df4a8a','#dfb84a','#af4adf','#df9a4a'];
+const AV_BG = [
+  "#0d1f35",
+  "#0d2918",
+  "#2a0d1e",
+  "#1e1a0d",
+  "#1a0d2e",
+  "#1a1a0d",
+];
+const AV_C = ["#4a9eff", "#4adf8a", "#df4a8a", "#dfb84a", "#af4adf", "#df9a4a"];
 function avatarStyle(seed) {
-  const i = (typeof seed === 'string' ? seed.charCodeAt(0) : seed || 0) % AV_BG.length;
+  const i =
+    (typeof seed === "string" ? seed.charCodeAt(0) : seed || 0) % AV_BG.length;
   return { bg: AV_BG[i], c: AV_C[i] };
 }
 function timeAgo(isoString) {
-  if (!isoString) return '';
+  if (!isoString) return "";
   const diff = Date.now() - new Date(isoString).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1) return 'just now';
+  if (m < 1) return "just now";
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
@@ -391,14 +405,24 @@ function timeAgo(isoString) {
 function renderText(text) {
   if (!text) return null;
   return text.split(/(\#\w+|@\w+)/g).map((p, i) => {
-    if (p.startsWith('#')) return <span key={i} className="c-tag">{p}</span>;
-    if (p.startsWith('@')) return <span key={i} className="c-mention">{p}</span>;
+    if (p.startsWith("#"))
+      return (
+        <span key={i} className="c-tag">
+          {p}
+        </span>
+      );
+    if (p.startsWith("@"))
+      return (
+        <span key={i} className="c-mention">
+          {p}
+        </span>
+      );
     return <span key={i}>{p}</span>;
   });
 }
 function extractTags(content) {
   if (!content) return [];
-  return [...new Set((content.match(/#\w+/g) || []))];
+  return [...new Set(content.match(/#\w+/g) || [])];
 }
 
 /* ─── Lightbox ───────────────────────────────────────────────────────────── */
@@ -406,23 +430,102 @@ function Lightbox({ images, startIndex, onClose }) {
   const [idx, setIdx] = useState(startIndex);
   useEffect(() => {
     const h = (e) => {
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'ArrowLeft')  setIdx(i => (i - 1 + images.length) % images.length);
-      if (e.key === 'ArrowRight') setIdx(i => (i + 1) % images.length);
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft")
+        setIdx((i) => (i - 1 + images.length) % images.length);
+      if (e.key === "ArrowRight") setIdx((i) => (i + 1) % images.length);
     };
-    document.addEventListener('keydown', h);
-    return () => document.removeEventListener('keydown', h);
+    document.addEventListener("keydown", h);
+    return () => document.removeEventListener("keydown", h);
   }, [images.length, onClose]);
   return (
-    <div onClick={onClose} style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,.92)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-      <button onClick={onClose} style={{position:'absolute',top:18,right:22,background:'none',border:'none',color:'#fff',fontSize:28,cursor:'pointer',opacity:.7}}>✕</button>
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1000,
+        background: "rgba(0,0,0,.92)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <button
+        onClick={onClose}
+        style={{
+          position: "absolute",
+          top: 18,
+          right: 22,
+          background: "none",
+          border: "none",
+          color: "#fff",
+          fontSize: 28,
+          cursor: "pointer",
+          opacity: 0.7,
+        }}
+      >
+        ✕
+      </button>
       {images.length > 1 && (
         <>
-          <button onClick={e => { e.stopPropagation(); setIdx(i => (i - 1 + images.length) % images.length); }} style={{position:'absolute',left:16,top:'50%',transform:'translateY(-50%)',background:'rgba(255,255,255,.08)',border:'none',borderRadius:'50%',width:46,height:46,color:'#fff',fontSize:22,cursor:'pointer'}}>‹</button>
-          <button onClick={e => { e.stopPropagation(); setIdx(i => (i + 1) % images.length); }} style={{position:'absolute',right:16,top:'50%',transform:'translateY(-50%)',background:'rgba(255,255,255,.08)',border:'none',borderRadius:'50%',width:46,height:46,color:'#fff',fontSize:22,cursor:'pointer'}}>›</button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIdx((i) => (i - 1 + images.length) % images.length);
+            }}
+            style={{
+              position: "absolute",
+              left: 16,
+              top: "50%",
+              transform: "translateY(-50%)",
+              background: "rgba(255,255,255,.08)",
+              border: "none",
+              borderRadius: "50%",
+              width: 46,
+              height: 46,
+              color: "#fff",
+              fontSize: 22,
+              cursor: "pointer",
+            }}
+          >
+            ‹
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIdx((i) => (i + 1) % images.length);
+            }}
+            style={{
+              position: "absolute",
+              right: 16,
+              top: "50%",
+              transform: "translateY(-50%)",
+              background: "rgba(255,255,255,.08)",
+              border: "none",
+              borderRadius: "50%",
+              width: 46,
+              height: 46,
+              color: "#fff",
+              fontSize: 22,
+              cursor: "pointer",
+            }}
+          >
+            ›
+          </button>
         </>
       )}
-      <img src={images[idx].url} alt="" onClick={e => e.stopPropagation()} style={{maxWidth:'92vw',maxHeight:'90vh',objectFit:'contain',borderRadius:8}} />
+      <img
+        src={images[idx].url}
+        alt=""
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxWidth: "92vw",
+          maxHeight: "90vh",
+          objectFit: "contain",
+          borderRadius: 8,
+        }}
+      />
     </div>
   );
 }
@@ -430,13 +533,14 @@ function Lightbox({ images, startIndex, onClose }) {
 /* ─── ReactionDetailsModal ───────────────────────────────────────────────── */
 function ReactionDetailsModal({ postId, reactions, onClose }) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState("all");
   const [reactors, setReactors] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    postService.getPostReactions(postId)
-      .then(res => {
+    postService
+      .getPostReactions(postId)
+      .then((res) => {
         const data = res?.data ?? res;
         setReactors(Array.isArray(data) ? data : []);
       })
@@ -445,47 +549,96 @@ function ReactionDetailsModal({ postId, reactions, onClose }) {
   }, [postId]);
 
   const total = reactions.reduce((s, r) => s + (r.count ?? 0), 0);
-  const filtered = activeTab === 'all'
-    ? reactors
-    : reactors.filter(r => (r.reactionType ?? r.type ?? r.name) === activeTab);
+  const filtered =
+    activeTab === "all"
+      ? reactors
+      : reactors.filter(
+          (r) => (r.reactionType ?? r.type ?? r.name) === activeTab,
+        );
 
   return (
-    <div className="rx-detail-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div
+      className="rx-detail-overlay"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="rx-detail-modal">
         <div className="rx-modal-head">
           <span className="rx-modal-title">Reactions</span>
-          <button className="rx-modal-close" onClick={onClose}>✕</button>
+          <button className="rx-modal-close" onClick={onClose}>
+            ✕
+          </button>
         </div>
         <div className="rx-modal-tabs">
-          <button className={`rx-modal-tab ${activeTab === 'all' ? 'on' : ''}`} onClick={() => setActiveTab('all')}>
+          <button
+            className={`rx-modal-tab ${activeTab === "all" ? "on" : ""}`}
+            onClick={() => setActiveTab("all")}
+          >
             ⚡ {total}
           </button>
-          {reactions.filter(r => r.count > 0).map(r => (
-            <button
-              key={r.name ?? r.type}
-              className={`rx-modal-tab ${activeTab === (r.name ?? r.type) ? 'on' : ''}`}
-              onClick={() => setActiveTab(r.name ?? r.type)}
-            >
-              {RX_EMOJI[r.name ?? r.type] ?? '👍'} {r.count}
-            </button>
-          ))}
+          {reactions
+            .filter((r) => r.count > 0)
+            .map((r) => (
+              <button
+                key={r.name ?? r.type}
+                className={`rx-modal-tab ${activeTab === (r.name ?? r.type) ? "on" : ""}`}
+                onClick={() => setActiveTab(r.name ?? r.type)}
+              >
+                {RX_EMOJI[r.name ?? r.type] ?? "👍"} {r.count}
+              </button>
+            ))}
         </div>
         <div className="rx-modal-body">
           {loading ? (
-            <div style={{padding:'20px',textAlign:'center',color:'var(--t3)',fontSize:13}}>Loading…</div>
+            <div
+              style={{
+                padding: "20px",
+                textAlign: "center",
+                color: "var(--t3)",
+                fontSize: 13,
+              }}
+            >
+              Loading…
+            </div>
           ) : filtered.length === 0 ? (
-            <div style={{padding:'20px',textAlign:'center',color:'var(--t3)',fontSize:13}}>No reactions yet</div>
-          ) : filtered.map((r, i) => {
-            const ini = getInitials(r.displayName, r.email);
-            const { bg, c } = avatarStyle(r.userId);
-            return (
-              <div key={i} className="rx-user-row" onClick={() => { navigate(`/profile/${r.userId}`); onClose(); }}>
-                <div className="rx-user-av" style={{ background: `linear-gradient(135deg,${bg},${c})` }}>{ini}</div>
-                <span className="rx-user-name">{r.displayName || r.email || 'User'}</span>
-                <span className="rx-user-emoji">{RX_EMOJI[r.reactionType ?? r.type ?? r.name] ?? '👍'}</span>
-              </div>
-            );
-          })}
+            <div
+              style={{
+                padding: "20px",
+                textAlign: "center",
+                color: "var(--t3)",
+                fontSize: 13,
+              }}
+            >
+              No reactions yet
+            </div>
+          ) : (
+            filtered.map((r, i) => {
+              const ini = getInitials(r.displayName, r.email);
+              const { bg, c } = avatarStyle(r.userId);
+              return (
+                <div
+                  key={i}
+                  className="rx-user-row"
+                  onClick={() => {
+                    navigate(`/profile/${r.userId}`);
+                    onClose();
+                  }}
+                >
+                  <div
+                    className="rx-user-av"
+                    style={{ background: `linear-gradient(135deg,${bg},${c})` }}
+                  >
+                    {ini}
+                  </div>
+                  <span className="rx-user-name">
+                    {r.displayName || r.email || "User"}
+                  </span>
+                  <span className="rx-user-emoji">
+                    {RX_EMOJI[r.reactionType ?? r.type ?? r.name] ?? "👍"}
+                  </span>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </div>
@@ -493,10 +646,14 @@ function ReactionDetailsModal({ postId, reactions, onClose }) {
 }
 
 /* ─── CommentReactions — JS hover-controlled, no CSS :hover race ─────────── */
-function CommentReactions({ commentId, reactions: initRx, myReaction: initMy }) {
+function CommentReactions({
+  commentId,
+  reactions: initRx,
+  myReaction: initMy,
+}) {
   const [reactions, setReactions] = useState(initRx ?? []);
-  const [myRx, setMyRx]           = useState(initMy ?? null);
-  const [busy, setBusy]           = useState(false);
+  const [myRx, setMyRx] = useState(initMy ?? null);
+  const [busy, setBusy] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const hoverTimerRef = useRef(null);
   const wrapRef = useRef(null);
@@ -509,8 +666,8 @@ function CommentReactions({ commentId, reactions: initRx, myReaction: initMy }) 
         setPickerOpen(false);
       }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, [pickerOpen]);
 
   const handle = async (type) => {
@@ -521,16 +678,19 @@ function CommentReactions({ commentId, reactions: initRx, myReaction: initMy }) 
       let updated;
       if (myRx === type) {
         const res = await commentService.removeCommentReaction(commentId);
-        updated   = res?.data ?? res;
+        updated = res?.data ?? res;
         setMyRx(null);
       } else {
         const res = await commentService.reactToComment(commentId, type);
-        updated   = res?.data ?? res;
+        updated = res?.data ?? res;
         setMyRx(type);
       }
       if (Array.isArray(updated)) setReactions(updated);
-    } catch { /* no-op */ }
-    finally { setBusy(false); }
+    } catch {
+      /* no-op */
+    } finally {
+      setBusy(false);
+    }
   };
 
   // Click the main button: if already reacted → remove reaction; else open picker
@@ -538,7 +698,7 @@ function CommentReactions({ commentId, reactions: initRx, myReaction: initMy }) 
     if (myRx) {
       handle(myRx); // un-react
     } else {
-      setPickerOpen(v => !v);
+      setPickerOpen((v) => !v);
     }
   };
 
@@ -560,34 +720,48 @@ function CommentReactions({ commentId, reactions: initRx, myReaction: initMy }) 
         onMouseLeave={handleMouseLeave}
       >
         <button
-          className={`cm-rx-btn ${myRx ? 'liked' : ''}`}
+          className={`cm-rx-btn ${myRx ? "liked" : ""}`}
           disabled={busy}
           onClick={handleBtnClick}
-          title={myRx ? 'Click to remove reaction · Hold to change' : 'Click or hold to react'}
+          title={
+            myRx
+              ? "Click to remove reaction · Hold to change"
+              : "Click or hold to react"
+          }
         >
-          {myRx ? (RX_EMOJI[myRx] ?? '👍') : '👍'}
-          {total > 0 && <span style={{fontSize:10}}>{total}</span>}
+          {myRx ? (RX_EMOJI[myRx] ?? "👍") : "👍"}
+          {total > 0 && <span style={{ fontSize: 10 }}>{total}</span>}
         </button>
-        <div className={`cm-rx-pick ${pickerOpen ? 'visible' : ''}`}>
-          {RX_TYPES.map(r => (
-            <button key={r.type} className="cm-rx-e" title={r.label}
-              onMouseDown={e => { e.preventDefault(); e.stopPropagation(); handle(r.type); }}>
+        <div className={`cm-rx-pick ${pickerOpen ? "visible" : ""}`}>
+          {RX_TYPES.map((r) => (
+            <button
+              key={r.type}
+              className="cm-rx-e"
+              title={r.label}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handle(r.type);
+              }}
+            >
               {r.emoji}
             </button>
           ))}
         </div>
       </div>
       {/* Reaction chips — clicking removes if it's your reaction, adds otherwise */}
-      {reactions.filter(r => r.count > 0).map(r => (
-        <span
-          key={r.name}
-          className={`cm-rx-chip ${myRx === r.name ? 'mine' : ''}`}
-          onClick={() => handle(r.name)}
-          title={myRx === r.name ? 'Remove reaction' : `React with ${r.name}`}
-        >
-          {RX_EMOJI[r.name] ?? r.emoji} {r.count}
-        </span>
-      ))}
+      {reactions
+        .filter((r) => r.count > 0)
+        .map((r) => (
+          <span
+            key={r.name}
+            className={`cm-rx-chip ${myRx === r.name ? "mine" : ""}`}
+            onClick={() => handle(r.name)}
+            title={myRx === r.name ? "Remove reaction" : `React with ${r.name}`}
+          >
+            {RX_EMOJI[r.name] ?? r.emoji} {r.count}
+          </span>
+        ))}
     </div>
   );
 }
@@ -595,7 +769,9 @@ function CommentReactions({ commentId, reactions: initRx, myReaction: initMy }) 
 /* ─── CardAttachmentGrid ─────────────────────────────────────────────────── */
 function CardAttachmentGrid({ attachments }) {
   const [lightbox, setLightbox] = useState(null);
-  const images = attachments.filter(a => a.type === 'image' || a.mimeType?.startsWith('image/'));
+  const images = attachments.filter(
+    (a) => a.type === "image" || a.mimeType?.startsWith("image/"),
+  );
   if (images.length === 0) return null;
   const n = Math.min(images.length, 4);
   return (
@@ -603,40 +779,56 @@ function CardAttachmentGrid({ attachments }) {
       <div className="card-media">
         <div className={`cm-grid n${n}`}>
           {images.slice(0, 4).map((img, i) => (
-            <img key={img.id ?? i} className="cm-att"
-              src={img.url} alt=""
-              onClick={e => { e.stopPropagation(); setLightbox(i); }}
+            <img
+              key={img.id ?? i}
+              className="cm-att"
+              src={img.url}
+              alt=""
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightbox(i);
+              }}
             />
           ))}
         </div>
       </div>
       {lightbox !== null && (
-        <Lightbox images={images} startIndex={lightbox} onClose={() => setLightbox(null)} />
+        <Lightbox
+          images={images}
+          startIndex={lightbox}
+          onClose={() => setLightbox(null)}
+        />
       )}
     </>
   );
 }
 
 /* ─── PostCard ───────────────────────────────────────────────────────────── */
-function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, showCopyToast }) {
+function PostCard({
+  post: initPost,
+  currentUserId,
+  currentUserIni,
+  onDelete,
+  showCopyToast,
+}) {
   const navigate = useNavigate();
-  const [post, setPost]           = useState(initPost);
-  const [myRx, setMyRx]           = useState(initPost.myReaction ?? null);
-  const [showCm, setShowCm]       = useState(false);
-  const [comments, setComments]   = useState([]);
-  const [cmLoaded, setCmLoaded]   = useState(false);
+  const [post, setPost] = useState(initPost);
+  const [myRx, setMyRx] = useState(initPost.myReaction ?? null);
+  const [showCm, setShowCm] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [cmLoaded, setCmLoaded] = useState(false);
   const [cmLoading, setCmLoading] = useState(false);
-  const [cmTxt, setCmTxt]         = useState('');
+  const [cmTxt, setCmTxt] = useState("");
   const [cmSending, setCmSending] = useState(false);
   const [rxLoading, setRxLoading] = useState(false);
-  const [menuOpen, setMenuOpen]   = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [showRxDetail, setShowRxDetail] = useState(false);
   // Reaction picker state — JS controlled, not CSS :hover
   const [rxPickerOpen, setRxPickerOpen] = useState(false);
   const hoverTimerRef = useRef(null);
-  const pickerRef     = useRef(null);
-  const menuRef       = useRef(null);
-  const cmRef         = useRef(null);
+  const pickerRef = useRef(null);
+  const menuRef = useRef(null);
+  const cmRef = useRef(null);
 
   const isOwn = post.authorId === currentUserId;
 
@@ -644,10 +836,11 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target))
+        setMenuOpen(false);
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, [menuOpen]);
 
   // Close reaction picker on outside click
@@ -658,43 +851,56 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
         setRxPickerOpen(false);
       }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, [rxPickerOpen]);
 
-  const reactions    = Array.isArray(post.reactions) ? post.reactions : [];
-  const totalRx      = reactions.reduce((s, r) => s + (r.count ?? 0), 0);
-  const topRx        = [...reactions].sort((a, b) => (b.count ?? 0) - (a.count ?? 0)).slice(0, 3);
-  const authorIni    = getInitials(post.authorDisplayName, post.authorEmail);
-  const { bg, c }    = avatarStyle(post.authorId);
+  const reactions = Array.isArray(post.reactions) ? post.reactions : [];
+  const totalRx = reactions.reduce((s, r) => s + (r.count ?? 0), 0);
+  const topRx = [...reactions]
+    .sort((a, b) => (b.count ?? 0) - (a.count ?? 0))
+    .slice(0, 3);
+  const authorIni = getInitials(post.authorDisplayName, post.authorEmail);
+  const { bg, c } = avatarStyle(post.authorId);
   const commentCount = post.commentCount ?? 0;
-  const tags         = post.hashtags?.map(h => `#${h}`) ?? extractTags(post.content);
-  const attachments  = post.attachments ?? [];
+  const tags = post.hashtags?.map((h) => `#${h}`) ?? extractTags(post.content);
+  const attachments = post.attachments ?? [];
 
   const loadComments = useCallback(async () => {
     if (cmLoading || cmLoaded) return;
     setCmLoading(true);
     try {
-      const res  = await commentService.getComments(post.id);
+      const res = await commentService.getComments(post.id);
       const data = res?.data ?? res;
       setComments(Array.isArray(data) ? data : []);
       setCmLoaded(true);
-    } catch { /* keep empty */ }
-    finally { setCmLoading(false); }
+    } catch {
+      /* keep empty */
+    } finally {
+      setCmLoading(false);
+    }
   }, [post.id, cmLoading, cmLoaded]);
 
   const toggleComments = (e) => {
     if (e) e.stopPropagation();
     const next = !showCm;
     setShowCm(next);
-    if (next) { loadComments(); setTimeout(() => cmRef.current?.focus(), 150); }
+    if (next) {
+      loadComments();
+      setTimeout(() => cmRef.current?.focus(), 150);
+    }
   };
 
   const handleCardClick = (e) => {
     const tag = e.target.tagName;
-    if (['BUTTON','INPUT','TEXTAREA','A','IMG'].includes(tag)) return;
-    if (e.target.closest('.c-more-wrap') || e.target.closest('.comments') ||
-        e.target.closest('.rx-pick') || e.target.closest('.rx-trigger')) return;
+    if (["BUTTON", "INPUT", "TEXTAREA", "A", "IMG"].includes(tag)) return;
+    if (
+      e.target.closest(".c-more-wrap") ||
+      e.target.closest(".comments") ||
+      e.target.closest(".rx-pick") ||
+      e.target.closest(".rx-trigger")
+    )
+      return;
     navigate(`/post/${post.id}`);
   };
 
@@ -721,13 +927,17 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
         updatedReactions = res?.data ?? res;
         setMyRx(null);
       } else {
-        const res = await postService.reactToPost(post.id, 'like');
+        const res = await postService.reactToPost(post.id, "like");
         updatedReactions = res?.data ?? res;
-        setMyRx('like');
+        setMyRx("like");
       }
-      if (Array.isArray(updatedReactions)) setPost(p => ({ ...p, reactions: updatedReactions }));
-    } catch { /* no-op */ }
-    finally { setRxLoading(false); }
+      if (Array.isArray(updatedReactions))
+        setPost((p) => ({ ...p, reactions: updatedReactions }));
+    } catch {
+      /* no-op */
+    } finally {
+      setRxLoading(false);
+    }
   };
 
   // Pick a specific reaction from picker
@@ -748,9 +958,13 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
         updatedReactions = res?.data ?? res;
         setMyRx(type);
       }
-      if (Array.isArray(updatedReactions)) setPost(p => ({ ...p, reactions: updatedReactions }));
-    } catch { /* no-op */ }
-    finally { setRxLoading(false); }
+      if (Array.isArray(updatedReactions))
+        setPost((p) => ({ ...p, reactions: updatedReactions }));
+    } catch {
+      /* no-op */
+    } finally {
+      setRxLoading(false);
+    }
   };
 
   const sendComment = async (e) => {
@@ -758,23 +972,28 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
     if (!cmTxt.trim() || cmSending) return;
     setCmSending(true);
     const text = cmTxt.trim();
-    setCmTxt('');
+    setCmTxt("");
     try {
-      const res   = await commentService.createComment(post.id, text);
+      const res = await commentService.createComment(post.id, text);
       const saved = res?.data ?? res;
-      setComments(prev => [...prev, saved]);
-      setPost(p => ({ ...p, commentCount: (p.commentCount ?? 0) + 1 }));
-    } catch { setCmTxt(text); }
-    finally { setCmSending(false); }
+      setComments((prev) => [...prev, saved]);
+      setPost((p) => ({ ...p, commentCount: (p.commentCount ?? 0) + 1 }));
+    } catch {
+      setCmTxt(text);
+    } finally {
+      setCmSending(false);
+    }
   };
 
   const handleDelete = async () => {
     setMenuOpen(false);
-    if (!window.confirm('Delete this post? This cannot be undone.')) return;
+    if (!window.confirm("Delete this post? This cannot be undone.")) return;
     try {
       await postService.deletePost(post.id);
       onDelete(post.id);
-    } catch (e) { alert(e?.response?.data?.message || 'Could not delete post.'); }
+    } catch (e) {
+      alert(e?.response?.data?.message || "Could not delete post.");
+    }
   };
 
   const handleShare = async (e) => {
@@ -783,14 +1002,14 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
     try {
       await navigator.clipboard.writeText(url);
     } catch {
-      const ta = document.createElement('textarea');
+      const ta = document.createElement("textarea");
       ta.value = url;
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
       document.body.appendChild(ta);
       ta.focus();
       ta.select();
-      document.execCommand('copy');
+      document.execCommand("copy");
       document.body.removeChild(ta);
     }
     showCopyToast();
@@ -803,38 +1022,94 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
         <div className="card-head">
           <div
             className="c-ava"
-            style={{ background: post.authorAvatarUrl ? 'transparent' : `linear-gradient(135deg,${bg},${c})` }}
-            onClick={e => { e.stopPropagation(); navigate(`/profile/${post.authorId}`); }}
+            style={{
+              background: post.authorAvatarUrl
+                ? "transparent"
+                : `linear-gradient(135deg,${bg},${c})`,
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/profile/${post.authorId}`);
+            }}
           >
-            {post.authorAvatarUrl
-              ? <img src={post.authorAvatarUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} onError={e=>{e.currentTarget.style.display='none'}} />
-              : authorIni
-            }
+            {post.authorAvatarUrl ? (
+              <img
+                src={post.authorAvatarUrl}
+                alt=""
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            ) : (
+              authorIni
+            )}
           </div>
           <div className="c-meta">
-            <div className="c-name" onClick={e => { e.stopPropagation(); navigate(`/profile/${post.authorId}`); }}>
-              {post.authorDisplayName || post.authorEmail || 'Unknown'}
+            <div
+              className="c-name"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/profile/${post.authorId}`);
+              }}
+            >
+              {post.authorDisplayName || post.authorEmail || "Unknown"}
             </div>
             <div className="c-sub">
-              {post.authorHeadline && <><span>{post.authorHeadline}</span><span className="c-dot">·</span></>}
+              {post.authorHeadline && (
+                <>
+                  <span>{post.authorHeadline}</span>
+                  <span className="c-dot">·</span>
+                </>
+              )}
               <span>{timeAgo(post.createdAt)}</span>
-              {post.visibility && post.visibility !== 'public' && (
-                <><span className="c-dot">·</span>
-                <span>{post.visibility === 'private' ? '🔒 Only me' : '🔗 Connections'}</span></>
+              {post.visibility && post.visibility !== "public" && (
+                <>
+                  <span className="c-dot">·</span>
+                  <span>
+                    {post.visibility === "private"
+                      ? "🔒 Only me"
+                      : "🔗 Connections"}
+                  </span>
+                </>
               )}
             </div>
           </div>
           <div className="c-more-wrap" ref={menuRef}>
-            <button className="c-more" title="Options" onClick={e => { e.stopPropagation(); setMenuOpen(v => !v); }}>⋯</button>
+            <button
+              className="c-more"
+              title="Options"
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpen((v) => !v);
+              }}
+            >
+              ⋯
+            </button>
             {menuOpen && (
               <div className="c-more-menu">
                 {isOwn ? (
-                  <button className="c-menu-item danger" onClick={handleDelete}>🗑 Delete Post</button>
+                  <button className="c-menu-item danger" onClick={handleDelete}>
+                    🗑 Delete Post
+                  </button>
                 ) : (
                   <>
-                    <button className="c-menu-item" onClick={() => setMenuOpen(false)}>🚫 Not Interested</button>
+                    <button
+                      className="c-menu-item"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      🚫 Not Interested
+                    </button>
                     <div className="c-menu-divider" />
-                    <button className="c-menu-item danger" onClick={() => { setMenuOpen(false); alert('Report submitted.'); }}>⚑ Report Post</button>
+                    <button
+                      className="c-menu-item danger"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        alert("Report submitted.");
+                      }}
+                    >
+                      ⚑ Report Post
+                    </button>
                   </>
                 )}
               </div>
@@ -842,14 +1117,27 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
           </div>
         </div>
 
-        {post.content && <div className="card-body">{renderText(post.content)}</div>}
+        {post.content && (
+          <div className="card-body">{renderText(post.content)}</div>
+        )}
 
-        {attachments.length > 0 && <CardAttachmentGrid attachments={attachments} />}
+        {attachments.length > 0 && (
+          <CardAttachmentGrid attachments={attachments} />
+        )}
 
         {tags.length > 0 && (
           <div className="card-tags">
-            {tags.map(t => (
-              <span key={t} className="tag-chip" onClick={e => { e.stopPropagation(); navigate(`/hashtag/${t.slice(1)}`); }}>{t}</span>
+            {tags.map((t) => (
+              <span
+                key={t}
+                className="tag-chip"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/hashtag/${t.slice(1)}`);
+                }}
+              >
+                {t}
+              </span>
             ))}
           </div>
         )}
@@ -857,17 +1145,24 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
         {/* Stats row */}
         {(totalRx > 0 || commentCount > 0) && (
           <div className="card-stats">
-            <div className="stat-rx"
-              onClick={e => { e.stopPropagation(); if (totalRx > 0) setShowRxDetail(true); }}>
-              {topRx.map(r => (
-                <span key={r.name ?? r.type} className="stat-em">{RX_EMOJI[r.name ?? r.type] ?? '👍'}</span>
+            <div
+              className="stat-rx"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (totalRx > 0) setShowRxDetail(true);
+              }}
+            >
+              {topRx.map((r) => (
+                <span key={r.name ?? r.type} className="stat-em">
+                  {RX_EMOJI[r.name ?? r.type] ?? "👍"}
+                </span>
               ))}
               {totalRx > 0 && <span className="stat-n">{totalRx}</span>}
             </div>
             <div className="stat-right">
               {commentCount > 0 && (
-                <span className="stat-link" onClick={e => toggleComments(e)}>
-                  {commentCount} comment{commentCount !== 1 ? 's' : ''}
+                <span className="stat-link" onClick={(e) => toggleComments(e)}>
+                  {commentCount} comment{commentCount !== 1 ? "s" : ""}
                 </span>
               )}
             </div>
@@ -882,27 +1177,35 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
             ref={pickerRef}
             onMouseEnter={handleRxMouseEnter}
             onMouseLeave={handleRxMouseLeave}
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <button
-              className={`ca-btn ${myRx ? 'liked' : ''}`}
+              className={`ca-btn ${myRx ? "liked" : ""}`}
               onClick={handleReactClick}
               disabled={rxLoading}
             >
-              <span style={{fontSize:16,lineHeight:1}}>{myRx ? (RX_EMOJI[myRx] ?? '👍') : '👍'}</span>
-              {myRx ? (RX_TYPES.find(r => r.type === myRx)?.label ?? 'Liked') : 'Like'}
+              <span style={{ fontSize: 16, lineHeight: 1 }}>
+                {myRx ? (RX_EMOJI[myRx] ?? "👍") : "👍"}
+              </span>
+              {myRx
+                ? (RX_TYPES.find((r) => r.type === myRx)?.label ?? "Liked")
+                : "Like"}
             </button>
-            <div className={`rx-pick ${rxPickerOpen ? 'visible' : ''}`}>
-              {RX_TYPES.map(r => (
-                <button key={r.type} className="rx-e" data-label={r.label}
-                  onMouseDown={e => handlePickReact(r.type, e)}>
+            <div className={`rx-pick ${rxPickerOpen ? "visible" : ""}`}>
+              {RX_TYPES.map((r) => (
+                <button
+                  key={r.type}
+                  className="rx-e"
+                  data-label={r.label}
+                  onMouseDown={(e) => handlePickReact(r.type, e)}
+                >
                   {r.emoji}
                 </button>
               ))}
             </div>
           </div>
 
-          <button className="ca" onClick={e => toggleComments(e)}>
+          <button className="ca" onClick={(e) => toggleComments(e)}>
             <span className="ca-i">💬</span>Comment
           </button>
 
@@ -911,56 +1214,91 @@ function PostCard({ post: initPost, currentUserId, currentUserIni, onDelete, sho
           </button>
 
           <button
-            className={`ca ${post.saved ? 'saved' : ''}`}
+            className={`ca ${post.saved ? "saved" : ""}`}
             onClick={async (e) => {
               e.stopPropagation();
               try {
                 if (post.saved) {
                   await postService.unsavePost(post.id);
-                  setPost(p => ({ ...p, saved: false }));
+                  setPost((p) => ({ ...p, saved: false }));
                 } else {
                   await postService.savePost(post.id);
-                  setPost(p => ({ ...p, saved: true }));
+                  setPost((p) => ({ ...p, saved: true }));
                 }
-              } catch { /* no-op */ }
+              } catch {
+                /* no-op */
+              }
             }}
           >
-            <span className="ca-i">{post.saved ? '🔖' : '🏷'}</span>
-            {post.saved ? 'Saved' : 'Save'}
+            <span className="ca-i">{post.saved ? "🔖" : "🏷"}</span>
+            {post.saved ? "Saved" : "Save"}
           </button>
         </div>
 
         {/* Comments */}
         {showCm && (
-          <div className="comments" onClick={e => e.stopPropagation()}>
+          <div className="comments" onClick={(e) => e.stopPropagation()}>
             {cmLoading ? (
-              <div style={{ padding: '14px 18px' }}>
-                {[1, 2].map(i => (
-                  <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                    <div className="sk" style={{ width: 28, height: 28, borderRadius: 7, flexShrink: 0 }} />
-                    <div className="sk" style={{ height: 44, flex: 1, borderRadius: 8 }} />
+              <div style={{ padding: "14px 18px" }}>
+                {[1, 2].map((i) => (
+                  <div
+                    key={i}
+                    style={{ display: "flex", gap: 8, marginBottom: 8 }}
+                  >
+                    <div
+                      className="sk"
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 7,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div
+                      className="sk"
+                      style={{ height: 44, flex: 1, borderRadius: 8 }}
+                    />
                   </div>
                 ))}
               </div>
             ) : (
               <div className="cm-scroll">
-                {comments.length === 0
-                  ? <div className="cm-empty">No comments yet — be the first.</div>
-                  : comments.map(cm => <CommentItem key={cm.id} comment={cm} currentUserIni={currentUserIni} />)
-                }
+                {comments.length === 0 ? (
+                  <div className="cm-empty">
+                    No comments yet — be the first.
+                  </div>
+                ) : (
+                  comments.map((cm) => (
+                    <CommentItem
+                      key={cm.id}
+                      comment={cm}
+                      currentUserIni={currentUserIni}
+                    />
+                  ))
+                )}
               </div>
             )}
             <div className="cm-input-row">
-              <div className="cm-av" style={{ background: 'var(--grad-fire)' }}>{currentUserIni}</div>
+              <div className="cm-av" style={{ background: "var(--grad-fire)" }}>
+                {currentUserIni}
+              </div>
               <input
                 ref={cmRef}
                 className="cm-inp"
                 placeholder="Write a comment…"
                 value={cmTxt}
-                onChange={e => setCmTxt(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendComment(e)}
+                onChange={(e) => setCmTxt(e.target.value)}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && !e.shiftKey && sendComment(e)
+                }
               />
-              <button className="cm-go" onClick={e => sendComment(e)} disabled={!cmTxt.trim() || cmSending}>➤</button>
+              <button
+                className="cm-go"
+                onClick={(e) => sendComment(e)}
+                disabled={!cmTxt.trim() || cmSending}
+              >
+                ➤
+              </button>
             </div>
           </div>
         )}
@@ -984,11 +1322,16 @@ function CommentItem({ comment, currentUserIni }) {
   const { bg, c } = avatarStyle(comment.authorId?.toString());
   return (
     <div className="cmi">
-      <div className="cm-av" style={{ background: `linear-gradient(135deg,${bg},${c})` }}>{authorIni}</div>
+      <div
+        className="cm-av"
+        style={{ background: `linear-gradient(135deg,${bg},${c})` }}
+      >
+        {authorIni}
+      </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="cm-bub">
           <div className="cm-who">
-            {comment.authorDisplayName || comment.authorEmail || 'User'}
+            {comment.authorDisplayName || comment.authorEmail || "User"}
             <span className="cm-when">{timeAgo(comment.createdAt)}</span>
           </div>
           <div className="cm-txt">{comment.content}</div>
@@ -1000,7 +1343,13 @@ function CommentItem({ comment, currentUserIni }) {
         />
         {comment.replies?.length > 0 && (
           <div className="cm-replies">
-            {comment.replies.map(r => <CommentItem key={r.id} comment={r} currentUserIni={currentUserIni} />)}
+            {comment.replies.map((r) => (
+              <CommentItem
+                key={r.id}
+                comment={r}
+                currentUserIni={currentUserIni}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -1012,16 +1361,39 @@ function CommentItem({ comment, currentUserIni }) {
 function PostSkeleton() {
   return (
     <div className="skel">
-      <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-        <div className="sk" style={{ width: 46, height: 46, borderRadius: 11, flexShrink: 0 }} />
+      <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+        <div
+          className="sk"
+          style={{ width: 46, height: 46, borderRadius: 11, flexShrink: 0 }}
+        />
         <div style={{ flex: 1 }}>
-          <div className="sk" style={{ height: 13, width: '38%', marginBottom: 8, borderRadius: 5 }} />
-          <div className="sk" style={{ height: 10, width: '22%', borderRadius: 5 }} />
+          <div
+            className="sk"
+            style={{
+              height: 13,
+              width: "38%",
+              marginBottom: 8,
+              borderRadius: 5,
+            }}
+          />
+          <div
+            className="sk"
+            style={{ height: 10, width: "22%", borderRadius: 5 }}
+          />
         </div>
       </div>
-      <div className="sk" style={{ height: 13, width: '100%', marginBottom: 7, borderRadius: 5 }} />
-      <div className="sk" style={{ height: 13, width: '85%', marginBottom: 7, borderRadius: 5 }} />
-      <div className="sk" style={{ height: 13, width: '60%', borderRadius: 5 }} />
+      <div
+        className="sk"
+        style={{ height: 13, width: "100%", marginBottom: 7, borderRadius: 5 }}
+      />
+      <div
+        className="sk"
+        style={{ height: 13, width: "85%", marginBottom: 7, borderRadius: 5 }}
+      />
+      <div
+        className="sk"
+        style={{ height: 13, width: "60%", borderRadius: 5 }}
+      />
     </div>
   );
 }
@@ -1033,14 +1405,19 @@ function RightPanel({ followed, onToggleFollow }) {
   const uid = user?.userId ?? user?.id;
   const [suggestions, setSuggestions] = useState([]);
 
+  // FINAL VERSION
   useEffect(() => {
-    import('../services/userService').then(({ default: us }) => {
-      us.search('').catch(() => null).then(res => {
-        if (!res) return;
-        const data = res?.data ?? res;
-        const users = Array.isArray(data) ? data : [];
-        setSuggestions(users.filter(u => (u.userId ?? u.id) !== uid).slice(0, 3));
-      });
+    import("../services/userService").then(({ default: us }) => {
+      us.getSuggestions()
+        .catch(() => null)
+        .then((res) => {
+          if (!res) return;
+          const data = res?.data ?? res;
+          const users = Array.isArray(data) ? data : [];
+          setSuggestions(
+            users.filter((u) => (u.userId ?? u.id) !== uid).slice(0, 3),
+          );
+        });
     });
   }, [uid]);
 
@@ -1052,7 +1429,11 @@ function RightPanel({ followed, onToggleFollow }) {
           <button className="wg-more">See all</button>
         </div>
         {TRENDS.map((t, i) => (
-          <div key={t.tag} className="tr-item" onClick={() => navigate(`/hashtag/${t.tag.slice(1)}`)}>
+          <div
+            key={t.tag}
+            className="tr-item"
+            onClick={() => navigate(`/hashtag/${t.tag.slice(1)}`)}
+          >
             <span className="tr-num">{i + 1}</span>
             <div className="tr-body">
               <div className="tr-tag">{t.tag}</div>
@@ -1069,32 +1450,81 @@ function RightPanel({ followed, onToggleFollow }) {
           <button className="wg-more">See all</button>
         </div>
         {suggestions.length === 0 ? (
-          <div style={{ padding: '16px', fontSize: 12, color: 'var(--t3)', fontFamily: 'var(--fm)' }}>No suggestions yet</div>
-        ) : suggestions.map(s => {
-          const id = s.userId ?? s.id;
-          const ini = getInitials(s.displayName, s.email);
-          const { bg, c } = avatarStyle(id);
-          return (
-            <div key={id} className="wf-item">
-              <div className="wf-av"
-                style={{ background: s.avatarUrl ? 'transparent' : `linear-gradient(135deg,${bg},${c})`, color: c, overflow: 'hidden' }}
-                onClick={() => navigate(`/profile/${id}`)}>
-                {s.avatarUrl ? <img src={s.avatarUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}} /> : ini}
+          <div
+            style={{
+              padding: "16px",
+              fontSize: 12,
+              color: "var(--t3)",
+              fontFamily: "var(--fm)",
+            }}
+          >
+            No suggestions yet
+          </div>
+        ) : (
+          suggestions.map((s) => {
+            const id = s.userId ?? s.id;
+            const ini = getInitials(s.displayName, s.email);
+            const { bg, c } = avatarStyle(id);
+            return (
+              <div key={id} className="wf-item">
+                <div
+                  className="wf-av"
+                  style={{
+                    background: s.avatarUrl
+                      ? "transparent"
+                      : `linear-gradient(135deg,${bg},${c})`,
+                    color: c,
+                    overflow: "hidden",
+                  }}
+                  onClick={() => navigate(`/profile/${id}`)}
+                >
+                  {s.avatarUrl ? (
+                    <img
+                      src={s.avatarUrl}
+                      alt=""
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    ini
+                  )}
+                </div>
+                <div
+                  className="wf-info"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => navigate(`/profile/${id}`)}
+                >
+                  <div className="wf-name">
+                    {s.displayName || s.email?.split("@")[0]}
+                  </div>
+                  <div className="wf-role">{s.email}</div>
+                </div>
+                <button
+                  className={`fw-btn ${followed[id] ? "ing" : ""}`}
+                  onClick={() => onToggleFollow(id)}
+                >
+                  {followed[id] ? "Following" : "Follow"}
+                </button>
               </div>
-              <div className="wf-info" style={{ cursor: 'pointer' }} onClick={() => navigate(`/profile/${id}`)}>
-                <div className="wf-name">{s.displayName || s.email?.split('@')[0]}</div>
-                <div className="wf-role">{s.email}</div>
-              </div>
-              <button className={`fw-btn ${followed[id] ? 'ing' : ''}`} onClick={() => onToggleFollow(id)}>
-                {followed[id] ? 'Following' : 'Follow'}
-              </button>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
 
-      <div style={{ fontSize: 9, color: 'var(--t4)', lineHeight: 1.8, padding: '0 4px', fontFamily: 'var(--fm)' }}>
-        Learnex · Terms · Privacy<br />© 2026 Learnex Inc.
+      <div
+        style={{
+          fontSize: 9,
+          color: "var(--t4)",
+          lineHeight: 1.8,
+          padding: "0 4px",
+          fontFamily: "var(--fm)",
+        }}
+      >
+        Learnex · Terms · Privacy
+        <br />© 2026 Learnex Inc.
       </div>
     </>
   );
@@ -1105,28 +1535,28 @@ export default function FeedPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const uid      = user?.userId ?? user?.id;
-  const userIni  = getInitials(user?.displayName, user?.email);
-  const userName = user?.displayName || user?.email?.split('@')[0] || 'Student';
+  const uid = user?.userId ?? user?.id;
+  const userIni = getInitials(user?.displayName, user?.email);
+  const userName = user?.displayName || user?.email?.split("@")[0] || "Student";
 
-  const [tab,         setTab]         = useState('following');
-  const [sortKey,     setSortKey]     = useState('latest');
-  const [sortOpen,    setSortOpen]    = useState(false);
-  const [posts,       setPosts]       = useState([]);
-  const [loading,     setLoading]     = useState(true);
-  const [postErr,     setPostErr]     = useState('');
-  const [draft,       setDraft]       = useState('');
-  const [posting,     setPosting]     = useState(false);
-  const [hasNext,     setHasNext]     = useState(false);
+  const [tab, setTab] = useState("following");
+  const [sortKey, setSortKey] = useState("latest");
+  const [sortOpen, setSortOpen] = useState(false);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [postErr, setPostErr] = useState("");
+  const [draft, setDraft] = useState("");
+  const [posting, setPosting] = useState(false);
+  const [hasNext, setHasNext] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [followed,    setFollowed]    = useState({});
+  const [followed, setFollowed] = useState({});
   // Reset to 'public' after each post — visibility is per-post
-  const [visibility,  setVisibility]  = useState('public');
-  const [mediaFiles,  setMediaFiles]  = useState([]);
-  const [copyToast,   setCopyToast]   = useState(false);
+  const [visibility, setVisibility] = useState("public");
+  const [mediaFiles, setMediaFiles] = useState([]);
+  const [copyToast, setCopyToast] = useState(false);
   const fileInputRef = useRef(null);
-  const sortRef      = useRef(null);
-  const pageRef      = useRef(0);
+  const sortRef = useRef(null);
+  const pageRef = useRef(0);
 
   const showCopyToast = useCallback(() => {
     setCopyToast(true);
@@ -1136,42 +1566,67 @@ export default function FeedPage() {
   // Close sort menu on outside click
   useEffect(() => {
     if (!sortOpen) return;
-    const h = (e) => { if (sortRef.current && !sortRef.current.contains(e.target)) setSortOpen(false); };
-    document.addEventListener('mousedown', h);
-    return () => document.removeEventListener('mousedown', h);
+    const h = (e) => {
+      if (sortRef.current && !sortRef.current.contains(e.target))
+        setSortOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
   }, [sortOpen]);
 
   const handleToggleFollow = async (targetId) => {
     const isNowFollowing = !followed[targetId];
-    setFollowed(f => ({ ...f, [targetId]: isNowFollowing }));
+    setFollowed((f) => ({ ...f, [targetId]: isNowFollowing }));
     try {
-      const { default: us } = await import('../services/userService');
+      const { default: us } = await import("../services/userService");
       isNowFollowing ? await us.follow(targetId) : await us.unfollow(targetId);
-    } catch { setFollowed(f => ({ ...f, [targetId]: !isNowFollowing })); }
+    } catch {
+      setFollowed((f) => ({ ...f, [targetId]: !isNowFollowing }));
+    }
   };
 
   const handleFileChange = async (e) => {
     const selected = Array.from(e.target.files ?? []);
     if (!selected.length) return;
-    const slots  = 4 - mediaFiles.length;
-    const toAdd  = selected.slice(0, slots);
-    const newEntries = toAdd.map(f => ({ file: f, previewUrl: URL.createObjectURL(f), id: null, uploading: true, error: null }));
-    setMediaFiles(prev => [...prev, ...newEntries]);
+    const slots = 4 - mediaFiles.length;
+    const toAdd = selected.slice(0, slots);
+    const newEntries = toAdd.map((f) => ({
+      file: f,
+      previewUrl: URL.createObjectURL(f),
+      id: null,
+      uploading: true,
+      error: null,
+    }));
+    setMediaFiles((prev) => [...prev, ...newEntries]);
     for (let i = 0; i < toAdd.length; i++) {
       const idx = mediaFiles.length + i;
       try {
-        const res  = await postService.uploadMedia(toAdd[i]);
+        const res = await postService.uploadMedia(toAdd[i]);
         const data = res?.data ?? res;
-        setMediaFiles(prev => prev.map((m, j) => j === idx ? { ...m, id: data.id, uploading: false } : m));
+        setMediaFiles((prev) =>
+          prev.map((m, j) =>
+            j === idx ? { ...m, id: data.id, uploading: false } : m,
+          ),
+        );
       } catch {
-        setMediaFiles(prev => prev.map((m, j) => j === idx ? { ...m, uploading: false, error: 'Upload failed' } : m));
+        setMediaFiles((prev) =>
+          prev.map((m, j) =>
+            j === idx
+              ? {
+                  ...m,
+                  uploading: false,
+                  error: "Upload failed — click × to remove and try again",
+                }
+              : m,
+          ),
+        );
       }
     }
-    e.target.value = '';
+    e.target.value = "";
   };
 
   const removeMedia = (idx) => {
-    setMediaFiles(prev => {
+    setMediaFiles((prev) => {
       const updated = [...prev];
       URL.revokeObjectURL(updated[idx].previewUrl);
       updated.splice(idx, 1);
@@ -1179,88 +1634,141 @@ export default function FeedPage() {
     });
   };
 
-  const loadFeed = useCallback(async (reset = true) => {
-    if (!uid) return;
-    reset ? setLoading(true) : setLoadingMore(true);
-    setPostErr('');
-    try {
-      const p = reset ? 0 : pageRef.current;
-      const opt = SORT_OPTIONS.find(s => s.key === sortKey) ?? SORT_OPTIONS[0];
-      const params = { page: p, size: 20, sort: opt.sort ?? 'latest' };
-      if (opt.window) params.window = opt.window;
+  const loadFeed = useCallback(
+    async (reset = true) => {
+      if (!uid) return;
+      reset ? setLoading(true) : setLoadingMore(true);
+      setPostErr("");
+      try {
+        const p = reset ? 0 : pageRef.current;
+        const opt =
+          SORT_OPTIONS.find((s) => s.key === sortKey) ?? SORT_OPTIONS[0];
+        const params = { page: p, size: 20, sort: opt.sort ?? "latest" };
+        if (opt.window) params.window = opt.window;
 
-      const res = tab === 'following'
-        ? await postService.getFeed(params.page, params.size, params.sort, params.window)
-        : await postService.getDiscover(params.page, params.size, params.sort, params.window);
+        const res =
+          tab === "following"
+            ? await postService.getFeed(
+                params.page,
+                params.size,
+                params.sort,
+                params.window,
+              )
+            : await postService.getDiscover(
+                params.page,
+                params.size,
+                params.sort,
+                params.window,
+              );
 
-      const data  = res?.data ?? res;
-      const items = data?.content ?? (Array.isArray(data) ? data : []);
-      if (reset) { setPosts(items); pageRef.current = 1; }
-      else { setPosts(prev => [...prev, ...items]); pageRef.current += 1; }
-      setHasNext(data?.hasNext ?? (data?.last === false));
-    } catch {
-      if (reset) setPostErr('Could not load posts. Check your connection.');
-    } finally {
-      reset ? setLoading(false) : setLoadingMore(false);
-    }
+        const data = res?.data ?? res;
+        const items = data?.content ?? (Array.isArray(data) ? data : []);
+        if (reset) {
+          setPosts(items);
+          pageRef.current = 1;
+        } else {
+          setPosts((prev) => [...prev, ...items]);
+          pageRef.current += 1;
+        }
+        setHasNext(data?.hasNext ?? data?.last === false);
+      } catch {
+        if (reset) setPostErr("Could not load posts. Check your connection.");
+      } finally {
+        reset ? setLoading(false) : setLoadingMore(false);
+      }
+    },
+    [uid, tab, sortKey],
+  );
+
+  useEffect(() => {
+    loadFeed(true);
   }, [uid, tab, sortKey]);
-
-  useEffect(() => { loadFeed(true); }, [uid, tab, sortKey]);
 
   const submitPost = async () => {
     const hasContent = draft.trim().length > 0;
-    const hasMedia   = mediaFiles.some(m => m.id);
+    const hasMedia = mediaFiles.some((m) => m.id);
     if ((!hasContent && !hasMedia) || posting) return;
-    if (mediaFiles.some(m => m.uploading)) { setPostErr('Please wait for uploads to finish.'); return; }
+    if (mediaFiles.some((m) => m.uploading)) {
+      setPostErr("Please wait for uploads to finish.");
+      return;
+    }
     setPosting(true);
-    setPostErr('');
+    setPostErr("");
     try {
-      const mediaIds = mediaFiles.filter(m => m.id).map(m => m.id);
-      const res      = await postService.createPost({ content: draft.trim() || null, visibility, mediaIds });
-      const saved    = res?.data ?? res;
-      setPosts(prev => [saved, ...prev]);
-      setDraft('');
+      const mediaIds = mediaFiles.filter((m) => m.id).map((m) => m.id);
+      const res = await postService.createPost({
+        content: draft.trim() || null,
+        visibility,
+        mediaIds,
+      });
+      const saved = res?.data ?? res;
+      setPosts((prev) => [saved, ...prev]);
+      setDraft("");
       setMediaFiles([]);
-      setVisibility('public'); // ← always reset to public after posting
+      setVisibility("public"); // ← always reset to public after posting
     } catch (err) {
-      setPostErr(err?.response?.data?.message || 'Failed to post. Try again.');
+      setPostErr(err?.response?.data?.message || "Failed to post. Try again.");
     } finally {
       setPosting(false);
     }
   };
 
-  const handleDelete = (postId) => setPosts(prev => prev.filter(p => p.id !== postId));
+  const handleDelete = (postId) =>
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
 
   const cycleVisibility = () => {
-    const opts = ['public', 'connections', 'private'];
-    setVisibility(v => opts[(opts.indexOf(v) + 1) % opts.length]);
+    const opts = ["public", "connections", "private"];
+    setVisibility((v) => opts[(opts.indexOf(v) + 1) % opts.length]);
   };
-  const visLabel = { public: '🌍 Public', connections: '🔗 Connections', private: '🔒 Only me' };
+  const visLabel = {
+    public: "🌍 Public",
+    connections: "🔗 Connections",
+    private: "🔒 Only me",
+  };
 
   return (
     <>
       <style>{css}</style>
       <Layout
         active="feed"
-        rightPanel={<RightPanel followed={followed} onToggleFollow={handleToggleFollow} />}
+        rightPanel={
+          <RightPanel followed={followed} onToggleFollow={handleToggleFollow} />
+        }
       >
         <main className="feed">
           {/* Tabs + Sort */}
           <div className="feed-header">
-            <button className={`ftab ${tab === 'following' ? 'on' : ''}`} onClick={() => setTab('following')}>Following</button>
-            <button className={`ftab ${tab === 'discover'  ? 'on' : ''}`} onClick={() => setTab('discover')}>Discover</button>
+            <button
+              className={`ftab ${tab === "following" ? "on" : ""}`}
+              onClick={() => setTab("following")}
+            >
+              Following
+            </button>
+            <button
+              className={`ftab ${tab === "discover" ? "on" : ""}`}
+              onClick={() => setTab("discover")}
+            >
+              Discover
+            </button>
             <div className="fh-gap" />
             <div className="sort-wrap" ref={sortRef}>
-              <button className="fh-sort" onClick={() => setSortOpen(v => !v)}>
-                ⇅ {SORT_OPTIONS.find(s => s.key === sortKey)?.label ?? 'Latest'}
+              <button
+                className="fh-sort"
+                onClick={() => setSortOpen((v) => !v)}
+              >
+                ⇅{" "}
+                {SORT_OPTIONS.find((s) => s.key === sortKey)?.label ?? "Latest"}
               </button>
               {sortOpen && (
                 <div className="sort-menu">
-                  {SORT_OPTIONS.map(opt => (
+                  {SORT_OPTIONS.map((opt) => (
                     <button
                       key={opt.key}
-                      className={`sort-item ${sortKey === opt.key ? 'active' : ''}`}
-                      onClick={() => { setSortKey(opt.key); setSortOpen(false); }}
+                      className={`sort-item ${sortKey === opt.key ? "active" : ""}`}
+                      onClick={() => {
+                        setSortKey(opt.key);
+                        setSortOpen(false);
+                      }}
                     >
                       {opt.label}
                     </button>
@@ -1276,11 +1784,13 @@ export default function FeedPage() {
               <div className="c-av">{userIni}</div>
               <textarea
                 className="c-input"
-                placeholder={`What's on your mind, ${userName.split(' ')[0]}?`}
+                placeholder={`What's on your mind, ${userName.split(" ")[0]}?`}
                 value={draft}
-                onChange={e => setDraft(e.target.value)}
+                onChange={(e) => setDraft(e.target.value)}
                 rows={draft.length > 80 ? 3 : 1}
-                onKeyDown={e => e.key === 'Enter' && e.ctrlKey && submitPost()}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && e.ctrlKey && submitPost()
+                }
               />
             </div>
 
@@ -1290,14 +1800,41 @@ export default function FeedPage() {
                   <div key={i} className="c-prev-item">
                     <img className="c-prev-img" src={m.previewUrl} alt="" />
                     {m.uploading && (
-                      <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.5)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: "rgba(0,0,0,.5)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
                         <div className="c-up-dot" />
                       </div>
                     )}
                     {m.error && (
-                      <div style={{position:'absolute',inset:0,background:'rgba(232,25,44,.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,color:'#fff'}}>✕</div>
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background: "rgba(232,25,44,.3)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 10,
+                          color: "#fff",
+                        }}
+                      >
+                        ✕
+                      </div>
                     )}
-                    <button className="c-prev-rm" onClick={() => removeMedia(i)}>✕</button>
+                    <button
+                      className="c-prev-rm"
+                      onClick={() => removeMedia(i)}
+                    >
+                      ✕
+                    </button>
                   </div>
                 ))}
               </div>
@@ -1309,27 +1846,35 @@ export default function FeedPage() {
                 type="file"
                 accept="image/*,video/mp4,video/webm,application/pdf"
                 multiple
-                style={{ display: 'none' }}
+                style={{ display: "none" }}
                 onChange={handleFileChange}
               />
               <button
-                className={`c-tool ${mediaFiles.length > 0 ? 'active' : ''}`}
+                className={`c-tool ${mediaFiles.length > 0 ? "active" : ""}`}
                 onClick={() => fileInputRef.current?.click()}
                 disabled={mediaFiles.length >= 4}
               >
-                📷 {mediaFiles.length > 0 ? `${mediaFiles.length}/4` : 'Photo'}
+                📷 {mediaFiles.length > 0 ? `${mediaFiles.length}/4` : "Photo"}
               </button>
               <button className="c-tool">#️⃣ Tag</button>
-              <button className="c-vis" onClick={cycleVisibility}>{visLabel[visibility]}</button>
+              <button className="c-vis" onClick={cycleVisibility}>
+                {visLabel[visibility]}
+              </button>
               <div className="c-gap" />
-              {(draft.length > 0 || mediaFiles.length > 0) && <span className="c-hint">Ctrl+Enter</span>}
+              {(draft.length > 0 || mediaFiles.length > 0) && (
+                <span className="c-hint">Ctrl+Enter</span>
+              )}
               {(draft.length > 0 || mediaFiles.length > 0) && (
                 <button
                   className="c-post"
                   onClick={submitPost}
-                  disabled={posting || mediaFiles.some(m => m.uploading) || (!draft.trim() && !mediaFiles.some(m => m.id))}
+                  disabled={
+                    posting ||
+                    mediaFiles.some((m) => m.uploading) ||
+                    (!draft.trim() && !mediaFiles.some((m) => m.id))
+                  }
                 >
-                  {posting ? 'Posting…' : 'Post'}
+                  {posting ? "Posting…" : "Post"}
                 </button>
               )}
             </div>
@@ -1339,19 +1884,24 @@ export default function FeedPage() {
 
           {/* Posts */}
           {loading ? (
-            [1, 2, 3].map(i => <PostSkeleton key={i} />)
+            [1, 2, 3].map((i) => <PostSkeleton key={i} />)
           ) : posts.length === 0 ? (
             <div className="lx-empty">
               <div className="lx-empty-ic">📭</div>
               <div className="lx-empty-t">Nothing Here Yet</div>
               <p className="lx-empty-s">
-                {tab === 'following' ? 'Follow students to see their posts here.' : 'No posts to discover right now.'}
+                {tab === "following"
+                  ? "Follow students to see their posts here."
+                  : "No posts to discover right now."}
               </p>
             </div>
           ) : (
             <>
               {posts.map((p, i) => (
-                <div key={p.id} style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }}>
+                <div
+                  key={p.id}
+                  style={{ animationDelay: `${Math.min(i, 8) * 50}ms` }}
+                >
                   <PostCard
                     post={p}
                     currentUserId={uid}
@@ -1363,8 +1913,12 @@ export default function FeedPage() {
               ))}
               {hasNext && (
                 <div className="load-more">
-                  <button className="lm-btn" onClick={() => loadFeed(false)} disabled={loadingMore}>
-                    {loadingMore ? 'Loading…' : 'Load more posts'}
+                  <button
+                    className="lm-btn"
+                    onClick={() => loadFeed(false)}
+                    disabled={loadingMore}
+                  >
+                    {loadingMore ? "Loading…" : "Load more posts"}
                   </button>
                 </div>
               )}
@@ -1374,7 +1928,9 @@ export default function FeedPage() {
       </Layout>
 
       {/* Global copy-link toast */}
-      {copyToast && <div className="copy-toast">🔗 Link copied to clipboard!</div>}
+      {copyToast && (
+        <div className="copy-toast">🔗 Link copied to clipboard!</div>
+      )}
     </>
   );
 }

@@ -184,4 +184,9 @@ public class UserService {
                 .avatarUrl(profile != null ? profile.getAvatarUrl() : null)
                 .build();
     }
+    @Transactional(readOnly = true)
+public List<ProfileResponse> getSuggestions() {
+    List<User> users = userRepository.findRecentUsers();
+    return buildProfileResponses(users);
+}
 }

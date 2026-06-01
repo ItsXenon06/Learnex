@@ -22,10 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.studentsocial.backend.model.Profile;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.time.LocalDateTime;
 
 import org.springframework.web.client.RestTemplate;
@@ -66,7 +63,7 @@ public class AuthService {
                 .isActive(true)
                 .build();
 
-        user = userRepository.save(user);
+        user = Objects.requireNonNull(userRepository.save(user));
 
         // HI-3 FIX: look up the seeded "student" role instead of creating "USER" on every
         // registration, which caused a race condition and a role that never existed in the DB.
@@ -129,7 +126,7 @@ return AuthResponse.builder()
         // but the real guard is the authenticate() call above.
         User user = userRepository.findByEmail(request.getIdentifier())
                 .orElseThrow(() -> new UnauthorizedException("User not found"));
-
+        
         var userRoles = userRoleRepository.findByUserId(user.getId());
         List<String> roles = userRoles.stream()
                 .map(ur -> ur.getRole().getName())
@@ -193,14 +190,14 @@ return AuthResponse.builder()
                 try {
                         if ("google".equalsIgnoreCase(provider)) {
                                 String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + token;
-                                Map resp = rest.getForObject(url, Map.class);
+                                Map<String, Object> resp = rest.getForObject(url, Map.class);
                                 if (resp != null) {
                                         email = (String) resp.get("email");
                                         oauthId = (String) resp.get("sub");
                                 }
                         } else if ("facebook".equalsIgnoreCase(provider)) {
                                 String url = "https://graph.facebook.com/me?fields=id,email&access_token=" + token;
-                                Map resp = rest.getForObject(url, Map.class);
+                                Map<String, Object> resp = rest.getForObject(url, Map.class);
                                 if (resp != null) {
                                         email = (String) resp.get("email");
                                         oauthId = (String) resp.get("id");
@@ -279,11 +276,12 @@ return AuthResponse.builder()
 
                 String jwt = jwtService.generateToken(user.getEmail(), roles);
 
-                String displayName = profileRepository.findByUserId(user.getId())
-                                .map(p -> p.getDisplayName() != null
-                                                ? p.getDisplayName()
-                                                : user.getEmail().split("@")[0])
-                                .orElse(user.getEmail().split("@")[0]);
+                final User finalUser = user;
+String displayName = profileRepository.findByUserId(finalUser.getId())
+        .map(p -> p.getDisplayName() != null
+                ? p.getDisplayName()
+                : finalUser.getEmail().split("@")[0])
+        .orElse(finalUser.getEmail().split("@")[0]);
 
                 return AuthResponse.builder()
                                 .token(jwt)

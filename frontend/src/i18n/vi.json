@@ -50,7 +50,9 @@
     "signOut": "Đăng xuất",
     "loading": "Đang tải…",
     "google": "Google",
-    "facebook": "Facebook"
+    "facebook": "Facebook",
+    "emailPlaceholder": "you@university.edu",
+    "oauthError": "Đăng nhập OAuth thất bại. Vui lòng thử lại."
   },
   "forms": {
     "firstName": "Tên",
@@ -101,6 +103,9 @@
     "fillAllFields": "Vui lòng điền đầy đủ tất cả các trường.",
     "somethingWentWrong": "Đã xảy ra lỗi. Vui lòng thử lại.",
     "resetTokenTesting": "Mã đặt lại (dùng thử): {{token}}",
-    "resetFailed": "Đặt lại thất bại"
+    "resetFailed": "Đặt lại thất bại",
+    "oauthInProgress": "Đang đăng nhập với {{provider}}…",
+    "oauthCancelled": "Đăng nhập OAuth đã bị huỷ.",
+    "oauthFailed": "Đăng nhập OAuth thất bại. Vui lòng thử lại."
   }
 }

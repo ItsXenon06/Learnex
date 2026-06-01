@@ -1,12 +1,11 @@
 package com.studentsocial.backend.repository;
 
-import com.studentsocial.backend.model.Course;
+import com.studentsocial.backend.model.CourseRequestEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
 
-// TODO: wire to CourseService once DB course table is seeded
 @Repository
-public interface CourseRepository extends JpaRepository<Course, UUID> {
+public interface CourseRequestRepository extends JpaRepository<CourseRequestEntity, UUID> {
 }

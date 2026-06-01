@@ -181,14 +181,26 @@ public class GroupController {
 
     // ── DELETE /api/groups/{id}/leave ─────────────────────────────────────
     @DeleteMapping("/{id}/leave")
-    public ResponseEntity<ApiResponse<Void>> leaveGroup(
-            @PathVariable UUID id,
-            @AuthenticationPrincipal UserDetails principal) {
+public ResponseEntity<ApiResponse<Void>> leaveGroup(
+        @PathVariable UUID id,
+        @AuthenticationPrincipal UserDetails principal) {
 
-        UUID userId = resolveUserId(principal);
-        groupMemberRepository.deleteByGroupIdAndUserId(id, userId);
-        return ResponseEntity.ok(ApiResponse.success(null));
-    }
+    UUID userId = resolveUserId(principal);
+
+    // Guard: owner cannot leave — they must transfer ownership first
+    groupMemberRepository.findByGroupId(id).stream()
+            .filter(gm -> gm.getUser().getId().equals(userId))
+            .findFirst()
+            .ifPresent(gm -> {
+                if ("owner".equals(gm.getRole().getName())) {
+                    throw new IllegalArgumentException(
+                            "Group owner cannot leave. Transfer ownership before leaving.");
+                }
+            });
+
+    groupMemberRepository.deleteByGroupIdAndUserId(id, userId);
+    return ResponseEntity.ok(ApiResponse.success(null));
+}
 
     // ── GET /api/groups/{id}/members ──────────────────────────────────────
     // Returns member UUIDs + emails only — never raw entity with lazy proxies.

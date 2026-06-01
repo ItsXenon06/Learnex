@@ -26,7 +26,7 @@ public class CourseService {
     private final UserRepository          userRepository;
     private final EmailService            emailService;
 
-    @Value("${admin.email:admin@learnex.app}")
+    @Value("${spring.mail.username:}")
     private String adminEmail;
 
     // Static course catalog — TODO: migrate to DB table when CourseRepository is wired
@@ -93,18 +93,19 @@ public class CourseService {
         );
 
         // Send notification email to admin — fail silently if mail not configured
-        try {
-            String subject = "[Learnex] Course Request: " + dto.getCourseName();
-            String body = String.format(
-                "A student has requested a new course.\n\n" +
-                "Course: %s\nRequested by: %s\nReason: %s\n",
-                dto.getCourseName(), user.getEmail(),
-                dto.getReason() != null ? dto.getReason() : "(no reason provided)"
-            );
-            emailService.sendEmail(adminEmail, subject, body);
-        } catch (Exception ex) {
-            log.warn("Could not send course request email: {}", ex.getMessage());
-        }
+        if (adminEmail != null && !adminEmail.isBlank()) {
+    try {
+        String subject = "[Learnex] Course Request: " + dto.getCourseName();
+        String body = String.format(
+            "Course request from: %s\nCourse: %s\nReason: %s",
+            user.getEmail(), dto.getCourseName(),
+            dto.getReason() != null ? dto.getReason() : "(none)"
+        );
+        emailService.sendEmail(adminEmail, subject, body);
+    } catch (Exception ex) {
+        log.warn("Could not send course request email: {}", ex.getMessage());
+    }
+}
 
         return CourseRequestResponse.builder()
                 .id(entity.getId())

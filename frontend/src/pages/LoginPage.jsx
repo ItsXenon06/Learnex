@@ -160,7 +160,7 @@ const styles = `
   }
   .social-btn:hover:not(:disabled) { border-color: var(--border-hover); background: #222; }
   .social-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-  .social-btn.google-btn:hover:not(:disabled) { border-color: rgba(66,133,244,0.5); background: rgba(66,133,244,0.05); }
+  .social-btn.github-btn:hover:not(:disabled) { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.05); }
   .social-btn.fb-btn:hover:not(:disabled) { border-color: rgba(24,119,242,0.5); background: rgba(24,119,242,0.05); }
   .social-btn.loading { border-color: var(--red) !important; }
   .social-spinner {
@@ -251,6 +251,24 @@ function MobileLogoIcon() {
   );
 }
 
+/* GitHub SVG icon */
+function GitHubIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
+    </svg>
+  );
+}
+
+/* Facebook SVG icon */
+function FacebookIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="#1877F2">
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+    </svg>
+  );
+}
+
 const FEATURES = [
   { icon: '🎓', titleKey: 'features.studyTogether',    descKey: 'features.studyTogetherDesc' },
   { icon: '💬', titleKey: 'features.realTimeMessaging', descKey: 'features.realTimeMessagingDesc' },
@@ -273,7 +291,7 @@ export default function LoginPage() {
   const [tab,      setTab]      = useState('login');
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
-  const [info,     setInfo]     = useState('');   // non-error status (OAuth in-progress)
+  const [info,     setInfo]     = useState('');
   const [pw,       setPw]       = useState('');
   const [form,     setForm]     = useState({
     identifier: '', email: '', password: '',
@@ -281,11 +299,7 @@ export default function LoginPage() {
   });
   const [searchParams] = useSearchParams();
   const [sessionBanner, setSessionBanner] = useState('');
-
-  // Track active OAuth provider so we can show a spinner on that button
-  const [oauthLoading, setOauthLoading] = useState(null); // 'google' | 'facebook' | null
-
-  // Ref to hold the popup-closed polling timer
+  const [oauthLoading, setOauthLoading] = useState(null); // 'github' | 'facebook' | null
   const popupTimerRef = useRef(null);
 
   useEffect(() => {
@@ -294,7 +308,6 @@ export default function LoginPage() {
     else if (reason === 'unauthorized') setSessionBanner(t('messages.unauthorized'));
   }, [t]);
 
-  // Cleanup popup timer on unmount
   useEffect(() => () => clearInterval(popupTimerRef.current), []);
 
   const isLogin = tab === 'login';
@@ -333,43 +346,65 @@ export default function LoginPage() {
 
   const handleKeyDown = (e) => { if (e.key === 'Enter') handleSubmit(); };
 
-  /* ── OAuth ── */
+  /* ── OAuth ──────────────────────────────────────────────────────────────
+   *
+   *  GitHub uses the AUTHORIZATION CODE flow (not implicit).
+   *  The popup visits GitHub → redirects to your oauth-callback page with
+   *  ?code=XXX in the query string.  The callback page posts that code to
+   *  window.opener, and the backend exchanges it for an access token.
+   *
+   *  Facebook uses the TOKEN (implicit) flow — the callback receives
+   *  #access_token=XXX in the hash, same as before.
+   *
+   *  Required env vars (create frontend/.env.local):
+   *    VITE_GITHUB_CLIENT_ID=your_github_oauth_app_client_id
+   *    VITE_FACEBOOK_APP_ID=your_facebook_app_id
+   *
+   *  Callback URL to register in each provider:
+   *    GitHub:   https://yourdomain.com/Learnex/oauth-callback.html?provider=github
+   *    Facebook: https://yourdomain.com/Learnex/oauth-callback.html?provider=facebook
+   *
+   *  For local dev (Vite on :5173):
+   *    GitHub:   http://localhost:5173/Learnex/oauth-callback.html?provider=github
+   *    Facebook: http://localhost:5173/Learnex/oauth-callback.html?provider=facebook
+   * ────────────────────────────────────────────────────────────────────── */
   const handleOAuth = (provider) => {
-    if (oauthLoading) return; // already in progress
+    if (oauthLoading) return;
 
-    const origin    = window.location.origin;
-    // The callback URL must be registered in your Google / Facebook app console.
-    // Path includes the Vite base (/Learnex/) so the file resolves correctly in dev.
-    const redirect  = `${origin}/Learnex/oauth-callback.html?provider=${provider}`;
+    const origin   = window.location.origin;
+    const redirect = `${origin}/Learnex/oauth-callback.html?provider=${provider}`;
 
     let authUrl = '';
-    if (provider === 'google') {
-      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+    if (provider === 'github') {
+      const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
       if (!clientId) {
-        setError('Google OAuth is not configured (VITE_GOOGLE_CLIENT_ID missing).');
+        setError('GitHub OAuth is not configured (VITE_GITHUB_CLIENT_ID missing).');
         return;
       }
-      const scope = encodeURIComponent('openid email profile');
-      const nonce = Math.random().toString(36).substring(2);
+      // GitHub uses authorization code flow — callback receives ?code=
+      const state = Math.random().toString(36).substring(2);
+      sessionStorage.setItem('oauth_state', state);
+      authUrl =
+        `https://github.com/login/oauth/authorize` +
+        `?client_id=${clientId}` +
+        `&redirect_uri=${encodeURIComponent(redirect)}` +
+        `&scope=user:email` +
+        `&state=${state}`;
 
-authUrl = `https://accounts.google.com/o/oauth2/v2/auth`
-  + `?client_id=${clientId}`
-  + `&redirect_uri=${encodeURIComponent(redirect)}`
-  + `&response_type=id_token`
-  + `&scope=${scope}`
-  + `&nonce=${nonce}`
-  + `&prompt=select_account`;
     } else if (provider === 'facebook') {
       const appId = import.meta.env.VITE_FACEBOOK_APP_ID;
       if (!appId) {
         setError('Facebook OAuth is not configured (VITE_FACEBOOK_APP_ID missing).');
         return;
       }
-      authUrl = `https://www.facebook.com/v18.0/dialog/oauth`
-        + `?client_id=${appId}`
-        + `&redirect_uri=${encodeURIComponent(redirect)}`
-        + `&response_type=token`
-        + `&scope=email`;
+      // Facebook uses implicit token flow — callback receives #access_token=
+      authUrl =
+        `https://www.facebook.com/v18.0/dialog/oauth` +
+        `?client_id=${appId}` +
+        `&redirect_uri=${encodeURIComponent(redirect)}` +
+        `&response_type=token` +
+        `&scope=email`;
     }
 
     const popup = openPopup(authUrl, `${provider}_oauth`);
@@ -379,67 +414,49 @@ authUrl = `https://accounts.google.com/o/oauth2/v2/auth`
     }
 
     setOauthLoading(provider);
-    setInfo(t('messages.oauthInProgress', { provider: provider === 'google' ? 'Google' : 'Facebook' }));
+    setInfo(`Signing in with ${provider === 'github' ? 'GitHub' : 'Facebook'}…`);
     setError('');
 
-    // ── Listen for message from oauth-callback.html ──
     const handleMessage = async (event) => {
-  if (event.origin !== window.location.origin) return;
-  if (!event.data || event.data.source !== 'learnex_oauth') return;
-  if (event.data.provider !== provider) return;
+      if (event.origin !== window.location.origin) return;
+      if (!event.data || event.data.source !== 'learnex_oauth') return;
+      if (event.data.provider !== provider) return;
 
-  window.removeEventListener('message', handleMessage);
-  clearInterval(popupTimerRef.current);
+      window.removeEventListener('message', handleMessage);
+      clearInterval(popupTimerRef.current);
+      popup?.close();
+      setInfo('');
 
-  popup?.close();
-  setInfo('');
+      if (event.data.error) {
+        setOauthLoading(null);
+        setError(`${provider === 'github' ? 'GitHub' : 'Facebook'} sign-in was cancelled or failed.`);
+        return;
+      }
 
-  if (event.data.error) {
-    setOauthLoading(null);
-    setError(
-      provider === 'google'
-        ? 'Google sign-in was cancelled or failed.'
-        : 'Facebook sign-in was cancelled or failed.'
-    );
-    return;
-  }
+      try {
+        // For GitHub: event.data.code  (authorization code)
+        // For Facebook: event.data.token (access token)
+        const credential = event.data.code || event.data.token;
+        await oauthLogin(provider, credential);
+        navigate('/feed');
+      } catch (err) {
+        setError(err.message || `${provider === 'github' ? 'GitHub' : 'Facebook'} sign-in failed.`);
+      } finally {
+        setOauthLoading(null);
+      }
+    };
 
-  try {
-    const result = await oauthLogin(provider, event.data.token);
+    window.addEventListener('message', handleMessage);
 
-    if (!result?.success) {
-      setError(
-        result?.error ||
-        `${provider === 'google' ? 'Google' : 'Facebook'} sign-in failed.`
-      );
-      return;
-    }
-
-    navigate('/feed');
-  } catch (err) {
-    setError(
-      err.message ||
-      `${provider === 'google' ? 'Google' : 'Facebook'} sign-in failed.`
-    );
-  } finally {
-    setOauthLoading(null);
-  }
-};
-
-window.addEventListener('message', handleMessage);
-
-
-    // Poll for the popup being closed without posting a message (user closed it manually)
     clearInterval(popupTimerRef.current);
     popupTimerRef.current = setInterval(() => {
       if (popup.closed) {
         clearInterval(popupTimerRef.current);
         window.removeEventListener('message', handleMessage);
-        // Only set cancelled if we're still waiting (oauthLoading still set)
         setOauthLoading(prev => {
           if (prev === provider) {
             setInfo('');
-            setError(t('messages.oauthCancelled'));
+            setError('Sign-in was cancelled.');
           }
           return null;
         });
@@ -507,26 +524,19 @@ window.addEventListener('message', handleMessage);
             {/* OAuth buttons */}
             <div className="divider">{t('app.continueWith')}</div>
             <div className="social-row">
+              {/* GitHub */}
               <button
-                className={`social-btn google-btn ${oauthLoading === 'google' ? 'loading' : ''}`}
-                onClick={() => handleOAuth('google')}
+                className={`social-btn github-btn ${oauthLoading === 'github' ? 'loading' : ''}`}
+                onClick={() => handleOAuth('github')}
                 disabled={!!oauthLoading || loading}
               >
-                {oauthLoading === 'google'
+                {oauthLoading === 'github'
                   ? <><div className="social-spinner" /> Signing in…</>
-                  : (
-                    <>
-                      <svg width="16" height="16" viewBox="0 0 24 24">
-                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                      </svg>
-                      {t('app.google')}
-                    </>
-                  )
+                  : <><GitHubIcon /> GitHub</>
                 }
               </button>
+
+              {/* Facebook */}
               <button
                 className={`social-btn fb-btn ${oauthLoading === 'facebook' ? 'loading' : ''}`}
                 onClick={() => handleOAuth('facebook')}
@@ -534,14 +544,7 @@ window.addEventListener('message', handleMessage);
               >
                 {oauthLoading === 'facebook'
                   ? <><div className="social-spinner" /> Signing in…</>
-                  : (
-                    <>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="#1877F2">
-                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                      </svg>
-                      {t('app.facebook')}
-                    </>
-                  )
+                  : <><FacebookIcon /> Facebook</>
                 }
               </button>
             </div>

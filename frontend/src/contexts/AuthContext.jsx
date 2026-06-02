@@ -46,9 +46,17 @@ export function AuthProvider({ children }) {
     });
 
     const payload = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new Error(payload?.message || payload?.data?.message || 'Invalid credentials');
-    }
+if (!res.ok) {
+  // Backend GlobalExceptionHandler returns { success: false, data: null, message: "..." }
+  const msg =
+    payload?.message ||
+    payload?.data?.message ||
+    (typeof payload?.errors === 'object'
+      ? Object.values(payload.errors).join(', ')
+      : null) ||
+    'Registration failed';
+  throw new Error(msg);
+}
 
     // Unwrap ApiResponse<AuthResponse>
     const data = payload?.data ?? payload;

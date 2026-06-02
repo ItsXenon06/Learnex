@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useAuth, getInitials } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import Layout from "../components/Layout";
 import groupService from "../services/groupService";
 import conversationService from "../services/conversationService";
@@ -68,6 +68,10 @@ const css = `
 .join-btn.leave{background:var(--s3);color:var(--t2);border:1px solid var(--b2);}
 .join-btn.leave:hover{background:rgba(232,25,44,.12);color:var(--red);border-color:var(--red-border);}
 .join-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+.cc-star{font-size:13px;cursor:pointer;padding:4px 6px;border-radius:5px;transition:all .12s;border:none;background:transparent;}
+.cc-star:hover{background:var(--s3);}
+.cc-star.starred{filter:drop-shadow(0 0 4px gold);}
 
 /* Skeleton */
 .gskel{background:var(--s1);border:1px solid var(--b1);border-radius:14px;overflow:hidden;}
@@ -174,6 +178,9 @@ function GroupCard({
   onLeaveRequest,
   onChat,
   joining,
+  starred,
+  toggleStar,
+  getStarCount,
 }) {
   const navigate = useNavigate();
   const ts = TYPE_STYLE[group.type] || DEFAULT_TYPE;
@@ -207,7 +214,25 @@ function GroupCard({
             👥 {group.memberCount ?? 0} member
             {group.memberCount !== 1 ? "s" : ""}
           </span>
-          <div style={{ display: "flex", gap: 6 }}>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <button
+              className={`cc-star ${starred.has(group.id) ? "starred" : ""}`}
+              onClick={(e) => toggleStar(e, group.id)}
+              title={starred.has(group.id) ? "Unstar" : "Star this group"}
+            >
+              {starred.has(group.id) ? "⭐" : "☆"}
+              <span
+                style={{
+                  fontSize: 10,
+                  marginLeft: 4,
+                  color: starred.has(group.id) ? "var(--gold)" : "var(--t4)",
+                  fontFamily: "var(--fm)",
+                  fontWeight: 700,
+                }}
+              >
+                {getStarCount(group.id)}
+              </span>
+            </button>
             {isMember && (
               <button
                 className="join-btn join"
@@ -437,23 +462,74 @@ export default function GroupsPage() {
   const [leaveTarget, setLeaveTarget] = useState(null); // group object
   const [leavingId, setLeavingId] = useState(null);
 
+  const starKey = `learnex_starred_groups_${user?.userId ?? user?.id ?? "guest"}`;
+  const [starred, setStarred] = useState(() => {
+    try {
+      const saved = localStorage.getItem(starKey);
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
   useEffect(() => {
-    if (!uid) return;
+    let active = true;
     setLoading(true);
-    Promise.all([
-      groupService.getGroups().catch(() => ({ data: [] })),
-      groupService.getMyGroups().catch(() => ({ data: [] })),
-    ])
-      .then(([allRes, myRes]) => {
-        const all = allRes?.data ?? allRes;
-        const my = myRes?.data ?? myRes;
-        const allGroups = Array.isArray(all) ? all : (all?.content ?? []);
-        const myList = Array.isArray(my) ? my : (my?.content ?? []);
-        setGroups(allGroups);
-        setJoined(new Set(myList.map((g) => g.id)));
+    setError("");
+
+    groupService
+      .getGroups()
+      .then((res) => {
+        const data = res?.data ?? res;
+        const items = Array.isArray(data) ? data : [];
+        if (!active) return;
+        setGroups(items);
+        setJoined(new Set(items.filter((g) => g.isMember).map((g) => g.id)));
       })
-      .finally(() => setLoading(false));
-  }, [uid]);
+      .catch(() => {
+        if (!active) return;
+        setError("Failed to load groups.");
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const toggleStar = (e, groupId) => {
+    e.stopPropagation();
+    setStarred((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupId)) next.delete(groupId);
+      else next.add(groupId);
+      try {
+        localStorage.setItem(starKey, JSON.stringify([...next]));
+      } catch {
+        /* no-op */
+      }
+      return next;
+    });
+  };
+
+  const getStarCount = (groupId) => {
+    let count = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("learnex_starred_groups_")) {
+        try {
+          const ids = JSON.parse(localStorage.getItem(key) || "[]");
+          if (ids.includes(groupId)) count++;
+        } catch {
+          /* no-op */
+        }
+      }
+    }
+    return count > 0 ? count : null;
+  };
 
   const handleJoin = async (groupId) => {
     setJoining(groupId);
@@ -497,13 +573,19 @@ export default function GroupsPage() {
       setGroups((prev) =>
         prev.map((g) =>
           g.id === leaveTarget.id
-            ? { ...g, memberCount: Math.max(0, (g.memberCount ?? 1) - 1) }
+            ? {
+                ...g,
+                memberCount: Math.max(0, (g.memberCount ?? 1) - 1),
+                isMember: false,
+              }
             : g,
         ),
       );
       setLeaveTarget(null);
     } catch (e) {
-      setError(e?.response?.data?.message || "Could not leave group.");
+      const msg = e?.response?.data?.message || "Could not leave group.";
+      setError(msg); // ← was silently dropped before
+      setLeaveTarget(null);
     } finally {
       setLeavingId(null);
     }
@@ -619,6 +701,9 @@ export default function GroupsPage() {
                     onLeaveRequest={handleLeaveRequest}
                     onChat={openGroupChat}
                     joining={joining}
+                    starred={starred}
+                    toggleStar={toggleStar}
+                    getStarCount={getStarCount}
                   />
                 </div>
               ))}

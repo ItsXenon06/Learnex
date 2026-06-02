@@ -116,15 +116,18 @@ export default function CoursePage() {
   }, []);
 
   const toggleStar = (e, id) => {
-  e.stopPropagation();
-  setStarred(prev => {
-    const next = new Set(prev);
-    next.has(id) ? next.delete(id) : next.add(id);
-    try { localStorage.setItem(starKey, JSON.stringify([...next])); }
-    catch { /* no-op */ }
-    return next;
-  });
-};
+    e.stopPropagation();
+    setStarred((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      try {
+        localStorage.setItem(starKey, JSON.stringify([...next]));
+      } catch {
+        /* no-op */
+      }
+      return next;
+    });
+  };
 
   const sendRequest = async () => {
     if (!reqForm.courseName.trim()) return;
@@ -294,6 +297,41 @@ export default function CoursePage() {
                         }
                       >
                         {starred.has(c.id) ? "⭐" : "☆"}
+                        {/* Show star count — reads aggregate from a shared key across users */}
+                        <span
+                          style={{
+                            fontSize: 10,
+                            marginLeft: 4,
+                            color: starred.has(c.id)
+                              ? "var(--gold)"
+                              : "var(--t4)",
+                            fontFamily: "var(--fm)",
+                            fontWeight: 700,
+                          }}
+                        >
+                          {(() => {
+                            // Count how many user-specific star sets contain this course id
+                            // This is a client-side aggregate across localStorage keys
+                            let count = 0;
+                            for (let i = 0; i < localStorage.length; i++) {
+                              const key = localStorage.key(i);
+                              if (
+                                key &&
+                                key.startsWith("learnex_starred_courses_")
+                              ) {
+                                try {
+                                  const ids = JSON.parse(
+                                    localStorage.getItem(key) || "[]",
+                                  );
+                                  if (ids.includes(c.id)) count++;
+                                } catch {
+                                  /* no-op */
+                                }
+                              }
+                            }
+                            return count > 0 ? count : null;
+                          })()}
+                        </span>
                       </button>
                     </div>
                   </div>

@@ -1,0 +1,27 @@
+# TODOs
+
+## Profile Page
+
+- [ ] Reproduce the bio edit issue in the browser using the current `ProfilePage` flow.
+- [ ] Verify network request when saving profile edits is `PUT /api/users/me`.
+- [ ] Confirm the response payload contains the updated `bio` field.
+- [ ] If the UI still does not update, adjust `saveProfile` in `frontend/src/pages/ProfilePage.jsx` so it correctly merges the returned profile values into state.
+- [ ] Add a regression note: clearing bio should work and show the updated empty state when the backend returns `bio: ""`.
+
+## Groups Page
+
+- [x] Remove stray unrelated JSX from `frontend/src/pages/GroupsPage.jsx`.
+- [x] Add `useEffect` to fetch groups from `groupService.getGroups()` on mount.
+- [x] Initialize the `joined` set from incoming `group.isMember` values.
+- [x] Update `handleJoin` so joined state and `isMember` are set after successful join.
+- [x] Confirm `handleLeaveConfirm` keeps group state consistent for `memberCount` and `isMember`.
+- [ ] Verify both tabs work:
+  - `Discover` shows all groups.
+  - `My Groups` filters groups properly by membership.
+- [ ] Add an error fallback if group loading fails.
+
+## General
+
+- [ ] Run the frontend build or linter to catch any remaining syntax or state issues.
+- [ ] Test the app locally after these fixes.
+- [ ] Document any backend contract mismatch discovered during profile edit debugging.

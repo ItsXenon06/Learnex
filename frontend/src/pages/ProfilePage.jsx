@@ -237,13 +237,29 @@ function EditModal({ profile, onClose, onSave, saving }) {
     avatarUrl: profile.avatarUrl || "",
   });
   const [err, setErr] = useState("");
+  const [showUrlInput, setShowUrlInput] = useState(false);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const [avatarUploading, setAvatarUploading] = useState(false);
 
+  // In EditModal, replace the submit function:
   const submit = async () => {
     setErr("");
+    // Only send fields that have actual values — empty string would clear the field on backend
+    // If user genuinely wants to clear a field, they must explicitly blank it
+    const payload = {
+      ...(form.displayName.trim()
+        ? { displayName: form.displayName.trim() }
+        : {}),
+      ...(form.headline.trim()
+        ? { headline: form.headline.trim() }
+        : { headline: "" }),
+      // Bio and website CAN be cleared intentionally — send as-is
+      bio: form.bio,
+      website: form.website,
+      avatarUrl: form.avatarUrl,
+    };
     try {
-      await onSave(form);
+      await onSave(payload);
     } catch (e) {
       setErr(e?.response?.data?.message || "Save failed.");
     }
@@ -481,7 +497,6 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
   const uid = user?.userId ?? user?.id;
   const targetId = paramId ?? uid;
   const isOwn = uid === targetId;
-  const [showUrlInput, setShowUrlInput] = useState(false);
   const [profile, setProfile] = useState(null);
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
@@ -573,10 +588,19 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
     try {
       const res = await userService.updateProfile(form);
       const updated = res?.data ?? res;
-      setProfile((p) => ({ ...p, ...updated }));
-      // Sync displayName into auth cache so topbar updates immediately
+      // Merge: only overwrite fields that the server actually returned non-null
+      setProfile((p) => ({
+        ...p,
+        ...Object.fromEntries(
+          Object.entries(updated).filter(
+            ([, v]) => v !== null && v !== undefined,
+          ),
+        ),
+      }));
       if (form.displayName) updateUserCache({ displayName: form.displayName });
       setEditOpen(false);
+    } catch (e) {
+      throw e; // re-throw so EditModal can show the error
     } finally {
       setSaving(false);
     }

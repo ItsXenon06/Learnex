@@ -221,10 +221,11 @@ export default function GroupDetailPage() {
   const handleJoin = async () => {
     setJoining(true);
     try {
-      await groupService.joinGroup(groupId);
+      const res = await groupService.joinGroup(groupId);
+      const updated = res?.data ?? res;
       setIsMember(true);
       setMyRole(updated?.myRole ?? "member");
-      setGroup((g) => ({ ...g, memberCount: (g?.memberCount ?? 0) + 1 }));
+      setGroup((g) => ({ ...g, memberCount: updated?.memberCount ?? (g?.memberCount ?? 0) + 1 }));
       // Refresh both posts and members
       await Promise.all([
         loadPosts(),
@@ -234,6 +235,7 @@ export default function GroupDetailPage() {
         }),
       ]);
     } catch (e) {
+      setIsMember(false);
       alert(e?.response?.data?.message || "Could not join group.");
     } finally {
       setJoining(false);
@@ -384,7 +386,7 @@ export default function GroupDetailPage() {
                     ? "…"
                     : isPrivate
                       ? "🔒 Request to Join"
-                      : "+ Join Group"}
+                      : "+ Join "}
                 </button>
               )}
             </div>

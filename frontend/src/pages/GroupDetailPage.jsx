@@ -220,10 +220,14 @@ export default function GroupDetailPage() {
 
   const handleJoin = async () => {
     setJoining(true);
+    // Optimistic update — show as member immediately
+    setIsMember(true);
+    setMyRole("member");
     try {
       const res = await groupService.joinGroup(groupId);
       const updated = res?.data ?? res;
-      setIsMember(true);
+      // Sync all fields from server response
+      setIsMember(updated?.isMember ?? true);
       setMyRole(updated?.myRole ?? "member");
       setGroup((g) => ({ ...g, memberCount: updated?.memberCount ?? (g?.memberCount ?? 0) + 1 }));
       // Refresh both posts and members
@@ -235,7 +239,9 @@ export default function GroupDetailPage() {
         }),
       ]);
     } catch (e) {
+      // Rollback optimistic update on failure
       setIsMember(false);
+      setMyRole(null);
       alert(e?.response?.data?.message || "Could not join group.");
     } finally {
       setJoining(false);
@@ -243,16 +249,24 @@ export default function GroupDetailPage() {
   };
   const handleLeave = async () => {
     setLeaving(true);
+    // Optimistic update — show as not member immediately
+    const prevIsMember = isMember;
+    const prevRole = myRole;
+    const prevCount = group?.memberCount ?? 0;
+    setIsMember(false);
+    setMyRole(null);
+    setGroup((g) => ({
+      ...g,
+      memberCount: Math.max(0, (g?.memberCount ?? 1) - 1),
+    }));
     try {
       await groupService.leaveGroup(groupId);
-      setIsMember(false);
-      setMyRole(null);
-      setGroup((g) => ({
-        ...g,
-        memberCount: Math.max(0, (g?.memberCount ?? 1) - 1),
-      }));
       setLeaveOpen(false);
     } catch (e) {
+      // Rollback optimistic update on failure
+      setIsMember(prevIsMember);
+      setMyRole(prevRole);
+      setGroup((g) => ({ ...g, memberCount: prevCount }));
       alert(e?.response?.data?.message || "Could not leave group.");
     } finally {
       setLeaving(false);
@@ -386,7 +400,7 @@ export default function GroupDetailPage() {
                     ? "…"
                     : isPrivate
                       ? "🔒 Request to Join"
-                      : "+ Join "}
+                      : "+ Join"}
                 </button>
               )}
             </div>

@@ -169,16 +169,15 @@ public class GroupController {
 
         UUID userId = resolveUserId(principal);
 
+        StudyGroup group = studyGroupRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new RuntimeException("Group not found"));
+
         if (groupMemberRepository.existsByGroupIdAndUserId(id, userId)) {
-            StudyGroup group = studyGroupRepository.findByIdAndDeletedAtIsNull(id)
-                    .orElseThrow(() -> new RuntimeException("Group not found"));
             return ResponseEntity.ok(ApiResponse.success(toDto(group, userId)));
         }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        StudyGroup group = studyGroupRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new RuntimeException("Group not found"));
         GroupRole memberRole = groupRoleRepository.findByName("member")
                 .orElseThrow(() -> new RuntimeException("Member role not seeded"));
 
@@ -189,7 +188,7 @@ public class GroupController {
                 .build());
 
         // Re-fetch so memberCount reflects the DB trigger update
-        StudyGroup refreshed = studyGroupRepository.findById(id)
+        StudyGroup refreshed = studyGroupRepository.findByIdAndDeletedAtIsNull(id)
                 .orElse(group);
 
         return ResponseEntity.ok(ApiResponse.success(toDto(refreshed, userId)));

@@ -11,6 +11,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.*;
 
 @RestController
@@ -31,9 +33,7 @@ public class GroupController {
                 .getId();
     }
 
-    // ── Map entity → DTO (must be called inside an open transaction) ──────
-    // FIX: never return a raw StudyGroup entity — lazy proxies (createdBy,
-    // school, section, coverMedia) crash Jackson with ByteBuddyInterceptor.
+    // ── Map entity → DTO ──────────────────────────────────────────────────
     private StudyGroupResponse toDto(StudyGroup g, UUID viewingUserId) {
         String displayName = null;
         if (g.getCreatedBy() != null) {
@@ -43,8 +43,22 @@ public class GroupController {
                     .orElse(null);
         }
 
-        boolean isMember = viewingUserId != null &&
-                groupMemberRepository.existsByGroupIdAndUserId(g.getId(), viewingUserId);
+        boolean isMember = false;
+        String  myRole   = null;
+
+        if (viewingUserId != null) {
+            for (GroupMember gm : groupMemberRepository.findByGroupId(g.getId())) {
+                if (gm.getUser().getId().equals(viewingUserId)) {
+                    isMember = true;
+                    myRole   = gm.getRole().getName();
+                    break;
+                }
+            }
+        }
+
+        // Extract to typed locals to satisfy @NonNull checker on builder
+        UUID    createdById    = g.getCreatedBy() != null ? g.getCreatedBy().getId()    : null;
+        String  createdByEmail = g.getCreatedBy() != null ? g.getCreatedBy().getEmail() : null;
 
         return StudyGroupResponse.builder()
                 .id(g.getId())
@@ -53,11 +67,12 @@ public class GroupController {
                 .type(g.getType())
                 .isPrivate(g.getIsPrivate())
                 .memberCount(g.getMemberCount())
-                .createdById(g.getCreatedBy() != null ? g.getCreatedBy().getId() : null)
-                .createdByEmail(g.getCreatedBy() != null ? g.getCreatedBy().getEmail() : null)
+                .createdById(createdById)
+                .createdByEmail(createdByEmail)
                 .createdByDisplayName(displayName)
                 .createdAt(g.getCreatedAt())
                 .isMember(isMember)
+                .myRole(myRole)
                 .build();
     }
 
@@ -92,9 +107,7 @@ public class GroupController {
         return ResponseEntity.ok(ApiResponse.success(toDto(group, viewerId)));
     }
 
-    // ── GET /api/users/me/groups ──────────────────────────────────────────
-    // Returns groups the authenticated user belongs to.
-    // NOTE: this endpoint lives here (not UserController) to keep group logic together.
+    // ── GET /api/groups/mine ──────────────────────────────────────────────
     @GetMapping("/mine")
     public ResponseEntity<ApiResponse<List<StudyGroupResponse>>> getMyGroups(
             @AuthenticationPrincipal UserDetails principal) {
@@ -110,10 +123,6 @@ public class GroupController {
     }
 
     // ── POST /api/groups ──────────────────────────────────────────────────
-    // FIX: was returning raw StudyGroup entity → ByteBuddyInterceptor crash.
-    // Now returns StudyGroupResponse DTO. Also: the crash was happening AFTER
-    // the save, which is why groups appeared to not persist (they did save, but
-    // the 500 response made the frontend think it failed).
     @PostMapping
     public ResponseEntity<ApiResponse<StudyGroupResponse>> createGroup(
             @AuthenticationPrincipal UserDetails principal,
@@ -129,23 +138,27 @@ public class GroupController {
                 .type((String) body.getOrDefault("type", "club"))
                 .isPrivate(Boolean.TRUE.equals(body.get("isPrivate")))
                 .createdBy(creator)
-                .memberCount(1)
+                .memberCount(0)
                 .build();
 
         StudyGroup saved = studyGroupRepository.save(group);
 
-        // Add creator as owner
         GroupRole ownerRole = groupRoleRepository.findByName("owner")
-                .orElseThrow(() -> new RuntimeException(
-                        "Owner role not seeded — run script.sql first"));
+                .orElseThrow(() -> new RuntimeException("Owner role not seeded — run script.sql first"));
+
         groupMemberRepository.save(GroupMember.builder()
                 .group(saved)
                 .user(creator)
                 .role(ownerRole)
                 .build());
 
+        // Re-fetch so memberCount reflects the DB trigger update (0 → 1)
+        UUID savedId = saved.getId();
+        StudyGroup refreshed = studyGroupRepository.findById(savedId)
+                .orElse(saved);
+
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(toDto(saved, userId)));
+                .body(ApiResponse.success(toDto(refreshed, userId)));
     }
 
     // ── POST /api/groups/{id}/join ────────────────────────────────────────
@@ -175,35 +188,61 @@ public class GroupController {
                 .role(memberRole)
                 .build());
 
-        // member_count maintained by DB trigger
-        return ResponseEntity.ok(ApiResponse.success(toDto(group, userId)));
+        // Re-fetch so memberCount reflects the DB trigger update
+        StudyGroup refreshed = studyGroupRepository.findById(id)
+                .orElse(group);
+
+        return ResponseEntity.ok(ApiResponse.success(toDto(refreshed, userId)));
     }
 
     // ── DELETE /api/groups/{id}/leave ─────────────────────────────────────
-    @DeleteMapping("/{id}/leave")
+    // ── DELETE /api/groups/{id}/leave ─────────────────────────────────────
+// If the leaving user is the owner, auto-promote:
+//   1. Earliest admin (by joinedAt) → promoted to owner
+//   2. If no admins, earliest plain member → promoted to owner
+//   3. If no other members at all → soft-delete the group (no one left)
+@DeleteMapping("/{id}/leave")
 public ResponseEntity<ApiResponse<Void>> leaveGroup(
         @PathVariable UUID id,
         @AuthenticationPrincipal UserDetails principal) {
 
     UUID userId = resolveUserId(principal);
 
-    // Guard: owner cannot leave — they must transfer ownership first
-    groupMemberRepository.findByGroupId(id).stream()
+    GroupMember membership = groupMemberRepository.findByGroupId(id).stream()
             .filter(gm -> gm.getUser().getId().equals(userId))
             .findFirst()
-            .ifPresent(gm -> {
-                if ("owner".equals(gm.getRole().getName())) {
-                    throw new IllegalArgumentException(
-                            "Group owner cannot leave. Transfer ownership before leaving.");
-                }
-            });
+            .orElseThrow(() -> new IllegalArgumentException("You are not a member of this group"));
+
+    if ("owner".equals(membership.getRole().getName())) {
+        // Try to find succession candidate: earliest admin first, then earliest member
+        Optional<GroupMember> successor =
+                groupMemberRepository.findEarliestByGroupIdAndRole(id, userId, "admin");
+
+        if (successor.isEmpty()) {
+            successor = groupMemberRepository.findEarliestByGroupIdAndRole(id, userId, "member");
+        }
+
+        if (successor.isPresent()) {
+            // Promote successor to owner before the current owner leaves
+            GroupRole ownerRole = groupRoleRepository.findByName("owner")
+                    .orElseThrow(() -> new RuntimeException("Owner role not seeded"));
+            GroupMember next = successor.get();
+            next.setRole(ownerRole);
+            groupMemberRepository.save(next);
+        } else {
+            // No other members — soft-delete the group
+            StudyGroup group = studyGroupRepository.findByIdAndDeletedAtIsNull(id)
+                    .orElseThrow(() -> new RuntimeException("Group not found"));
+            group.setDeletedAt(LocalDateTime.now());
+            studyGroupRepository.save(group);
+        }
+    }
 
     groupMemberRepository.deleteByGroupIdAndUserId(id, userId);
     return ResponseEntity.ok(ApiResponse.success(null));
 }
 
     // ── GET /api/groups/{id}/members ──────────────────────────────────────
-    // Returns member UUIDs + emails only — never raw entity with lazy proxies.
     @GetMapping("/{id}/members")
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getMembers(
             @PathVariable UUID id) {
@@ -211,19 +250,104 @@ public ResponseEntity<ApiResponse<Void>> leaveGroup(
         List<Map<String, Object>> members = groupMemberRepository.findByGroupId(id)
                 .stream()
                 .map(gm -> {
-    Map<String, Object> m = new HashMap<>();
-    m.put("userId",   gm.getUser().getId());
-    m.put("email",    gm.getUser().getEmail());
-    m.put("roleName", gm.getRole().getName());
-    m.put("joinedAt", gm.getJoinedAt());
-    // ADD displayName lookup:
-    profileRepository.findByUserId(gm.getUser().getId())
-        .ifPresent(p -> m.put("displayName", p.getDisplayName()));
-    return m;
-})
-
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("userId",   gm.getUser().getId());
+                    m.put("email",    gm.getUser().getEmail());
+                    m.put("roleName", gm.getRole().getName());
+                    m.put("joinedAt", gm.getJoinedAt());
+                    profileRepository.findByUserId(gm.getUser().getId())
+                            .ifPresent(p -> m.put("displayName", p.getDisplayName()));
+                    return m;
+                })
                 .toList();
 
         return ResponseEntity.ok(ApiResponse.success(members));
+    }
+
+    // ── PUT /api/groups/{id}/members/{targetUserId}/role ──────────────────
+    @PutMapping("/{id}/members/{targetUserId}/role")
+    public ResponseEntity<ApiResponse<Void>> updateMemberRole(
+            @PathVariable UUID id,
+            @PathVariable UUID targetUserId,
+            @AuthenticationPrincipal UserDetails principal,
+            @RequestBody Map<String, Object> body) {
+
+        UUID   callerId    = resolveUserId(principal);
+        String newRoleName = (String) body.get("role");
+
+        if (newRoleName == null || newRoleName.isBlank()) {
+            throw new IllegalArgumentException("role is required");
+        }
+
+        List<GroupMember> allMembers = groupMemberRepository.findByGroupId(id);
+
+        GroupMember callerMembership = allMembers.stream()
+                .filter(gm -> gm.getUser().getId().equals(callerId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("You are not a member of this group"));
+
+        String callerRole = callerMembership.getRole().getName();
+        if (!"owner".equals(callerRole) && !"admin".equals(callerRole)) {
+            throw new IllegalArgumentException("Only owners and admins can change roles");
+        }
+
+        if ("owner".equals(newRoleName) && !"owner".equals(callerRole)) {
+            throw new IllegalArgumentException("Only the owner can transfer ownership");
+        }
+
+        GroupMember target = allMembers.stream()
+                .filter(gm -> gm.getUser().getId().equals(targetUserId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Target user is not a member"));
+
+        // Admins cannot act on other admins or the owner
+        if (!"owner".equals(callerRole)) {
+            String targetCurrentRole = target.getRole().getName();
+            if ("owner".equals(targetCurrentRole) || "admin".equals(targetCurrentRole)) {
+                throw new IllegalArgumentException("Admins can only manage plain members");
+            }
+        }
+
+        GroupRole newRole = groupRoleRepository.findByName(newRoleName)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid role: " + newRoleName));
+
+        // Ownership transfer: demote caller to admin first
+        if ("owner".equals(newRoleName)) {
+            GroupRole adminRole = groupRoleRepository.findByName("admin")
+                    .orElseThrow(() -> new RuntimeException("Admin role not seeded"));
+            callerMembership.setRole(adminRole);
+            groupMemberRepository.save(callerMembership);
+        }
+
+        target.setRole(newRole);
+        groupMemberRepository.save(target);
+
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // ── DELETE /api/groups/{id} ───────────────────────────────────────────
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteGroup(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetails principal) {
+
+        UUID userId = resolveUserId(principal);
+
+        StudyGroup group = studyGroupRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new RuntimeException("Group not found"));
+
+        GroupMember membership = groupMemberRepository.findByGroupId(id).stream()
+                .filter(gm -> gm.getUser().getId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("You are not a member of this group"));
+
+        if (!"owner".equals(membership.getRole().getName())) {
+            throw new IllegalArgumentException("Only the group owner can delete the group");
+        }
+
+        group.setDeletedAt(LocalDateTime.now());
+        studyGroupRepository.save(group);
+
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

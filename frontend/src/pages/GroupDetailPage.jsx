@@ -167,12 +167,15 @@ export default function GroupDetailPage() {
   const [loading, setLoading] = useState(true);
   const [postsLoad, setPostsLoad] = useState(true);
   const [isMember, setIsMember] = useState(false);
+  const [myRole, setMyRole] = useState(null);
   const [joining, setJoining] = useState(false);
   const [tab, setTab] = useState("feed");
   const [draft, setDraft] = useState("");
   const [posting, setPosting] = useState(false);
   const [postErr, setPostErr] = useState("");
   const [denied, setDenied] = useState(false);
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   // Load group info + members
   useEffect(() => {
@@ -188,6 +191,7 @@ export default function GroupDetailPage() {
         setGroup(g);
         setMembers(Array.isArray(m) ? m : []);
         setIsMember(g?.isMember ?? false);
+        setMyRole(g?.myRole ?? null);
       })
       .catch(() => navigate("/groups"))
       .finally(() => setLoading(false));
@@ -219,15 +223,39 @@ export default function GroupDetailPage() {
     try {
       await groupService.joinGroup(groupId);
       setIsMember(true);
+      setMyRole(updated?.myRole ?? "member");
       setGroup((g) => ({ ...g, memberCount: (g?.memberCount ?? 0) + 1 }));
-      await loadPosts(); // refresh — now member can see content
+      // Refresh both posts and members
+      await Promise.all([
+        loadPosts(),
+        groupService.getMembers(groupId).then((res) => {
+          const m = res?.data ?? res;
+          setMembers(Array.isArray(m) ? m : []);
+        }),
+      ]);
     } catch (e) {
       alert(e?.response?.data?.message || "Could not join group.");
     } finally {
       setJoining(false);
     }
   };
-
+  const handleLeave = async () => {
+    setLeaving(true);
+    try {
+      await groupService.leaveGroup(groupId);
+      setIsMember(false);
+      setMyRole(null);
+      setGroup((g) => ({
+        ...g,
+        memberCount: Math.max(0, (g?.memberCount ?? 1) - 1),
+      }));
+      setLeaveOpen(false);
+    } catch (e) {
+      alert(e?.response?.data?.message || "Could not leave group.");
+    } finally {
+      setLeaving(false);
+    }
+  };
   const handlePost = async () => {
     if (!draft.trim() || posting) return;
     setPosting(true);
@@ -249,13 +277,10 @@ export default function GroupDetailPage() {
   };
 
   const openGroupChat = async () => {
-    if (members.length === 0) {
-      alert("Member list is still loading, please try again.");
-      return;
-    }
     setChatLoading(true);
     try {
       const groupTag = `grp:${groupId}`;
+      // Use already-loaded members; if empty just open messages
       const memberIds = members.map((m) => m.userId).filter((id) => id !== uid);
       const res = await conversationService.startGroupConversation(
         group.name,
@@ -330,21 +355,23 @@ export default function GroupDetailPage() {
                   >
                     {chatLoading ? "⏳ Opening…" : "💬 Group Chat"}
                   </button>
+                  {(myRole === "owner" || myRole === "admin") && (
+                    <button
+                      className="gd-btn gd-btn-outline"
+                      onClick={() => navigate(`/groups/${groupId}/manage`)}
+                      style={{
+                        color: "var(--gold)",
+                        borderColor: "rgba(201,168,76,.4)",
+                      }}
+                    >
+                      ⚙ Manage
+                    </button>
+                  )}
                   <button
                     className="gd-btn gd-btn-ghost"
-                    onClick={() => {
-                      if (window.confirm(`Leave ${group.name}?`)) {
-                        groupService.leaveGroup(groupId).then(() => {
-                          setIsMember(false);
-                          setGroup((g) => ({
-                            ...g,
-                            memberCount: Math.max(0, (g?.memberCount ?? 1) - 1),
-                          }));
-                        });
-                      }
-                    }}
+                    onClick={() => setLeaveOpen(true)}
                   >
-                    Leave
+                    Leave Group
                   </button>
                 </>
               ) : (
@@ -378,7 +405,7 @@ export default function GroupDetailPage() {
                   className={`gd-tab ${tab === "members" ? "on" : ""}`}
                   onClick={() => setTab("members")}
                 >
-                  Members ({members.length})
+                  Members {!loading && `(${members.length})`}
                 </button>
               </div>
 
@@ -570,8 +597,16 @@ export default function GroupDetailPage() {
                             {(p.commentCount ?? 0) > 0 && (
                               <span>💬 {p.commentCount}</span>
                             )}
-                            <span style={{ marginLeft: "auto" }}>
-                              Read more →
+                            <span
+                              style={{
+                                marginLeft: "auto",
+                                color: "var(--red)",
+                                fontSize: 11,
+                                fontWeight: 700,
+                                letterSpacing: ".3px",
+                              }}
+                            >
+                              VIEW POST →
                             </span>
                           </div>
                         </div>
@@ -613,11 +648,18 @@ export default function GroupDetailPage() {
                           <span className="gd-member-name">
                             {m.displayName || m.email}
                           </span>
-                          <span
-                            className={`gd-member-role ${m.roleName === "owner" ? "gd-role-owner" : "gd-role-member"}`}
-                          >
-                            {m.roleName === "owner" ? "👑 Owner" : "Member"}
-                          </span>
+
+<span
+    className={`gd-member-role ${
+        m.roleName === "owner" ? "gd-role-owner" : "gd-role-member"
+    }`}
+>
+    {m.roleName === "owner"
+        ? "👑 Owner"
+        : m.roleName === "admin"
+          ? "🛡 Admin"
+          : "Member"}
+</span>
                         </div>
                       );
                     })
@@ -706,6 +748,102 @@ export default function GroupDetailPage() {
           </div>
         </div>
       </Layout>
+      {leaveOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 500,
+            background: "rgba(0,0,0,.72)",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+            animation: "mfdin .2s var(--ease)",
+          }}
+          onClick={(e) => e.target === e.currentTarget && setLeaveOpen(false)}
+        >
+          <div
+            style={{
+              background: "var(--s1)",
+              border: "1px solid var(--b2)",
+              borderRadius: 16,
+              width: "100%",
+              maxWidth: 360,
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "18px 22px",
+                borderBottom: "1px solid var(--b1)",
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: "var(--fd)",
+                  fontSize: 20,
+                  letterSpacing: 3,
+                }}
+              >
+                Leave Group
+              </span>
+              <button
+                onClick={() => setLeaveOpen(false)}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 6,
+                  border: "none",
+                  background: "transparent",
+                  color: "var(--t3)",
+                  fontSize: 16,
+                  cursor: "pointer",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div
+              style={{
+                padding: "18px 22px",
+                fontSize: 14,
+                color: "var(--t2)",
+                lineHeight: 1.7,
+              }}
+            >
+              Leave <strong style={{ color: "var(--t1)" }}>{group.name}</strong>
+              ? You can rejoin later if it's public.
+            </div>
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                justifyContent: "flex-end",
+                padding: "0 22px 20px",
+              }}
+            >
+              <button
+                onClick={() => setLeaveOpen(false)}
+                className="gd-btn gd-btn-outline"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLeave}
+                disabled={leaving}
+                className="gd-btn gd-btn-ghost"
+              >
+                {leaving ? "Leaving…" : "Leave Group"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

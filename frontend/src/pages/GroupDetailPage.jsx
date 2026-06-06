@@ -181,7 +181,6 @@ export default function GroupDetailPage() {
   useEffect(() => {
     if (!groupId) return;
     setLoading(true);
-    console.log("[v0] Loading group:", groupId);
     Promise.all([
       groupService.getGroup(groupId),
       groupService.getMembers(groupId).catch(() => ({ data: [] })),
@@ -189,7 +188,6 @@ export default function GroupDetailPage() {
       .then(([gRes, mRes]) => {
         const g = gRes?.data ?? gRes;
         const m = mRes?.data ?? mRes;
-        console.log("[v0] Group loaded:", { groupId, isMember: g?.isMember, myRole: g?.myRole, memberCount: g?.memberCount, userId: uid });
         setGroup(g);
         setMembers(Array.isArray(m) ? m : []);
         setIsMember(g?.isMember ?? false);
@@ -197,7 +195,6 @@ export default function GroupDetailPage() {
       })
       //.catch(() => navigate("/groups"))
       .catch((err) => {
-        console.log("[v0] Error loading group:", err);
         navigate("/groups");
       })
       .finally(() => setLoading(false));
@@ -225,36 +222,26 @@ export default function GroupDetailPage() {
   }, [group, loadPosts]);
 
   const handleJoin = async () => {
-  console.log("[v0] Attempting to join group:", groupId);
   setJoining(true);
   setIsMember(true);
   setMyRole("member");
   try {
     const res = await groupService.joinGroup(groupId);
     const updated = res?.data ?? res;
-    console.log("[v0] After join response:", { 
-      isMember: updated?.isMember, 
-      myRole: updated?.myRole, 
-      memberCount: updated?.memberCount,
-      fullResponse: updated
-    });
     setIsMember(updated?.isMember ?? true);
     setMyRole(updated?.myRole ?? "member");
     setGroup((g) => {
       const newGroup = { ...g, memberCount: updated?.memberCount ?? (g?.memberCount ?? 0) + 1 };
-      console.log("[v0] Group state updated:", newGroup);
       return newGroup;
     });
     await Promise.all([
       loadPosts(),
       groupService.getMembers(groupId).then((res) => {
         const m = res?.data ?? res;
-        console.log("[v0] Members refreshed:", m.length);
         setMembers(Array.isArray(m) ? m : []);
       }),
     ]);
   } catch (e) {
-    console.log("[v0] Join failed, rolling back:", e?.response?.data?.message);
     setIsMember(false);
     setMyRole(null);
     alert(e?.response?.data?.message || "Could not join group.");

@@ -48,12 +48,11 @@ public class GroupController {
 
         if (viewingUserId != null) {
             try {
-                isMember = groupMemberRepository.findByGroupIdAndUserId(g.getId(), viewingUserId)
-                        .map(gm -> {
-                            myRole = gm.getRole().getName();
-                            return true;
-                        })
-                        .orElse(false);
+                var memberOpt = groupMemberRepository.findByGroupIdAndUserId(g.getId(), viewingUserId);
+                if (memberOpt.isPresent()) {
+                    isMember = true;
+                    myRole = memberOpt.get().getRole().getName();
+                }
             } catch (Exception e) {
                 // If query fails, default to not member
                 isMember = false;

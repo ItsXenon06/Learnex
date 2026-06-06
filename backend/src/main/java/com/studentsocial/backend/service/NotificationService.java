@@ -3,6 +3,8 @@ package com.studentsocial.backend.service;
 import com.studentsocial.backend.dto.request.UpdatePreferenceRequest;
 import com.studentsocial.backend.dto.response.NotificationPageResponse;
 import com.studentsocial.backend.dto.response.NotificationResponse;
+import com.studentsocial.backend.dto.response.GroupedNotificationPageResponse;
+import com.studentsocial.backend.dto.response.GroupedNotificationResponse;
 import com.studentsocial.backend.exception.ResourceNotFoundException;
 import com.studentsocial.backend.model.Notification;
 import com.studentsocial.backend.model.NotificationPreference;
@@ -10,6 +12,7 @@ import com.studentsocial.backend.model.User;
 import com.studentsocial.backend.repository.NotificationPreferenceRepository;
 import com.studentsocial.backend.repository.NotificationRepository;
 import com.studentsocial.backend.repository.UserRepository;
+import com.studentsocial.backend.util.NotificationGroupingUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -231,6 +234,36 @@ public class NotificationService {
         if (request.getInApp() != null) pref.setInApp(request.getInApp());
 
         return preferenceRepository.save(pref);
+    }
+
+    /**
+     * GET /api/notifications?grouped=true
+     * Returns grouped notifications for a user, newest first.
+     * Combines multiple notifications of the same type on the same resource.
+     */
+    @Transactional(readOnly = true)
+    public GroupedNotificationPageResponse getGroupedNotifications(UUID userId, int page, int size, boolean unreadOnly) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Notification> result = unreadOnly
+                ? notificationRepository.findUnreadByUserId(userId, pageable)
+                : notificationRepository.findByUserId(userId, pageable);
+
+        long unreadCount = notificationRepository.countByUserIdAndIsReadFalse(userId);
+
+        // Group notifications
+        List<GroupedNotificationResponse> grouped = NotificationGroupingUtil
+                .group(result.getContent());
+
+        return GroupedNotificationPageResponse.builder()
+                .content(grouped)
+                .currentPage(result.getNumber())
+                .totalPages(result.getTotalPages())
+                .totalElements(result.getTotalElements())
+                .unreadCount((int) unreadCount)
+                .build();
     }
 
     // ---------------------------------------------------------------

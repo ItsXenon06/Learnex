@@ -195,11 +195,10 @@ public class GroupController {
     }
 
     // ── DELETE /api/groups/{id}/leave ─────────────────────────────────────
-    // ── DELETE /api/groups/{id}/leave ─────────────────────────────────────
-// If the leaving user is the owner, auto-promote:
-//   1. Earliest admin (by joinedAt) → promoted to owner
-//   2. If no admins, earliest plain member → promoted to owner
-//   3. If no other members at all → soft-delete the group (no one left)
+    // If the leaving user is the owner, auto-promote in this order:
+    //   1. Earliest admin (by joinedAt) → promoted to owner
+    //   2. If no admins, earliest plain member → promoted to owner
+    //   3. If no other members at all → soft-delete the group (no one left)
     @DeleteMapping("/{id}/leave")
     public ResponseEntity<ApiResponse<Void>> leaveGroup(
             @PathVariable UUID id,
@@ -218,27 +217,41 @@ public class GroupController {
 
         if ("owner".equals(memberRole)) {
             System.out.println("[v0] User is owner, finding successor...");
-            // Try to find the earliest (longest-standing) member to promote to owner
-            Optional<GroupMember> successor =
-                    groupMemberRepository.findEarliestByGroupIdAndRole(id, userId);
+            
+            // Try to find the earliest admin first
+            Optional<GroupMember> adminSuccessor = 
+                    groupMemberRepository.findEarliestAdminByGroupId(id, userId);
 
-            if (successor.isPresent()) {
-                System.out.println("[v0] Found successor: " + successor.get().getUser().getId());
-                // Promote successor to owner before the current owner leaves
+            if (adminSuccessor.isPresent()) {
+                System.out.println("[v0] Found admin successor: " + adminSuccessor.get().getUser().getId());
                 GroupRole ownerRole = groupRoleRepository.findByName("owner")
                         .orElseThrow(() -> new RuntimeException("Owner role not seeded"));
-                GroupMember next = successor.get();
+                GroupMember next = adminSuccessor.get();
                 next.setRole(ownerRole);
                 groupMemberRepository.save(next);
-                System.out.println("[v0] Successor promoted to owner");
+                System.out.println("[v0] Admin promoted to owner");
             } else {
-                // No other members — soft-delete the group
-                System.out.println("[v0] No successor found, deleting group");
-                StudyGroup group = studyGroupRepository.findByIdAndDeletedAtIsNull(id)
-                        .orElseThrow(() -> new RuntimeException("Group not found"));
-                group.setDeletedAt(LocalDateTime.now());
-                studyGroupRepository.save(group);
-                System.out.println("[v0] Group soft-deleted");
+                // No admins, try to find the earliest member
+                Optional<GroupMember> memberSuccessor = 
+                        groupMemberRepository.findEarliestMemberByGroupId(id, userId);
+
+                if (memberSuccessor.isPresent()) {
+                    System.out.println("[v0] Found member successor: " + memberSuccessor.get().getUser().getId());
+                    GroupRole ownerRole = groupRoleRepository.findByName("owner")
+                            .orElseThrow(() -> new RuntimeException("Owner role not seeded"));
+                    GroupMember next = memberSuccessor.get();
+                    next.setRole(ownerRole);
+                    groupMemberRepository.save(next);
+                    System.out.println("[v0] Member promoted to owner");
+                } else {
+                    // No other members — soft-delete the group
+                    System.out.println("[v0] No successor found, deleting group");
+                    StudyGroup group = studyGroupRepository.findByIdAndDeletedAtIsNull(id)
+                            .orElseThrow(() -> new RuntimeException("Group not found"));
+                    group.setDeletedAt(LocalDateTime.now());
+                    studyGroupRepository.save(group);
+                    System.out.println("[v0] Group soft-deleted");
+                }
             }
         }
 
@@ -270,6 +283,11 @@ public class GroupController {
     }
 
     // ── PUT /api/groups/{id}/members/{targetUserId}/role ──────────────────
+    // Role assignment rules:
+    // - Only owner can assign/change "owner" and "admin" roles
+    // - Owner and admin can assign "moderator" role (unlimited)
+    // - Admin can only manage plain members and moderators (not other admins or owner)
+    // - Enforce max 1 admin per group
     @PutMapping("/{id}/members/{targetUserId}/role")
     public ResponseEntity<ApiResponse<Void>> updateMemberRole(
             @PathVariable UUID id,
@@ -284,6 +302,11 @@ public class GroupController {
             throw new IllegalArgumentException("role is required");
         }
 
+        if (!("member".equals(newRoleName) || "admin".equals(newRoleName) || 
+              "moderator".equals(newRoleName) || "owner".equals(newRoleName))) {
+            throw new IllegalArgumentException("Invalid role: " + newRoleName);
+        }
+
         List<GroupMember> allMembers = groupMemberRepository.findByGroupId(id);
 
         GroupMember callerMembership = allMembers.stream()
@@ -292,26 +315,45 @@ public class GroupController {
                 .orElseThrow(() -> new IllegalArgumentException("You are not a member of this group"));
 
         String callerRole = callerMembership.getRole().getName();
+        
+        // Only owner and admin can manage roles
         if (!"owner".equals(callerRole) && !"admin".equals(callerRole)) {
-            throw new IllegalArgumentException("Only owners and admins can change roles");
+            throw new IllegalArgumentException("Only owners and admins can change member roles");
         }
 
-        if ("owner".equals(newRoleName) && !"owner".equals(callerRole)) {
-            throw new IllegalArgumentException("Only the owner can transfer ownership");
+        // Only owner can assign owner or admin roles
+        if (("owner".equals(newRoleName) || "admin".equals(newRoleName)) && 
+            !"owner".equals(callerRole)) {
+            throw new IllegalArgumentException("Only the owner can assign owner/admin roles");
+        }
+
+        // Enforce max 1 admin per group (if assigning admin role)
+        if ("admin".equals(newRoleName)) {
+            long adminCount = allMembers.stream()
+                    .filter(gm -> "admin".equals(gm.getRole().getName()))
+                    .count();
+            if (adminCount > 0) {
+                throw new IllegalArgumentException("Group can only have 1 admin. Remove current admin first.");
+            }
+        }
+
+        // Admins cannot act on other admins or the owner
+        if (!"owner".equals(callerRole)) {
+            GroupMember target = allMembers.stream()
+                    .filter(gm -> gm.getUser().getId().equals(targetUserId))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Target user is not a member"));
+            
+            String targetCurrentRole = target.getRole().getName();
+            if ("owner".equals(targetCurrentRole) || "admin".equals(targetCurrentRole)) {
+                throw new IllegalArgumentException("Admins can only manage plain members and moderators");
+            }
         }
 
         GroupMember target = allMembers.stream()
                 .filter(gm -> gm.getUser().getId().equals(targetUserId))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Target user is not a member"));
-
-        // Admins cannot act on other admins or the owner
-        if (!"owner".equals(callerRole)) {
-            String targetCurrentRole = target.getRole().getName();
-            if ("owner".equals(targetCurrentRole) || "admin".equals(targetCurrentRole)) {
-                throw new IllegalArgumentException("Admins can only manage plain members");
-            }
-        }
 
         GroupRole newRole = groupRoleRepository.findByName(newRoleName)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid role: " + newRoleName));
@@ -326,6 +368,60 @@ public class GroupController {
 
         target.setRole(newRole);
         groupMemberRepository.save(target);
+
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // ── DELETE /api/groups/{id}/members/{targetUserId} ───────────────────
+    // Remove a member from the group
+    // Owner can remove anyone
+    // Admin can remove plain members and moderators (not owner or other admin)
+    @DeleteMapping("/{id}/members/{targetUserId}")
+    public ResponseEntity<ApiResponse<Void>> removeMember(
+            @PathVariable UUID id,
+            @PathVariable UUID targetUserId,
+            @AuthenticationPrincipal UserDetails principal) {
+
+        UUID callerId = resolveUserId(principal);
+        
+        if (callerId.equals(targetUserId)) {
+            throw new IllegalArgumentException("Use /leave endpoint to leave the group yourself");
+        }
+
+        List<GroupMember> allMembers = groupMemberRepository.findByGroupId(id);
+
+        GroupMember callerMembership = allMembers.stream()
+                .filter(gm -> gm.getUser().getId().equals(callerId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("You are not a member of this group"));
+
+        String callerRole = callerMembership.getRole().getName();
+        
+        // Only owner and admin can remove members
+        if (!"owner".equals(callerRole) && !"admin".equals(callerRole)) {
+            throw new IllegalArgumentException("Only owners and admins can remove members");
+        }
+
+        GroupMember target = allMembers.stream()
+                .filter(gm -> gm.getUser().getId().equals(targetUserId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Target user is not a member"));
+
+        // Admins cannot remove owner or other admins
+        if (!"owner".equals(callerRole)) {
+            String targetRole = target.getRole().getName();
+            if ("owner".equals(targetRole) || "admin".equals(targetRole)) {
+                throw new IllegalArgumentException("Admins can only remove plain members and moderators");
+            }
+        }
+
+        groupMemberRepository.deleteByGroupIdAndUserId(id, targetUserId);
+        
+        // Decrement member count
+        StudyGroup group = studyGroupRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new RuntimeException("Group not found"));
+        group.setMemberCount(Math.max(0, group.getMemberCount() - 1));
+        studyGroupRepository.save(group);
 
         return ResponseEntity.ok(ApiResponse.success(null));
     }

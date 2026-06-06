@@ -13,9 +13,13 @@ const leaveGroup = (groupId) => api.delete(`/groups/${groupId}/leave`);
 const getMembers = (groupId) => api.get(`/groups/${groupId}/members`);
 
 // PUT /api/groups/{groupId}/members/{userId}/role
-// body: { role: 'owner' | 'admin' | 'member' }
+// body: { role: 'owner' | 'admin' | 'moderator' | 'member' }
 const updateMemberRole = (groupId, userId, role) =>
   api.put(`/groups/${groupId}/members/${userId}/role`, { role });
+
+// DELETE /api/groups/{groupId}/members/{userId}
+const removeMember = (groupId, userId) =>
+  api.delete(`/groups/${groupId}/members/${userId}`);
 
 const getAnnouncements = (groupId) =>
   api.get(`/groups/${groupId}/announcements`);
@@ -34,6 +38,7 @@ export default {
   leaveGroup,
   getMembers,
   updateMemberRole,
+  removeMember,
   getAnnouncements,
   createAnnouncement,
   getResources,

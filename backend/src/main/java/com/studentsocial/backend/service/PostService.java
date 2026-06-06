@@ -15,6 +15,8 @@ import com.studentsocial.backend.repository.PostReactionRepository;
 import com.studentsocial.backend.repository.PostRepository;
 import com.studentsocial.backend.repository.ProfileRepository;
 import com.studentsocial.backend.repository.UserRepository;
+import com.studentsocial.backend.repository.HashtagRepository;
+import com.studentsocial.backend.repository.PostHashtagRepository;
 import lombok.RequiredArgsConstructor;
 import com.studentsocial.backend.repository.StudyGroupRepository;
 import org.springframework.stereotype.Service;
@@ -23,7 +25,10 @@ import com.studentsocial.backend.repository.PostAttachmentRepository;
 import com.studentsocial.backend.model.PostAttachment;
 import com.studentsocial.backend.dto.response.AttachmentResponse;
 import com.studentsocial.backend.model.MediaFile;
+import com.studentsocial.backend.model.Hashtag;
+import com.studentsocial.backend.model.PostHashtag;
 import com.studentsocial.backend.repository.MediaFileRepository;
+import com.studentsocial.backend.util.HashtagUtil;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,7 +51,9 @@ public class PostService {
     private final PostReactionRepository   postReactionRepository;
     private final CommentRepository        commentRepository;
     private final SavedPostRepository      savedPostRepository;
-    private final StudyGroupRepository      studyGroupRepository; // FIX: needed for group posts
+    private final StudyGroupRepository     studyGroupRepository; // FIX: needed for group posts
+    private final HashtagRepository        hashtagRepository;
+    private final PostHashtagRepository    postHashtagRepository;
     // ── Create ────────────────────────────────────────────────────────────
     @Transactional
     public PostResponse createPost(UUID authorId, CreatePostRequest request) {
@@ -58,11 +65,24 @@ public class PostService {
                 .content(request.getContent())
                 .visibility(request.getVisibility() != null ? request.getVisibility() : "public")
                 .build());
+        
         // ADD after postRepository.save(...):
-if (request.getGroupId() != null) {
-    studyGroupRepository.findById(request.getGroupId()).ifPresent(post::setGroup);
-    postRepository.save(post); // re-save with group
-}
+        if (request.getGroupId() != null) {
+            studyGroupRepository.findById(request.getGroupId()).ifPresent(post::setGroup);
+            postRepository.save(post); // re-save with group
+        }
+
+        // ── Extract and save hashtags ──
+        Set<String> hashtags = HashtagUtil.extractHashtags(request.getContent());
+        for (String tag : hashtags) {
+            Hashtag hashtag = hashtagRepository.findByTag(tag)
+                    .orElseGet(() -> hashtagRepository.save(Hashtag.builder().tag(tag).build()));
+            
+            postHashtagRepository.save(PostHashtag.builder()
+                    .post(post)
+                    .hashtag(hashtag)
+                    .build());
+        }
 
         if (request.getMediaIds() != null && !request.getMediaIds().isEmpty()) {
             short order = 0;
@@ -120,6 +140,8 @@ if (request.getGroupId() != null) {
         }
         post.setDeletedAt(LocalDateTime.now());
         postRepository.save(post);
+        // Clean up post-hashtag associations
+        postHashtagRepository.deleteByPostId(postId);
     }
 
     // ── Discover: public posts ────────────────────────────────────────────

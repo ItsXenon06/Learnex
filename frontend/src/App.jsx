@@ -9,6 +9,7 @@ import NotificationsPage  from './pages/NotificationsPage';
 import MessagesPage       from './pages/MessagesPage';
 import GroupsPage         from './pages/GroupsPage';
 import GroupDetailPage    from './pages/GroupDetailPage';
+import GroupManagePage    from './pages/GroupManagePage';
 import SavedPage          from './pages/SavedPage';
 import PostDetailPage     from './pages/PostDetailPage';
 import SearchPage   from './pages/SearchPage';
@@ -146,6 +147,8 @@ function AppRoutes() {
         {/* Group detail — MUST be after /groups/new to avoid "new" matching :groupId */}
         <Route path="/groups/:groupId"
           element={<PrivateRoute><GroupDetailPage /></PrivateRoute>} />
+        <Route path="/groups/:groupId/manage"
+          element={<PrivateRoute><GroupManagePage /></PrivateRoute>} />
 
         {/* Saved */}
         <Route path="/saved"

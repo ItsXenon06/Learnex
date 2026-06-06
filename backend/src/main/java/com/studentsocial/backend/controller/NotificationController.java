@@ -32,19 +32,21 @@ public class NotificationController {
                 .getId();
     }
 
-    // ── GET /api/notifications ────────────────────────────────────────────
-    // Returns paginated notifications for the authenticated user, newest first.
-    // Use unreadOnly=true to filter to unread only.
+    // ── GET /api/notifications?grouped=true ──────────────────────────────
+    // Returns grouped notifications (multiple of same type on same resource combined)
+    // vs individual notifications when grouped=false (default)
     @GetMapping
-    public ResponseEntity<ApiResponse<NotificationPageResponse>> getNotifications(
+    public ResponseEntity<ApiResponse<Object>> getNotifications(
             @AuthenticationPrincipal UserDetails principal,
             @RequestParam(defaultValue = "0")     int     page,
             @RequestParam(defaultValue = "20")    int     size,
-            @RequestParam(defaultValue = "false") boolean unreadOnly) {
+            @RequestParam(defaultValue = "false") boolean unreadOnly,
+            @RequestParam(defaultValue = "false") boolean grouped) {
 
         UUID userId = resolveUserId(principal);
-        NotificationPageResponse result =
-                notificationService.getNotifications(userId, page, size, unreadOnly);
+        Object result = grouped
+                ? notificationService.getGroupedNotifications(userId, page, size, unreadOnly)
+                : notificationService.getNotifications(userId, page, size, unreadOnly);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 

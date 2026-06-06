@@ -256,11 +256,15 @@ function ManageModal({ group, uid, onClose, onGroupDeleted, onGroupUpdated, show
 
   const handleDelete = async () => {
     setDeleting(true);
+    setErr("");
     try {
+      console.log("[v0] Deleting group:", group.id);
       await groupService.deleteGroup(group.id);
+      console.log("[v0] Group deleted successfully:", group.id);
       onGroupDeleted(group.id);
       onClose();
     } catch (e) {
+      console.error("[v0] Delete failed:", e?.response?.data);
       setErr(e?.response?.data?.message || "Could not delete group.");
       setDeleting(false);
     }

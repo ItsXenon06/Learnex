@@ -200,46 +200,52 @@ public class GroupController {
 //   1. Earliest admin (by joinedAt) → promoted to owner
 //   2. If no admins, earliest plain member → promoted to owner
 //   3. If no other members at all → soft-delete the group (no one left)
-@DeleteMapping("/{id}/leave")
-public ResponseEntity<ApiResponse<Void>> leaveGroup(
-        @PathVariable UUID id,
-        @AuthenticationPrincipal UserDetails principal) {
+    @DeleteMapping("/{id}/leave")
+    public ResponseEntity<ApiResponse<Void>> leaveGroup(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetails principal) {
 
-    UUID userId = resolveUserId(principal);
+        UUID userId = resolveUserId(principal);
+        System.out.println("[v0] leaveGroup called: userId=" + userId + ", groupId=" + id);
 
-    GroupMember membership = groupMemberRepository.findByGroupId(id).stream()
-            .filter(gm -> gm.getUser().getId().equals(userId))
-            .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException("You are not a member of this group"));
+        GroupMember membership = groupMemberRepository.findByGroupId(id).stream()
+                .filter(gm -> gm.getUser().getId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("You are not a member of this group"));
 
-    if ("owner".equals(membership.getRole().getName())) {
-        // Try to find succession candidate: earliest admin first, then earliest member
-        Optional<GroupMember> successor =
-                groupMemberRepository.findEarliestByGroupIdAndRole(id, userId, "admin");
+        String memberRole = membership.getRole().getName();
+        System.out.println("[v0] User role: " + memberRole);
 
-        if (successor.isEmpty()) {
-            successor = groupMemberRepository.findEarliestByGroupIdAndRole(id, userId, "member");
+        if ("owner".equals(memberRole)) {
+            System.out.println("[v0] User is owner, finding successor...");
+            // Try to find the earliest (longest-standing) member to promote to owner
+            Optional<GroupMember> successor =
+                    groupMemberRepository.findEarliestByGroupIdAndRole(id, userId);
+
+            if (successor.isPresent()) {
+                System.out.println("[v0] Found successor: " + successor.get().getUser().getId());
+                // Promote successor to owner before the current owner leaves
+                GroupRole ownerRole = groupRoleRepository.findByName("owner")
+                        .orElseThrow(() -> new RuntimeException("Owner role not seeded"));
+                GroupMember next = successor.get();
+                next.setRole(ownerRole);
+                groupMemberRepository.save(next);
+                System.out.println("[v0] Successor promoted to owner");
+            } else {
+                // No other members — soft-delete the group
+                System.out.println("[v0] No successor found, deleting group");
+                StudyGroup group = studyGroupRepository.findByIdAndDeletedAtIsNull(id)
+                        .orElseThrow(() -> new RuntimeException("Group not found"));
+                group.setDeletedAt(LocalDateTime.now());
+                studyGroupRepository.save(group);
+                System.out.println("[v0] Group soft-deleted");
+            }
         }
 
-        if (successor.isPresent()) {
-            // Promote successor to owner before the current owner leaves
-            GroupRole ownerRole = groupRoleRepository.findByName("owner")
-                    .orElseThrow(() -> new RuntimeException("Owner role not seeded"));
-            GroupMember next = successor.get();
-            next.setRole(ownerRole);
-            groupMemberRepository.save(next);
-        } else {
-            // No other members — soft-delete the group
-            StudyGroup group = studyGroupRepository.findByIdAndDeletedAtIsNull(id)
-                    .orElseThrow(() -> new RuntimeException("Group not found"));
-            group.setDeletedAt(LocalDateTime.now());
-            studyGroupRepository.save(group);
-        }
+        groupMemberRepository.deleteByGroupIdAndUserId(id, userId);
+        System.out.println("[v0] User removed from group");
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
-
-    groupMemberRepository.deleteByGroupIdAndUserId(id, userId);
-    return ResponseEntity.ok(ApiResponse.success(null));
-}
 
     // ── GET /api/groups/{id}/members ──────────────────────────────────────
     @GetMapping("/{id}/members")
@@ -331,6 +337,7 @@ public ResponseEntity<ApiResponse<Void>> leaveGroup(
             @AuthenticationPrincipal UserDetails principal) {
 
         UUID userId = resolveUserId(principal);
+        System.out.println("[v0] deleteGroup called: userId=" + userId + ", groupId=" + id);
 
         StudyGroup group = studyGroupRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new RuntimeException("Group not found"));
@@ -340,12 +347,17 @@ public ResponseEntity<ApiResponse<Void>> leaveGroup(
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("You are not a member of this group"));
 
-        if (!"owner".equals(membership.getRole().getName())) {
+        String memberRole = membership.getRole().getName();
+        System.out.println("[v0] Delete attempt - User role: " + memberRole);
+
+        if (!"owner".equals(memberRole)) {
+            System.out.println("[v0] User is not owner, denying delete");
             throw new IllegalArgumentException("Only the group owner can delete the group");
         }
 
         group.setDeletedAt(LocalDateTime.now());
         studyGroupRepository.save(group);
+        System.out.println("[v0] Group deleted successfully");
 
         return ResponseEntity.ok(ApiResponse.success(null));
     }

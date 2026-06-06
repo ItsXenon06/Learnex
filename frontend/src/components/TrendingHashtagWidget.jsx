@@ -30,39 +30,97 @@ const TrendingHashtagWidget = () => {
     navigate(`/hashtags/${encodeURIComponent(tag)}`);
   };
 
-  if (loading) return <div className="text-sm text-muted-foreground p-4">Loading...</div>;
+  // CSS styling to match the rest of the widgets
+  const css = `
+    .tr-wg {
+      background: var(--bg1);
+      border: 1px solid var(--b1);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .tr-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .tr-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--t0);
+    }
+    .tr-more {
+      font-size: 12px;
+      color: var(--primary);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      font-family: var(--fm);
+    }
+    .tr-more:hover {
+      text-decoration: underline;
+    }
+    .tr-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 4px;
+    }
+    .tr-item:hover {
+      background: var(--bg2);
+    }
+    .tr-idx {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--t2);
+      min-width: 20px;
+    }
+    .tr-tag {
+      flex: 1;
+      min-width: 0;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  `;
+
+  if (loading) return null;
   if (error) return null;
   if (!trendingTags || trendingTags.length === 0) return null;
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-foreground">Trending Hashtags</h3>
-      </div>
+    <>
+      <style>{css}</style>
+      <div className="tr-wg">
+        <div className="tr-head">
+          <div className="tr-title">✦ Trending</div>
+          <button className="tr-more" onClick={() => navigate('/hashtags')}>See all</button>
+        </div>
 
-      <div className="space-y-2">
-        {trendingTags.map((tag, index) => (
-          <div
-            key={tag}
-            onClick={() => handleHashtagClick(tag)}
-            className="flex items-center gap-3 p-2 hover:bg-accent rounded cursor-pointer transition-colors"
-          >
-            <span className="text-xs text-muted-foreground font-semibold w-6">#{index + 1}</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-primary truncate">#{tag}</p>
+        <div>
+          {trendingTags.map((tag, index) => (
+            <div
+              key={tag}
+              onClick={() => handleHashtagClick(tag)}
+              className="tr-item"
+            >
+              <span className="tr-idx">#{index + 1}</span>
+              <div className="tr-tag">#{tag}</div>
+              <span style={{ fontSize: '12px', color: 'var(--t2)' }}>→</span>
             </div>
-            <span className="text-xs text-muted-foreground">→</span>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-
-      <button
-        onClick={() => navigate('/hashtags')}
-        className="w-full mt-4 px-3 py-2 text-sm text-primary hover:bg-accent rounded transition-colors"
-      >
-        See All
-      </button>
-    </div>
+    </>
   );
 };
 

@@ -264,6 +264,8 @@ export default function GroupDetailPage() {
     try {
       await groupService.leaveGroup(groupId);
       setLeaveOpen(false);
+      // Navigate to groups page after successful leave
+      setTimeout(() => navigate('/groups'), 300);
     } catch (e) {
       // Rollback optimistic update on failure
       setIsMember(prevIsMember);

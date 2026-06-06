@@ -654,6 +654,7 @@ export default function GroupsPage() {
         ...created,
         isMember: created.isMember ?? true,
         myRole:   created.myRole   ?? "owner",
+        memberCount: created.memberCount ?? 1, // Ensure memberCount is at least 1 (the creator)
       }, ...prev]);
       setCreateOpen(false);
       showToast(`"${created.name}" created!`);

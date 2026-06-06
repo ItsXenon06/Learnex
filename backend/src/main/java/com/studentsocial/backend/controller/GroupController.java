@@ -47,12 +47,17 @@ public class GroupController {
         String  myRole   = null;
 
         if (viewingUserId != null) {
-            for (GroupMember gm : groupMemberRepository.findByGroupId(g.getId())) {
-                if (gm.getUser().getId().equals(viewingUserId)) {
-                    isMember = true;
-                    myRole   = gm.getRole().getName();
-                    break;
-                }
+            try {
+                isMember = groupMemberRepository.findByGroupIdAndUserId(g.getId(), viewingUserId)
+                        .map(gm -> {
+                            myRole = gm.getRole().getName();
+                            return true;
+                        })
+                        .orElse(false);
+            } catch (Exception e) {
+                // If query fails, default to not member
+                isMember = false;
+                myRole = null;
             }
         }
 

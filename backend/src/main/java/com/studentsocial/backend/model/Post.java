@@ -38,6 +38,10 @@ public class Post {
     @JoinColumn(name = "group_id")
     private StudyGroup group;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "course_id")
+    private Course course; // For course forum posts
+
     @Column(name = "is_edited", nullable = false)
     @Builder.Default
     private Boolean isEdited = false;

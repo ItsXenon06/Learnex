@@ -95,7 +95,12 @@ export default function CoursePage() {
   });
   const [reqOpen, setReqOpen] = useState(false);
   const [reqSent, setReqSent] = useState(false);
-  const [reqForm, setReqForm] = useState({ courseName: "", reason: "" });
+  const [reqForm, setReqForm] = useState({
+    courseName: "",
+    reason: "",
+    courseCode: "",
+    schoolName: "",
+  });
   const [sending, setSending] = useState(false);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -130,12 +135,17 @@ export default function CoursePage() {
   };
 
   const sendRequest = async () => {
-    if (!reqForm.courseName.trim()) return;
+    if (!reqForm.courseName.trim() || !reqForm.reason.trim()) return;
 
     setSending(true);
 
     try {
-      await courseService.requestCourse(reqForm.courseName, reqForm.reason);
+      await courseService.requestCourse(
+        reqForm.courseName,
+        reqForm.reason,
+        reqForm.courseCode,
+        reqForm.schoolName
+      );
 
       setSending(false);
       setReqSent(true);
@@ -169,7 +179,12 @@ export default function CoursePage() {
               onClick={() => {
                 setReqOpen(true);
                 setReqSent(false);
-                setReqForm({ courseName: "", reason: "" });
+                setReqForm({
+                  courseName: "",
+                  reason: "",
+                  courseCode: "",
+                  schoolName: "",
+                });
               }}
             >
               + Request Course
@@ -376,7 +391,9 @@ export default function CoursePage() {
               <>
                 <div className="modal-body">
                   <div className="mfield">
-                    <label>Course Name *</label>
+                    <label>
+                      Course Name <span style={{ color: "var(--red)" }}>*</span>
+                    </label>
                     <input
                       autoFocus
                       value={reqForm.courseName}
@@ -390,7 +407,10 @@ export default function CoursePage() {
                     />
                   </div>
                   <div className="mfield">
-                    <label>Why should this course be added?</label>
+                    <label>
+                      Why should this course be added?{" "}
+                      <span style={{ color: "var(--red)" }}>*</span>
+                    </label>
                     <textarea
                       rows={3}
                       value={reqForm.reason}
@@ -398,6 +418,32 @@ export default function CoursePage() {
                         setReqForm((f) => ({ ...f, reason: e.target.value }))
                       }
                       placeholder="Describe the course and why the community would benefit…"
+                    />
+                  </div>
+                  <div className="mfield">
+                    <label>Course Code (Optional)</label>
+                    <input
+                      value={reqForm.courseCode}
+                      onChange={(e) =>
+                        setReqForm((f) => ({
+                          ...f,
+                          courseCode: e.target.value,
+                        }))
+                      }
+                      placeholder="e.g. CS302, MATH401"
+                    />
+                  </div>
+                  <div className="mfield">
+                    <label>School/University (Optional)</label>
+                    <input
+                      value={reqForm.schoolName}
+                      onChange={(e) =>
+                        setReqForm((f) => ({
+                          ...f,
+                          schoolName: e.target.value,
+                        }))
+                      }
+                      placeholder="e.g. Stanford University, MIT"
                     />
                   </div>
                 </div>
@@ -411,7 +457,11 @@ export default function CoursePage() {
                   <button
                     className="btn-fire"
                     onClick={sendRequest}
-                    disabled={!reqForm.courseName.trim() || sending}
+                    disabled={
+                      !reqForm.courseName.trim() ||
+                      !reqForm.reason.trim() ||
+                      sending
+                    }
                   >
                     {sending ? "Sending…" : "Send Request →"}
                   </button>

@@ -136,4 +136,14 @@ List<Post> findByHashtag(
     @Param("tag") String tag,
     @Param("off") int offset,
     @Param("lim") int limit);
+
+// ── Course forum: get all posts for a specific course, newest first ──
+@Query("""
+    SELECT p FROM Post p
+    WHERE p.course.id = :courseId
+      AND p.deletedAt IS NULL
+    ORDER BY p.isPinned DESC, p.createdAt DESC
+    """)
+List<Post> findByCourseIdOrderByCreatedAtDesc(
+    @Param("courseId") UUID courseId);
 }

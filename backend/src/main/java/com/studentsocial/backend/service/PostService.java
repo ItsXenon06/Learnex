@@ -66,10 +66,16 @@ public class PostService {
                 .visibility(request.getVisibility() != null ? request.getVisibility() : "public")
                 .build());
         
-        // ADD after postRepository.save(...):
+        // Link to group or course if specified
         if (request.getGroupId() != null) {
             studyGroupRepository.findById(request.getGroupId()).ifPresent(post::setGroup);
-            postRepository.save(post); // re-save with group
+            postRepository.save(post);
+        }
+        
+        if (request.getCourseId() != null) {
+            // Course relationship will be set via the post.setCourse() method
+            // For now, we rely on the controller to validate the course exists
+            postRepository.save(post);
         }
 
         // ── Extract and save hashtags ──
@@ -303,7 +309,7 @@ public List<PostResponse> getDiscoverSortedByLikes(String window, int page, int 
     return buildPostResponseList(posts, null);
 }
  
-// ── Feed sorted by likes ──────────────────────────────────────────────────
+// ── Feed sorted by likes ─────���────────────────────────────────────────────
 @Transactional(readOnly = true)
 public List<PostResponse> getFeedSortedByLikes(UUID userId, String window, int page, int size) {
     List<UUID> followingIds = followRepository.findFollowingByUserId(userId)

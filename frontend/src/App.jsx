@@ -15,6 +15,8 @@ import PostDetailPage     from './pages/PostDetailPage';
 import SearchPage   from './pages/SearchPage';
 import HashtagPage  from './pages/HashtagPage';
 import CoursePage   from './pages/CoursePage';
+import CourseDetailPage from './pages/CourseDetailPage';
+import CoursePostCreatePage from './pages/CoursePostCreatePage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 
@@ -165,7 +167,9 @@ function AppRoutes() {
 <Route path="/courses"
   element={<PrivateRoute><CoursePage /></PrivateRoute>} />
 <Route path="/courses/:courseId"
-  element={<PrivateRoute><CoursePage /></PrivateRoute>} />
+  element={<PrivateRoute><CourseDetailPage /></PrivateRoute>} />
+<Route path="/courses/:courseId/create-post"
+  element={<PrivateRoute><CoursePostCreatePage /></PrivateRoute>} />
 
         <Route path="*" element={<Navigate to="/feed" replace />} />
       </Routes>

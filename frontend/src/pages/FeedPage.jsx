@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, getInitials } from "../contexts/AuthContext";
 import Layout from "../components/Layout";
+import TrendingHashtagWidget from "../components/TrendingHashtagWidget";
 import postService from "../services/postService";
 import commentService from "../services/commentService";
 
@@ -1446,32 +1447,8 @@ function RightPanel({ followed, onToggleFollow }) {
 
   return (
     <>
+      <TrendingHashtagWidget />
       <div className="wg">
-        <div className="wg-head">
-          <div className="wg-title">
-            🔥 Trending{" "}
-            <span
-              style={{
-                fontSize: 9,
-                color: "var(--t4)",
-                fontWeight: 400,
-                letterSpacing: 0,
-                textTransform: "none",
-              }}
-            >
-              (sample)
-            </span>
-          </div>
-          <button className="wg-more">See all</button>
-        </div>
-        {TRENDS.map((t, i) => (
-          <div
-            key={t.tag}
-            className="tr-item"
-            onClick={() => navigate(`/hashtag/${t.tag.slice(1)}`)}
-          >
-            <span className="tr-num">{i + 1}</span>
-            <div className="tr-body">
               <div className="tr-tag">{t.tag}</div>
               <div className="tr-sub">{t.sub}</div>
             </div>

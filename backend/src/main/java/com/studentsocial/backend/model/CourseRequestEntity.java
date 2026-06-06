@@ -24,10 +24,16 @@ public class CourseRequestEntity {
     private User user;
 
     @Column(name = "course_name", nullable = false, length = 255)
-    private String courseName;
+    private String courseName; // Required: e.g., "Data Science 101"
 
-    @Column(columnDefinition = "TEXT")
-    private String reason;
+    @Column(columnDefinition = "TEXT", nullable = false)
+    private String reason; // Required: Why this course is needed
+
+    @Column(name = "course_code", nullable = true, length = 50)
+    private String courseCode; // Optional: e.g., "CS302", "MATH401"
+
+    @Column(name = "school_name", nullable = true, length = 255)
+    private String schoolName; // Optional: e.g., "Stanford University", "MIT"
 
     @Column(nullable = false, length = 30)
     @Builder.Default

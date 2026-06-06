@@ -23,6 +23,6 @@ public class StudyGroupResponse {
 
     private LocalDateTime createdAt;
 
-    private boolean isMember;
+    private Boolean isMember;
     private String  myRole;   // ← ADD THIS: "owner" | "admin" | "moderator" | "member" | null
 }

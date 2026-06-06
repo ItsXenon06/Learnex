@@ -1,6 +1,7 @@
 package com.studentsocial.backend.controller;
 
 import com.studentsocial.backend.dto.response.ApiResponse;
+import com.studentsocial.backend.dto.request.UpdateMemberRoleRequest;
 import com.studentsocial.backend.dto.response.StudyGroupResponse;
 import com.studentsocial.backend.model.*;
 import com.studentsocial.backend.repository.*;
@@ -355,6 +356,60 @@ public class GroupController {
 
         group.setDeletedAt(LocalDateTime.now());
         studyGroupRepository.save(group);
+
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // ── PUT /api/groups/{id}/members/{memberId}/role ─────────────────────
+    // Only owner can promote/demote members to admin or back to member
+    // Admin role acts as "vice-admin" and will inherit ownership if owner leaves
+    @PutMapping("/{id}/members/{memberId}/role")
+    public ResponseEntity<ApiResponse<Void>> updateMemberRole(
+            @PathVariable UUID id,
+            @PathVariable UUID memberId,
+            @RequestBody UpdateMemberRoleRequest request,
+            @AuthenticationPrincipal UserDetails principal) {
+
+        UUID userId = resolveUserId(principal);
+        if (userId == null) {
+            throw new IllegalArgumentException("User not authenticated");
+        }
+
+        StudyGroup group = studyGroupRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+        // Verify requester is owner
+        GroupMember requester = groupMemberRepository.findByGroupId(id).stream()
+                .filter(gm -> gm.getUser().getId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("You are not a member of this group"));
+
+        if (!"owner".equals(requester.getRole().getName())) {
+            throw new IllegalArgumentException("Only the group owner can update member roles");
+        }
+
+        // Get the member to update
+        GroupMember targetMember = groupMemberRepository.findByGroupId(id).stream()
+                .filter(gm -> gm.getUser().getId().equals(memberId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Member not found in this group"));
+
+        // Validate role name
+        String roleName = request.getRoleName();
+        if (!roleName.matches("admin|moderator|member")) {
+            throw new IllegalArgumentException("Invalid role. Must be 'admin', 'moderator', or 'member'");
+        }
+
+        // Can't demote owner
+        if ("owner".equals(targetMember.getRole().getName())) {
+            throw new IllegalArgumentException("Cannot change the role of the group owner");
+        }
+
+        // Get and set the new role
+        GroupRole newRole = groupRoleRepository.findByName(roleName)
+                .orElseThrow(() -> new IllegalArgumentException("Role not found: " + roleName));
+        targetMember.setRole(newRole);
+        groupMemberRepository.save(targetMember);
 
         return ResponseEntity.ok(ApiResponse.success(null));
     }

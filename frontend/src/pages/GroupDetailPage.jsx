@@ -267,11 +267,14 @@ export default function GroupDetailPage() {
     try {
       await groupService.leaveGroup(groupId);
       setLeaveOpen(false);
+      // After leaving successfully, navigate back to groups
+      setTimeout(() => navigate("/groups"), 500);
     } catch (e) {
       // Rollback optimistic update on failure
       setIsMember(prevIsMember);
       setMyRole(prevRole);
       setGroup((g) => ({ ...g, memberCount: prevCount }));
+      console.error("[v0] Leave failed:", e?.response?.data);
       alert(e?.response?.data?.message || "Could not leave group.");
     } finally {
       setLeaving(false);

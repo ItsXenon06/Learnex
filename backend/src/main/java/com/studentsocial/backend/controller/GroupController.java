@@ -206,6 +206,9 @@ public class GroupController {
             @AuthenticationPrincipal UserDetails principal) {
 
         UUID userId = resolveUserId(principal);
+        if (userId == null) {
+            throw new IllegalArgumentException("User not authenticated");
+        }
 
         StudyGroup group = studyGroupRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));

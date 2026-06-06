@@ -218,14 +218,9 @@ public class GroupController {
 
         if ("owner".equals(memberRole)) {
             System.out.println("[v0] User is owner, finding successor...");
-            // Try to find succession candidate: earliest admin first, then earliest member
+            // Try to find the earliest (longest-standing) member to promote to owner
             Optional<GroupMember> successor =
-                    groupMemberRepository.findEarliestByGroupIdAndRole(id, userId, "admin");
-
-            if (successor.isEmpty()) {
-                System.out.println("[v0] No admin found, looking for member");
-                successor = groupMemberRepository.findEarliestByGroupIdAndRole(id, userId, "member");
-            }
+                    groupMemberRepository.findEarliestByGroupIdAndRole(id, userId);
 
             if (successor.isPresent()) {
                 System.out.println("[v0] Found successor: " + successor.get().getUser().getId());

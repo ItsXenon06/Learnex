@@ -21,19 +21,15 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, UUID> 
     @Query("SELECT gm.group FROM GroupMember gm WHERE gm.user.id = :userId")
     List<StudyGroup> findGroupsByUserId(@Param("userId") UUID userId);
 
-    // Succession query: earliest admin in the group by joinedAt (excluding the owner).
-    // Used when owner leaves to auto-promote the longest-standing admin.
-    // Falls back to earliest plain member if no admins exist.
+    // Succession query: earliest non-owner member in the group by joinedAt
+    // Used when owner leaves to find the longest-standing member to promote
     @Query("""
         SELECT gm FROM GroupMember gm
         WHERE gm.group.id = :groupId
           AND gm.user.id  <> :excludeUserId
-          AND gm.role.name = :roleName
         ORDER BY gm.joinedAt ASC
-        LIMIT 1
         """)
     Optional<GroupMember> findEarliestByGroupIdAndRole(
             @Param("groupId")       UUID   groupId,
-            @Param("excludeUserId") UUID   excludeUserId,
-            @Param("roleName")      String roleName);
+            @Param("excludeUserId") UUID   excludeUserId);
 }

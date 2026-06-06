@@ -10,8 +10,10 @@ import com.studentsocial.backend.dto.response.CourseResponse;
 import com.studentsocial.backend.dto.response.CourseRequestResponse;
 import com.studentsocial.backend.model.Course;
 import com.studentsocial.backend.model.Post;
+import com.studentsocial.backend.model.PostAttachment;
 import com.studentsocial.backend.repository.CourseRepository;
 import com.studentsocial.backend.repository.PostRepository;
+import com.studentsocial.backend.repository.PostAttachmentRepository;
 import com.studentsocial.backend.repository.UserRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +40,7 @@ public class CourseController {
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
     private final PostRepository postRepository;
+    private final PostAttachmentRepository postAttachmentRepository;
 
     private UUID resolveUserId(UserDetails principal) {
         return userRepository.findByEmail(principal.getUsername())
@@ -84,15 +87,18 @@ public class CourseController {
         int start = Math.min(page * size, posts.size());
         int end = Math.min(start + size, posts.size());
         List<PostResponse> pageContent = posts.subList(start, end).stream()
-                .map(p -> postService.mapToResponse(
-                        p,
-                        p.getAuthor(),
-                        p.getAuthor().getProfile().orElse(null),
-                        p.getComments(),
-                        0,
-                        false,
-                        p.getAttachments()
-                ))
+                .map(p -> {
+                    List<PostAttachment> attachments = postAttachmentRepository.findByPostIdOrderBySortOrderAsc(p.getId());
+                    return postService.mapToResponse(
+                            p,
+                            p.getAuthor(),
+                            null,
+                            List.of(),
+                            0,
+                            false,
+                            attachments
+                    );
+                })
                 .collect(Collectors.toList());
         
         Page<PostResponse> result = new PageImpl<>(
@@ -125,3 +131,4 @@ public class CourseController {
         return ResponseEntity.status(201).body(ApiResponse.success(response));
     }
 }
+

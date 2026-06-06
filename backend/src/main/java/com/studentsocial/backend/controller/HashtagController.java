@@ -4,9 +4,11 @@ import com.studentsocial.backend.dto.response.ApiResponse;
 import com.studentsocial.backend.dto.response.PostResponse;
 import com.studentsocial.backend.model.Hashtag;
 import com.studentsocial.backend.model.Post;
+import com.studentsocial.backend.model.PostAttachment;
 import com.studentsocial.backend.repository.HashtagRepository;
 import com.studentsocial.backend.repository.PostHashtagRepository;
 import com.studentsocial.backend.repository.PostRepository;
+import com.studentsocial.backend.repository.PostAttachmentRepository;
 import com.studentsocial.backend.repository.UserRepository;
 import com.studentsocial.backend.service.PostService;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,7 @@ public class HashtagController {
     private final UserRepository userRepository;
     private final HashtagRepository hashtagRepository;
     private final PostHashtagRepository postHashtagRepository;
+    private final PostAttachmentRepository postAttachmentRepository;
 
     private UUID resolveUserId(UserDetails p) {
         if (p == null) return null;
@@ -70,15 +73,18 @@ public class HashtagController {
         Page<Post> posts = postHashtagRepository
                 .findPostsByHashtag(tag.toLowerCase(), pageable);
         
-        Page<PostResponse> responses = posts.map(p -> postService.mapToResponse(
-                p,
-                p.getAuthor(),
-                p.getAuthor().getProfile().orElse(null),
-                p.getComments(),
-                0,
-                false,
-                p.getAttachments()
-        ));
+        Page<PostResponse> responses = posts.map(p -> {
+            List<PostAttachment> attachments = postAttachmentRepository.findByPostIdOrderBySortOrderAsc(p.getId());
+            return postService.mapToResponse(
+                    p,
+                    p.getAuthor(),
+                    null,
+                    List.of(),
+                    0,
+                    false,
+                    attachments
+            );
+        });
         
         return ResponseEntity.ok(ApiResponse.success(responses));
     }

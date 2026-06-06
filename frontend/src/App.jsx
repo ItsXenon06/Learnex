@@ -6,7 +6,7 @@ import LoginPage          from './pages/LoginPage';
 import FeedPage           from './pages/FeedPage';
 import ProfilePage        from './pages/ProfilePage';
 import NotificationsPage  from './pages/NotificationsPage';
-import MessagesPage       from './pages/MessagesPage';
+import MessagesPage       from './pages/Messagespage';
 import GroupsPage         from './pages/GroupsPage';
 import GroupDetailPage    from './pages/GroupDetailPage';
 import GroupManagePage    from './pages/GroupManagePage';

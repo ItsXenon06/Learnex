@@ -1448,14 +1448,6 @@ function RightPanel({ followed, onToggleFollow }) {
   return (
     <>
       <TrendingHashtagWidget />
-      <div className="wg">
-              <div className="tr-tag">{t.tag}</div>
-              <div className="tr-sub">{t.sub}</div>
-            </div>
-            <span className="tr-cnt">{t.cnt}</span>
-          </div>
-        ))}
-      </div>
 
       <div className="wg">
         <div className="wg-head">

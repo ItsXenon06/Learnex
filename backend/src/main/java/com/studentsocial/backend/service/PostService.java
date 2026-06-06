@@ -241,7 +241,7 @@ public class PostService {
                 .toList();
     }
 
-    private PostResponse mapToResponse(Post post, User author, Profile profile,
+    public PostResponse mapToResponse(Post post, User author, Profile profile,
                                        List<ReactionSummaryResponse> reactions,
                                        int commentCount, boolean saved,
                                        List<PostAttachment> attachments) {

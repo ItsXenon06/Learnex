@@ -22,7 +22,7 @@ public interface HashtagRepository extends JpaRepository<Hashtag, UUID> {
         LEFT JOIN Post p ON p.id = ph.post.id
         WHERE p.deletedAt IS NULL
         GROUP BY h.id
-        ORDER BY COUNT(ph.id) DESC, h.createdAt DESC
+        ORDER BY COUNT(ph.id) DESC
         """)
     List<Hashtag> findTrendingHashtags(Pageable pageable);
 }

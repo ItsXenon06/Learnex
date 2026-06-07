@@ -27,11 +27,11 @@ const TrendingHashtagWidget = () => {
   }, []);
 
   const handleHashtagClick = (tag) => {
-    navigate(`/hashtags/${encodeURIComponent(tag)}`);
+    navigate(`/hashtag/${encodeURIComponent(tag)}`);
   };
 
   const handleSeeAll = () => {
-    navigate('/hashtags');
+    navigate('/hashtag');
   };
 
   // CSS styling to match the rest of the widgets

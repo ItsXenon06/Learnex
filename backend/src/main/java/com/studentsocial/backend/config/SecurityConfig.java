@@ -38,6 +38,9 @@ public class SecurityConfig {
                 // ── Public: auth endpoints (no token needed) ──────────────
                 .requestMatchers("/api/auth/**").permitAll()
 
+                // ── Public: static content (uploads, images) ──────────────
+                .requestMatchers("/uploads/**").permitAll()
+
                 // ── Public: read-only content (guests can browse) ─────────
                 .requestMatchers(HttpMethod.GET, "/api/posts/discover").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/posts/{id}").permitAll()

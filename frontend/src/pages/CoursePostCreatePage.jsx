@@ -98,7 +98,7 @@ export default function CoursePostCreatePage() {
         setError("");
       } catch (err) {
         console.error("[v0] Error loading course:", err);
-        setError("Failed to load course");
+        setError(t("courses.loadFailed"));
       } finally {
         setLoading(false);
       }
@@ -109,11 +109,11 @@ export default function CoursePostCreatePage() {
 
   const handleSubmit = async () => {
     if (!content.trim()) {
-      setError("Discussion cannot be empty");
+      setError(t("courses.emptyDiscussion"));
       return;
     }
     if (content.length > 2000) {
-      setError("Discussion is too long (max 2000 characters)");
+      setError(t("courses.discussionTooLong"));
       return;
     }
 
@@ -125,7 +125,7 @@ export default function CoursePostCreatePage() {
     } catch (err) {
       setSubmitting(false);
       console.error("[v0] Error creating post:", err);
-      setError(err?.response?.data?.message || "Failed to post discussion");
+      setError(err?.response?.data?.message || t("courses.postFailed"));
     }
   };
 
@@ -148,7 +148,7 @@ export default function CoursePostCreatePage() {
         <style>{css}</style>
         <Layout active="courses">
           <main className="create-post-main">
-            <div className="error-msg">{error || "Course not found"}</div>
+            <div className="error-msg">{error || t("courses.notFound")}</div>
           </main>
         </Layout>
       </>
@@ -182,7 +182,7 @@ export default function CoursePostCreatePage() {
               <div className="cp-av">{userIni}</div>
               <textarea
                 className="cp-textarea"
-                placeholder="Share your thoughts, questions, or insights about this course…"
+                placeholder=t("courses.discussionPlaceholder")
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={6}
@@ -209,7 +209,7 @@ export default function CoursePostCreatePage() {
                   onClick={handleSubmit}
                   disabled={!content.trim() || submitting || content.length > 2000}
                 >
-                  {submitting ? "Posting…" : "Post Discussion →"}
+                  {submitting ? t("common.posting") : t("courses.postDiscussion")}
                 </button>
               </div>
             </div>

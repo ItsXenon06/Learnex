@@ -117,7 +117,7 @@ export default function CourseDetailPage() {
         setError("");
       } catch (err) {
         console.error("[v0] Error loading course:", err);
-        setError("Failed to load course details");
+        setError(t("courses.loadDetailsFailed"));
       } finally {
         setLoading(false);
       }
@@ -168,7 +168,7 @@ export default function CourseDetailPage() {
         <style>{css}</style>
         <Layout active="courses">
           <main className="course-detail-main">
-            <div className="error-msg">{error || "Course not found"}</div>
+            <div className="error-msg">{error || t("courses.notFound")}</div>
           </main>
         </Layout>
       </>

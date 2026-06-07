@@ -201,7 +201,7 @@ export default function SavedPage() {
                     <div className="unsave-col">
                       <button
                         className="unsave-btn"
-                        title="Remove from saved"
+                        title=t("posts.removeFromSaved")
                         onClick={e => unsave(e, p.id)}
                         disabled={unsaving === p.id}
                       >

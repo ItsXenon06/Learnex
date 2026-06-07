@@ -440,12 +440,12 @@ export default function NotificationsPage() {
             <div className="lx-empty">
               <div className="lx-empty-ic">🔔</div>
               <div className="lx-empty-t">
-                {filter === "unread" ? "All Caught Up" : "No Notifications"}
+                {filter === "unread" ? t('notifications.allCaughtUp') : t('notifications.noNotifications')}
               </div>
               <p className="lx-empty-s">
                 {filter === "unread"
-                  ? "You have no unread notifications."
-                  : "Notifications will appear here."}
+                  ? t('notifications.noUnread')
+                  : t('notifications.empty')}
               </p>
             </div>
           ) : (
@@ -499,7 +499,7 @@ export default function NotificationsPage() {
                     onClick={loadMore}
                     disabled={loadingMore}
                   >
-                    {loadingMore ? "Loading…" : "Load more"}
+                    {loadingMore ? t('common.loading') : t('notifications.loadMore')}
                   </button>
                 </div>
               )}

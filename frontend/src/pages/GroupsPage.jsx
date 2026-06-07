@@ -138,8 +138,8 @@ function roleLabel(role) {
 }
 
 const TYPE_STYLE = {
-  class:   { label:"Class",   cls:"gc-type-class",   banner:"linear-gradient(135deg,rgba(74,158,255,.2),rgba(74,158,255,.05))" },
-  club:    { label:"Club",    cls:"gc-type-club",    banner:"linear-gradient(135deg,rgba(34,197,94,.2),rgba(34,197,94,.05))" },
+  class:   { label:t("groups.class"),   cls:"gc-type-class",   banner:"linear-gradient(135deg,rgba(74,158,255,.2),rgba(74,158,255,.05))" },
+  club:    { label:t("groups.club"),    cls:"gc-type-club",    banner:"linear-gradient(135deg,rgba(34,197,94,.2),rgba(34,197,94,.05))" },
   society: { label:"Society", cls:"gc-type-society", banner:"linear-gradient(135deg,rgba(155,89,245,.2),rgba(155,89,245,.05))" },
 };
 const DEFAULT_TYPE = TYPE_STYLE.club;
@@ -201,7 +201,7 @@ function ConfirmDeleteModal({ groupName, onConfirm, onCancel, loading }) {
         <div className="modal-foot">
           <button className="btn-outline" onClick={onCancel}>Cancel</button>
           <button className="btn-danger" onClick={onConfirm} disabled={loading || !confirmed}>
-            {loading ? "Deleting…" : "Delete Group"}
+            {loading ? t("common.deleting") : t("groups.deleteGroup")}
           </button>
         </div>
       </div>
@@ -224,7 +224,7 @@ function ManageModal({ group, uid, onClose, onGroupDeleted, onGroupUpdated, show
         const data = res?.data ?? res;
         setMembers(Array.isArray(data) ? data : []);
       })
-      .catch(() => setErr("Could not load members."))
+      .catch(() => setErr(t("groups.loadMembersFailed")))
       .finally(() => setLoading(false));
   }, [group.id]);
 
@@ -249,7 +249,7 @@ function ManageModal({ group, uid, onClose, onGroupDeleted, onGroupUpdated, show
       }
       showToast(newRole === "owner" ? "Ownership transferred." : `Role updated to ${newRole}.`);
     } catch (e) {
-      setErr(e?.response?.data?.message || "Could not update role.");
+      setErr(e?.response?.data?.message || t("groups.updateRoleFailed"));
     } finally {
       setBusy(null);
     }
@@ -266,7 +266,7 @@ function ManageModal({ group, uid, onClose, onGroupDeleted, onGroupUpdated, show
       onClose();
     } catch (e) {
       console.error("[v0] Delete failed:", e?.response?.data);
-      setErr(e?.response?.data?.message || "Could not delete group.");
+      setErr(e?.response?.data?.message || t("groups.deleteFailed"));
       setDeleting(false);
     }
   };
@@ -327,7 +327,7 @@ function ManageModal({ group, uid, onClose, onGroupDeleted, onGroupUpdated, show
                             className="mem-act-btn demote"
                             disabled={!!busy}
                             onClick={() => updateMemberRole(m.userId, "member")}
-                            title="Demote to Member"
+                            title=t("groups.demoteToMember")
                           >
                             {busy === m.userId ? "…" : "↓ Member"}
                           </button>
@@ -438,7 +438,7 @@ function GroupCard({ group, isMember, myRole, onJoin, onLeaveRequest, onManage, 
               </button>
             )}
             {isMember && isAdmin && (
-              <button className="join-btn manage" onClick={handleManage} title="Manage group">
+              <button className="join-btn manage" onClick={handleManage} title=t("groups.manageGroup")>
                 ⚙
               </button>
             )}
@@ -450,7 +450,7 @@ function GroupCard({ group, isMember, myRole, onJoin, onLeaveRequest, onManage, 
               {joining === group.id
                 ? "…"
                 : isMember
-                  ? "Leave"
+                  ? t("common.leave")
                   : (group.isPrivate || group.type === "class") ? "🔒 Request" : "+ Join"}
             </button>
           </div>
@@ -490,12 +490,12 @@ function CreateModal({ onClose, onCreate, creating }) {
   const effectivePrivate = form.type === "class" ? true : form.isPrivate;
 
   const submit = async () => {
-    if (!form.name.trim()) { setErr("Group name is required."); return; }
+    if (!form.name.trim()) { setErr(t("groups.nameRequired")); return; }
     setErr("");
     try {
       await onCreate({ ...form, isPrivate: effectivePrivate });
     } catch (e) {
-      setErr(e?.response?.data?.message || "Failed to create group.");
+      setErr(e?.response?.data?.message || t("groups.createFailed"));
     }
   };
 
@@ -547,7 +547,7 @@ function CreateModal({ onClose, onCreate, creating }) {
         <div className="modal-foot">
           <button className="btn-outline" onClick={onClose}>Cancel</button>
           <button className="btn-fire" onClick={submit} disabled={creating}>
-            {creating ? "Creating…" : "Create Group"}
+            {creating ? t("common.creating") : t("groups.createGroup")}
           </button>
         </div>
       </div>
@@ -586,7 +586,7 @@ export default function GroupsPage() {
         if (!active) return;
         setGroups(Array.isArray(data) ? data : []);
       })
-      .catch(() => { if (!active) return; setError("Failed to load groups."); })
+      .catch(() => { if (!active) return; setError(t("groups.loadFailed")); })
       .finally(() => { if (!active) return; setLoading(false); });
     return () => { active = false; };
   }, []);
@@ -610,7 +610,7 @@ export default function GroupsPage() {
     } catch (e) {
       // Rollback optimistic update on failure
       setGroups(prev => prev.map(g => g.id === groupId ? { ...g, isMember: false, myRole: null } : g));
-      setError(e?.response?.data?.message || "Could not join group.");
+      setError(e?.response?.data?.message || t("groups.joinFailed"));
     } finally {
       setJoining(null);
     }
@@ -630,9 +630,9 @@ export default function GroupsPage() {
         : g
       ));
       setLeaveTarget(null);
-      showToast("Left group.");
+      showToast(t("groups.leftGroup"));
     } catch (e) {
-      setError(e?.response?.data?.message || "Could not leave group.");
+      setError(e?.response?.data?.message || t("groups.leaveFailed"));
       setLeaveTarget(null);
     } finally {
       setLeavingId(null);
@@ -641,7 +641,7 @@ export default function GroupsPage() {
 
   const handleGroupDeleted = groupId => {
     setGroups(prev => prev.filter(g => g.id !== groupId));
-    showToast("Group deleted.");
+    showToast(t("groups.groupDeleted"));
   };
 
   // Extracted so both tab buttons share one handler
@@ -716,10 +716,10 @@ export default function GroupsPage() {
           ) : displayed.length === 0 ? (
             <div className="lx-empty">
               <div className="lx-empty-ic">{tab === "mine" ? "👥" : "🔍"}</div>
-              <div className="lx-empty-t">{tab === "mine" ? "No Groups Yet" : "No Groups Found"}</div>
+              <div className="lx-empty-t">{tab === "mine" ? t("groups.noGroupsYet") : t("groups.noGroupsFound")}</div>
               <p className="lx-empty-s">
                 {tab === "mine"
-                  ? "Join a group from the Discover tab or create your own."
+                  ? t("groups.noGroupsDesc")
                   : "No groups have been created yet. Be the first!"}
               </p>
             </div>

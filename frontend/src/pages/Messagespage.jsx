@@ -242,8 +242,8 @@ function dateLabel(iso) {
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
-  if (d.toDateString() === today.toDateString()) return "Today";
-  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+  if (d.toDateString() === today.toDateString()) return t("common.today");
+  if (d.toDateString() === yesterday.toDateString()) return t("common.yesterday");
   return d.toLocaleDateString([], {
     weekday: "long",
     month: "short",
@@ -263,7 +263,7 @@ function groupInitials(name) {
 function convDisplayName(conv) {
   if (!conv) return "";
   if (conv.type === "group" || conv.type === "class")
-    return conv.name || "Group Chat";
+    return conv.name || t("messages.groupChat");
   // For DMs: prefer displayName, fall back to email username (not full email)
   if (conv.otherUserDisplayName) return conv.otherUserDisplayName;
   if (conv.otherUserEmail) return conv.otherUserEmail.split("@")[0];
@@ -539,7 +539,7 @@ export default function MessagesPage() {
         const found = searchRes?.data ?? searchRes;
         const resolved = Array.isArray(found) ? found[0] : found;
         if (!resolved?.userId && !resolved?.id) {
-          setDmErr("No user found with that email.");
+          setDmErr(t("messages.userNotFound"));
           return;
         }
         recipientId = resolved.userId ?? resolved.id;
@@ -554,7 +554,7 @@ export default function MessagesPage() {
       setDmErr(
         e?.response?.data?.message ||
           e?.displayMessage ||
-          "Could not start conversation.",
+          t("messages.startConvFailed"),
       );
     } finally {
       setDmLoading(false);
@@ -598,7 +598,7 @@ export default function MessagesPage() {
       setGroupErr(
         e?.response?.data?.message ||
           e?.displayMessage ||
-          "Could not create group.",
+          t("messages.createGroupFailed"),
       );
     } finally {
       setGroupLoading(false);
@@ -641,7 +641,7 @@ export default function MessagesPage() {
               <span className="cl-title">Messages</span>
               <button
                 className="cl-new"
-                title="New conversation"
+                title=t("messages.newMessage")
                 onClick={() => {
                   setDmOpen(true);
                   setDmErr("");
@@ -653,7 +653,7 @@ export default function MessagesPage() {
             </div>
             <div className="cl-search">
               <input
-                placeholder="Search…"
+                placeholder=t("messages.searchPlaceholder")
                 value={searchQ}
                 onChange={(e) => setSearchQ(e.target.value)}
               />
@@ -671,7 +671,7 @@ export default function MessagesPage() {
                     fontFamily: "var(--fm)",
                   }}
                 >
-                  {searchQ ? "No results" : "No conversations yet"}
+                  {searchQ ? t("messages.noResults") : t("messages.noConversations")}
                 </div>
               ) : (
                 filtered.map((conv) => {
@@ -679,8 +679,8 @@ export default function MessagesPage() {
                   const ini = convInitials(conv);
                   const isGrp = conv.type === "group" || conv.type === "class";
                   const preview = conv.lastMessage?.isDeleted
-                    ? "Message deleted"
-                    : conv.lastMessage?.content || "Start a conversation";
+                    ? t("messages.messageDeleted")
+                    : conv.lastMessage?.content || t("messages.startConversation");
                   const unread = isConvUnread(conv);
 
                   return (
@@ -916,14 +916,14 @@ export default function MessagesPage() {
                                         : otherName,
                                     })
                                   }
-                                  title="Double-click to reply"
+                                  title=t("messages.doubleClickReply")
                                 >
                                   {replySrc && (
                                     <div className="reply-quote">
                                       ↩{" "}
                                       <strong>
                                         {replySrc.senderId === uid
-                                          ? "You"
+                                          ? t("common.you")
                                           : replySrc.senderDisplayName ||
                                             otherName}
                                         :
@@ -933,7 +933,7 @@ export default function MessagesPage() {
                                     </div>
                                   )}
                                   {msg.isDeleted
-                                    ? "Message deleted"
+                                    ? t("messages.messageDeleted")
                                     : msg.content}
                                 </div>
                               </div>
@@ -995,7 +995,7 @@ export default function MessagesPage() {
                     className="send-btn"
                     onClick={sendMsg}
                     disabled={!draft.trim() || sending}
-                    title="Send (Enter)"
+                    title=t("messages.sendEnter")
                   >
                     ➤
                   </button>
@@ -1093,7 +1093,7 @@ export default function MessagesPage() {
                     onClick={startDm}
                     disabled={!dmEmail.trim() || dmLoading}
                   >
-                    {dmLoading ? "Looking up…" : "Start Chat →"}
+                    {dmLoading ? t("common.lookingUp") : t("messages.startChat")}
                   </button>
                 </div>
               </>
@@ -1141,7 +1141,7 @@ export default function MessagesPage() {
                     onClick={startGroupChat}
                     disabled={!groupName.trim() || groupLoading}
                   >
-                    {groupLoading ? "Creating…" : "Create Group Chat →"}
+                    {groupLoading ? t("common.creating") : t("messages.createGroupChat")}
                   </button>
                 </div>
               </>

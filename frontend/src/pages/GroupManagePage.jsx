@@ -297,7 +297,7 @@ export default function GroupManagePage() {
       await loadData();
       setModal(null);
     } catch (e) {
-      alert(e?.response?.data?.message || "Failed to change role");
+      alert(e?.response?.data?.message || t("groups.changeRoleFailed"));
     } finally {
       setUpdating(false);
     }
@@ -310,7 +310,7 @@ export default function GroupManagePage() {
       setMembers((prev) => prev.filter((m) => m.userId !== memberId));
       setModal(null);
     } catch (e) {
-      alert(e?.response?.data?.message || "Failed to remove member");
+      alert(e?.response?.data?.message || t("groups.removeMemberFailed"));
     } finally {
       setUpdating(false);
     }
@@ -322,7 +322,7 @@ export default function GroupManagePage() {
       await groupService.deleteGroup(groupId);
       navigate("/groups");
     } catch (e) {
-      alert(e?.response?.data?.message || "Failed to delete group");
+      alert(e?.response?.data?.message || t("groups.deleteFailed"));
       setUpdating(false);
     }
   };
@@ -477,7 +477,7 @@ export default function GroupManagePage() {
                   onClick={() => handleChangeRole(modalTarget, newRole)}
                   disabled={updating || newRole === modalTarget.roleName}
                 >
-                  {updating ? "…" : "Confirm"}
+                  {updating ? "…" : t("common.confirm")}
                 </button>
               </div>
             </div>
@@ -506,7 +506,7 @@ export default function GroupManagePage() {
                   onClick={() => handleRemoveMember(modalTarget.userId)}
                   disabled={updating}
                 >
-                  {updating ? "…" : "Remove"}
+                  {updating ? "…" : t("common.remove")}
                 </button>
               </div>
             </div>
@@ -535,7 +535,7 @@ export default function GroupManagePage() {
                   onClick={handleDeleteGroup}
                   disabled={updating}
                 >
-                  {updating ? "…" : "Delete"}
+                  {updating ? "…" : t("common.delete")}
                 </button>
               </div>
             </div>

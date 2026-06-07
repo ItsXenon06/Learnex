@@ -569,7 +569,7 @@ export default function PostDetailPage() {
         setPost(data);
         setMyRx(data?.myReaction ?? null);
       })
-      .catch(() => setError("Post not found or unavailable."))
+      .catch(() => setError(t("posts.notFound")))
       .finally(() => setLoading(false));
   }, [postId]);
 
@@ -650,7 +650,7 @@ export default function PostDetailPage() {
               <div className="pd-err-ic">🔍</div>
               <div className="pd-err-t">Not Found</div>
               <div className="pd-err-s">
-                {error || "This post does not exist."}
+                {error || t("posts.notFound")}
               </div>
             </div>
           </div>

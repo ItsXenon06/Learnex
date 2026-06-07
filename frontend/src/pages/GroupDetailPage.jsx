@@ -246,7 +246,7 @@ export default function GroupDetailPage() {
   } catch (e) {
     setIsMember(false);
     setMyRole(null);
-    alert(e?.response?.data?.message || "Could not join group.");
+    alert(e?.response?.data?.message || t("groups.joinFailed"));
   } finally {
     setJoining(false);
   }
@@ -273,7 +273,7 @@ export default function GroupDetailPage() {
       setIsMember(prevIsMember);
       setMyRole(prevRole);
       setGroup((g) => ({ ...g, memberCount: prevCount }));
-      alert(e?.response?.data?.message || "Could not leave group.");
+      alert(e?.response?.data?.message || t("groups.leaveFailed"));
     } finally {
       setLeaving(false);
     }
@@ -292,7 +292,7 @@ export default function GroupDetailPage() {
       setPosts((prev) => [saved, ...prev]);
       setDraft("");
     } catch (e) {
-      setPostErr(e?.response?.data?.message || "Failed to post.");
+      setPostErr(e?.response?.data?.message || t("groups.postFailed"));
     } finally {
       setPosting(false);
     }
@@ -476,7 +476,7 @@ export default function GroupDetailPage() {
                             onClick={handlePost}
                             disabled={posting}
                           >
-                            {posting ? "Posting…" : "Post"}
+                            {posting ? t("common.posting") : "Post"}
                           </button>
                         </div>
                       )}
@@ -498,7 +498,7 @@ export default function GroupDetailPage() {
                           onClick={handleJoin}
                           disabled={joining}
                         >
-                          {joining ? "…" : "Request to Join"}
+                          {joining ? "…" : t("groups.requestToJoin")}
                         </button>
                       )}
                     </div>
@@ -562,8 +562,8 @@ export default function GroupDetailPage() {
                       <div className="lx-empty-t">No Posts Yet</div>
                       <p className="lx-empty-s">
                         {isMember
-                          ? "Be the first to post in this group."
-                          : "Join the group to see and create posts."}
+                          ? t("groups.noPosts")
+                          : t("groups.joinToView")}
                       </p>
                     </div>
                   ) : (
@@ -604,7 +604,7 @@ export default function GroupDetailPage() {
                               >
                                 {p.authorDisplayName ||
                                   p.authorEmail ||
-                                  "Unknown"}
+                                  t("common.unknown")}
                               </div>
                               <div className="gd-card-sub">
                                 {timeAgo(p.createdAt)}
@@ -680,7 +680,7 @@ export default function GroupDetailPage() {
         ? "👑 Owner"
         : m.roleName === "admin"
           ? "🛡 Admin"
-          : "Member"}
+          : t("common.member")}
 </span>
                         </div>
                       );
@@ -860,7 +860,7 @@ export default function GroupDetailPage() {
                 disabled={leaving}
                 className="gd-btn gd-btn-ghost"
               >
-                {leaving ? "Leaving…" : "Leave Group"}
+                {leaving ? t("common.leaving") : t("groups.leaveGroup")}
               </button>
             </div>
           </div>

@@ -98,7 +98,7 @@ export default function CoursePostCreatePage() {
         setError("");
       } catch (err) {
         console.error("[v0] Error loading course:", err);
-        setError(t("courses.loadFailed"));
+        setError(t("courseDetail.failedLoad"));
       } finally {
         setLoading(false);
       }
@@ -109,11 +109,11 @@ export default function CoursePostCreatePage() {
 
   const handleSubmit = async () => {
     if (!content.trim()) {
-      setError(t("courses.emptyDiscussion"));
+      setError(t("coursePost.emptyError"));
       return;
     }
     if (content.length > 2000) {
-      setError(t("courses.discussionTooLong"));
+      setError(t("coursePost.tooLongError"));
       return;
     }
 
@@ -125,7 +125,7 @@ export default function CoursePostCreatePage() {
     } catch (err) {
       setSubmitting(false);
       console.error("[v0] Error creating post:", err);
-      setError(err?.response?.data?.message || t("courses.postFailed"));
+      setError(err?.response?.data?.message || t("coursePost.failedPost"));
     }
   };
 

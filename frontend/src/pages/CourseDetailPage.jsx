@@ -155,7 +155,7 @@ export default function CourseDetailPage() {
         <style>{css}</style>
         <Layout active="courses">
           <main className="course-detail-main">
-            <div className="loading">Loading course…</div>
+            <div className="loading">{t("courseDetail.loadingCourse")}</div>
           </main>
         </Layout>
       </>
@@ -181,8 +181,8 @@ export default function CourseDetailPage() {
       <Layout active="courses">
         <main className="course-detail-main">
           <button className="cd-back" onClick={() => navigate("/courses")}>
-            ← Courses
-          </button>
+  {t("courseDetail.backBtn")}
+</button>
 
           {/* Course Header */}
           <div className="cd-header">
@@ -196,7 +196,7 @@ export default function CourseDetailPage() {
               <h1 className="cd-title">{course.name}</h1>
               <div className="cd-code">{course.code}</div>
               <div className="cd-meta">
-                <span>🎓 {course.enrolled ?? 0} enrolled</span>
+                <span>{t("courseDetail.enrolled", { count: course.enrolled ?? 0 })}</span>
                 <span>·</span>
                 <span>{course.department}</span>
               </div>
@@ -208,11 +208,11 @@ export default function CourseDetailPage() {
 
           {/* Course Forum Section */}
           <div className="cd-section">
-            <div className="cd-section-title">📋 Discussions</div>
+            <div className="cd-section-title">{t("courseDetail.discussionsTitle")}</div>
 
             {user && (
               <button className="create-post-btn" onClick={handleCreatePost}>
-                ✎ Start Discussion
+                ✎ {t("courseDetail.startDiscussionBtn")}
               </button>
             )}
 
@@ -234,8 +234,8 @@ export default function CourseDetailPage() {
             ) : posts.length === 0 ? (
               <div className="empty-forum">
                 <div className="empty-ic">💭</div>
-                <div className="empty-t">No Discussions Yet</div>
-                <div className="empty-s">Be the first to start a discussion about this course.</div>
+                <div className="empty-t">{t("courseDetail.noDiscussionsTitle")}</div>
+                <div className="empty-s">{t("courseDetail.noDiscussionsHint")}</div>
               </div>
             ) : (
               <div className="forum-posts">
@@ -267,7 +267,7 @@ export default function CourseDetailPage() {
                           <span>👍 {post.reactions.reduce((s, r) => s + (r.count ?? 0), 0)}</span>
                         )}
                         <span style={{ marginLeft: "auto", color: "var(--red)", fontWeight: 700, fontSize: 10, letterSpacing: ".3px" }}>
-                          VIEW →
+                          {t("courseDetail.viewArrow")}
                         </span>
                       </div>
                     </div>

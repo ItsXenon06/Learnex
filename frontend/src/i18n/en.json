@@ -343,7 +343,17 @@
     "loadingCourses": "Loading courses...",
     "enrolled": "🎓 {{count}} enrolled",
     "starTitle": "Star this course",
-    "unstarTitle": "Unstar"
+    "unstarTitle": "Unstar",
+    "notFound": "Course not found",
+  "loadDetailsFailed": "Failed to load course details",
+  "loadFailed": "Failed to load courses",
+  "emptyDiscussion": "Discussion cannot be empty",
+  "discussionTooLong": "Discussion is too long (max 2000 characters)",
+  "discussionPlaceholder": "Share your thoughts, questions, or insights about this course…",
+  "postDiscussion": "Post Discussion →",
+  "postFailed": "Failed to post discussion",
+  "requestFailed": "Could not send request. Please try again.",
+  "description": "Describe the course and why the community would benefit…"
   },
   "courseDetail": {
     "backBtn": "← Courses",
@@ -453,5 +463,29 @@
     "errorTooShort": "Password must be at least 8 characters.",
     "errorMismatch": "Passwords do not match.",
     "successMsg": "Password reset successfully! Redirecting to login…"
-  }
+  },
+  "common": {
+    "posting": "Posting…",
+    "saving": "Saving…",
+    "creating": "Creating…",
+    "leaving": "Leaving…",
+    "deleting": "Deleting…",
+  "loading": "Loading…",
+  "remove": "Remove",
+  "delete": "Delete",
+  "confirm": "Confirm",
+  "leave": "Leave",
+  "member": "Member",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "you": "You",
+  "unknown": "Unknown",
+  "student": "Student",
+  "lookingUp": "Looking up…",
+  "sending": "Sending…",
+  "cancel": "Cancel",
+  "done": "Done",
+  "close": "Close",
+  "back": "Back"
+}
 }

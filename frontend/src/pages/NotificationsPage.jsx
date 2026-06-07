@@ -215,60 +215,6 @@ function buildText(n) {
   }
 }
 
-function buildGroupedText(n) {
-  // If it's a grouped notification with summary, use that
-  if (n.summary) return <>{n.summary}</>;
-  
-  // Fallback: use actorNames + count for display
-  if (n.actorNames && n.actorNames.length > 0) {
-    const actors = n.actorNames.slice(0, 3).join(", ");
-    const extra = n.count > 3 ? ` and ${n.count - 3} other${n.count - 3 > 1 ? 's' : ''}` : "";
-    const from = `from ${actors}${extra}`;
-    
-    switch (n.type) {
-      case "like":
-        return <><strong>{actors}</strong>{extra && <>{extra}</>} reacted to your post</>;
-      case "love":
-        return <><strong>{actors}</strong>{extra && <>{extra}</>} loved your post</>;
-      case "comment":
-        return <><strong>{actors}</strong>{extra && <>{extra}</>} commented on your post</>;
-      case "follow":
-        return <><strong>{actors}</strong>{extra && <>{extra}</>} started following you</>;
-      default:
-        return <>{actors}{extra && <>{extra}</>} did something</>;
-    }
-  }
-  
-  // Fallback to single notification format
-  const actor = n.payloadJson?.actorName || "Someone";
-  switch (n.type) {
-    case "like":
-      return <>👍 <strong>{actor}</strong> reacted to your post</>;
-    case "love":
-      return <>❤️ <strong>{actor}</strong> loved your post</>;
-    case "comment":
-      return <>💬 <strong>{actor}</strong> commented on your post</>;
-    case "mention":
-      return <>@ <strong>{actor}</strong> mentioned you in a {n.payloadJson?.targetType || "post"}</>;
-    case "follow":
-      return <>➕ <strong>{actor}</strong> started following you</>;
-    case "message":
-      return <>✉️ <strong>{actor}</strong> sent you a message</>;
-    case "group_invite":
-      return <>👥 <strong>{actor}</strong> invited you to a group</>;
-    case "group_join_request":
-      return <>🔔 <strong>{actor}</strong> requested to join your group</>;
-    case "friend_request":
-      return <>🤝 <strong>{actor}</strong> sent you a connection request</>;
-    case "share":
-      return <>↗️ <strong>{actor}</strong> shared your post</>;
-    case "poll_ended":
-      return <>📊 A poll you voted in has ended</>;
-    default:
-      return <>{actor} did something</>;
-  }
-}
-
 function handleNav(n, navigate) {
   const p = n.payloadJson || n.payload || {};
   switch (n.type) {
@@ -369,7 +315,7 @@ export default function NotificationsPage() {
     pageRef.current = 0;
     setLoading(true);
     notificationService
-      .getNotifications(0, 20, filter === "unread", true)
+      .getNotifications(0, 20, filter === "unread")
       .then((res) => {
         const data = res?.data ?? res;
         const fetched = data.content ?? data.notifications ?? [];
@@ -395,7 +341,6 @@ export default function NotificationsPage() {
         pageRef.current,
         20,
         filter === "unread",
-        true,
       );
       const data = res?.data ?? res;
       setNotifs((prev) => [...prev, ...(data.content ?? data.notifications ?? [])]);
@@ -506,22 +451,10 @@ export default function NotificationsPage() {
               {displayed.map((n, i) => {
                 const unread = isUnread(n);
                 const meta = TYPE_META[n.type] || DEFAULT_META;
-                
-                // For grouped notifications - show badge only if count > 1
-                let displayBadge = false;
-                let badgeLabel = "";
-                let actorInitials = meta.emoji;
-                let primaryActor = "";
-                
-                if (n.count > 1 && n.actorNames && n.actorNames.length > 0) {
-                  displayBadge = true;
-                  badgeLabel = `+${n.count}`;
-                  primaryActor = n.actorNames[0];
-                  actorInitials = getInitials(primaryActor, "");
-                } else if (n.actorNames && n.actorNames.length > 0) {
-                  primaryActor = n.actorNames[0];
-                  actorInitials = getInitials(primaryActor, "");
-                }
+                const actorName = n.payloadJson?.actorName || "";
+                const actorIni = actorName
+                  ? getInitials(actorName, "")
+                  : meta.emoji;
 
                 return (
                   <div
@@ -535,13 +468,12 @@ export default function NotificationsPage() {
                         className="notif-av"
                         style={{ background: meta.bg, color: meta.color }}
                       >
-                        {actorInitials}
+                        {actorName ? actorIni : meta.emoji}
                       </div>
-                      {displayBadge && (
+                      {actorName && (
                         <div
                           className="notif-badge"
-                          style={{ background: meta.bg, color: meta.color, fontSize: '9px' }}
-                          title={`${n.count} notifications`}
+                          style={{ background: meta.bg, color: meta.color }}
                         >
                           {meta.emoji}
                         </div>
@@ -549,8 +481,8 @@ export default function NotificationsPage() {
                     </div>
 
                     <div className="notif-body">
-                      <div className="notif-text">{buildGroupedText(n)}</div>
-                      <div className="notif-time">{timeAgo(n.latestCreatedAt || n.createdAt)}</div>
+                      <div className="notif-text">{buildText(n)}</div>
+                      <div className="notif-time">{timeAgo(n.createdAt)}</div>
                     </div>
 
                     {unread && <div className="unread-dot" />}

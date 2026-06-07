@@ -320,6 +320,8 @@ function EditModal({ profile, onClose, onSave, saving }) {
                       width: "100%",
                       height: "100%",
                       objectFit: "cover",
+                      borderRadius: "inherit",
+                      display: "block",
                     }}
                     onError={(e) => {
                       e.currentTarget.style.display = "none";

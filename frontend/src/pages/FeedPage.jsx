@@ -667,7 +667,9 @@ function CommentReactions({
   commentId,
   reactions: initRx,
   myReaction: initMy,
+  rxTypes = [],
 }) {
+  const { t } = useTranslation();
   const [reactions, setReactions] = useState(initRx ?? []);
   const [myRx, setMyRx] = useState(initMy ?? null);
   const [busy, setBusy] = useState(false);
@@ -750,7 +752,7 @@ function CommentReactions({
           {total > 0 && <span style={{ fontSize: 10 }}>{total}</span>}
         </button>
         <div className={`cm-rx-pick ${pickerOpen ? "visible" : ""}`}>
-          {RX_TYPES.map((r) => (
+          {rxTypes.map((r) => (
             <button
               key={r.type}
               className="cm-rx-e"
@@ -857,6 +859,7 @@ function PostCard({
   currentUserIni,
   onDelete,
   showCopyToast,
+  rxTypes = [],
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -1251,11 +1254,11 @@ function PostCard({
                 {myRx ? (RX_EMOJI[myRx] ?? "👍") : "👍"}
               </span>
               {myRx
-                ? (RX_TYPES.find((r) => r.type === myRx)?.label ?? "Liked")
+                ? (rxTypes.find((r) => r.type === myRx)?.label ?? "Liked")
                 : "Like"}
             </button>
             <div className={`rx-pick ${rxPickerOpen ? "visible" : ""}`}>
-              {RX_TYPES.map((r) => (
+              {rxTypes.map((r) => (
                 <button
                   key={r.type}
                   className="rx-e"
@@ -1415,6 +1418,7 @@ function CommentItem({ comment, currentUserIni }) {
           commentId={comment.id}
           reactions={comment.reactions ?? []}
           myReaction={comment.myReaction ?? null}
+          rxTypes={RX_TYPES}
         />
         {comment.replies?.length > 0 && (
           <div className="cm-replies">
@@ -2015,6 +2019,7 @@ export default function FeedPage() {
                     currentUserIni={userIni}
                     onDelete={handleDelete}
                     showCopyToast={showCopyToast}
+                    rxTypes={RX_TYPES}
                   />
                 </div>
               ))}

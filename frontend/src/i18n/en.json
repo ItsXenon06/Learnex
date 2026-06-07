@@ -362,6 +362,7 @@
   "courseDetail": {
     "backBtn": "← Courses",
     "enrolled": "🎓 {{count}} enrolled",
+    "starCount": "⭐ {{count}} starred",
     "discussionsTitle": "📋 Discussions",
     "startDiscussionBtn": "✎ Start Discussion",
     "noDiscussionsTitle": "No Discussions Yet",

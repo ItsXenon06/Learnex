@@ -12,7 +12,6 @@ const requestCourse = (courseName, reason, courseCode = "", schoolName = "") =>
 
 // Course forum endpoints - uses backend baseURL automatically
 const getCoursePosts = (courseId, page = 0, size = 20) => {
-  console.log("[v0] getCoursePosts called:", { courseId, page, size });
   return api.get(`/courses/${courseId}/posts`, { params: { page, size } });
 };
 

@@ -60,8 +60,13 @@ export default function CourseDetailPage() {
         const courseRes = await courseService.getCourse(courseId);
         setCourse(courseRes.data);
 
-        const postsRes = await courseService.getCoursePosts(courseId);
-        setPosts(postsRes.data?.content || []);
+        try {
+          const postsRes = await courseService.getCoursePosts(courseId);
+          setPosts(postsRes.data?.content || []);
+        } catch (postsErr) {
+          console.warn("[v0] Could not fetch course posts:", postsErr?.response?.status);
+          setPosts([]);
+        }
         setError("");
       } catch (err) {
         console.error("[v0] Error loading course details:", err);

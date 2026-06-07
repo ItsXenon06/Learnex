@@ -6,6 +6,18 @@ import TrendingHashtagWidget from "../components/TrendingHashtagWidget";
 import postService from "../services/postService";
 import commentService from "../services/commentService";
 
+/* ─── Utility Functions ───────────────────────────────────────────────────── */
+function truncateEmail(email, maxLength = 24) {
+  if (!email) return '';
+  if (email.length <= maxLength) return email;
+  const atIndex = email.indexOf('@');
+  if (atIndex === -1) return email.slice(0, maxLength) + '...';
+  const namePart = email.slice(0, atIndex);
+  const domainPart = email.slice(atIndex);
+  const availableForName = Math.max(3, maxLength - domainPart.length - 2);
+  return namePart.slice(0, availableForName) + '...' + domainPart;
+}
+
 /* ─── Page-specific CSS ───────────────────────────────────────────────────── */
 const css = `
 /* FEED LAYOUT */
@@ -1188,7 +1200,10 @@ function PostCard({
             ref={pickerRef}
             onMouseEnter={handleRxMouseEnter}
             onMouseLeave={handleRxMouseLeave}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
           >
             <button
               className={`ca-btn ${myRx ? "liked" : ""}`}
@@ -1516,7 +1531,7 @@ function RightPanel({ followed, onToggleFollow }) {
                   <div className="wf-name">
                     {s.displayName || s.email?.split("@")[0]}
                   </div>
-                  <div className="wf-role">{s.email}</div>
+                  <div className="wf-role" title={s.email}>{truncateEmail(s.email)}</div>
                 </div>
                 <button
                   className={`fw-btn ${followed[id] ? "ing" : ""}`}

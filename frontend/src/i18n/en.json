@@ -1,8 +1,145 @@
 {
+  "app": {
+    "name": "Learnex",
+    "tagline": "Study together. Connect. Grow.",
+    "taglineLine1": "LEARN.",
+    "taglineLine2": "CONNECT.",
+    "taglineLine3": "GROW.",
+    "description": "The social platform built for students. Share knowledge, collaborate on projects, and thrive together on campus.",
+    "signIn": "Sign In",
+    "register": "Register",
+    "signUpFree": "Sign up free",
+    "welcomeBack": "Welcome Back",
+    "joinLearnex": "Join Learnex",
+    "loginSubtitle": "Sign in to your student account",
+    "registerSubtitle": "Create your free student account",
+    "continueWith": "continue with",
+    "orWithEmail": "or with email",
+    "forgotPassword": "Forgot password?",
+    "forgotPasswordLink": "Forgot password?",
+    "sendResetEmail": "Send reset email",
+    "forgotPasswordDescription": "Enter your account email and we'll send a password reset link.",
+    "resetPassword": "Reset Password",
+    "resetPasswordDescription": "Enter the reset token and choose a new password.",
+    "resetToken": "Reset token",
+    "send": "Send",
+    "back": "Back",
+    "submit": "Submit",
+    "pleaseWait": "Please wait…",
+    "signInButton": "SIGN IN →",
+    "createAccountButton": "CREATE ACCOUNT →",
+    "dontHaveAccount": "Don't have an account? ",
+    "alreadyMember": "Already a member? ",
+    "termsAgreement": "By creating an account you agree to our",
+    "termsOfService": "Terms of Service",
+    "and": "and",
+    "privacyPolicy": "Privacy Policy",
+    "emailOrUsername": "Email or Username",
+    "studentEmail": "Student Email",
+    "emailOrUsernamePlaceholder": "you@university.edu or username",
+    "studentEmailPlaceholder": "you@university.edu",
+    "enterPassword": "Enter your password",
+    "createPassword": "Create a strong password",
+    "firstNamePlaceholder": "Alex",
+    "lastNamePlaceholder": "Nguyen",
+    "usernamePlaceholder": "alex.nguyen",
+    "search": "Search",
+    "searchPlaceholder": "Search students, posts, groups…",
+    "sending": "Sending…",
+    "resetting": "Resetting…",
+    "signOut": "Sign Out",
+    "loading": "Loading…",
+    "google": "Google",
+    "facebook": "Facebook",
+    "emailPlaceholder": "you@university.edu",
+    "oauthError": "OAuth login failed. Please try again."
+  },
+  "forms": {
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "password": "Password",
+    "username": "Username"
+  },
   "nav": {
+    "navigation": "Navigation",
+    "feed": "Feed",
+    "notifications": "Notifications",
+    "messages": "Messages",
+    "groups": "Groups",
+    "saved": "Saved",
+    "courses": "Courses",
+    "profile": "Profile",
     "search": "Search"
   },
-
+  "features": {
+    "studyTogether": "Study Together",
+    "studyTogetherDesc": "Join subject groups & collaborate on coursework.",
+    "realTimeMessaging": "Real-time Messaging",
+    "realTimeMessagingDesc": "DMs and group chats with your classmates.",
+    "campusFeed": "Campus Feed",
+    "campusFeedDesc": "Stay updated on events, posts & announcements."
+  },
+  "search": {
+    "title": "Search",
+    "placeholder": "Search students, posts, topics…",
+    "emptyHeading": "Find People & Posts",
+    "emptyDescription": "Search for students by name or email, or discover posts by topic.",
+    "tabs": {
+      "people": "People",
+      "posts": "Posts"
+    },
+    "noPeopleTitle": "No People Found",
+    "noPeopleDescription": "No students match \"{{query}}\". Try a different name or email.",
+    "noPostsTitle": "No Posts Found",
+    "noPostsDescription": "No posts mention \"{{query}}\". Try a different term or hashtag."
+  },
+  "messages": {
+    "resetLinkSent": "If the email exists, a reset link was sent.",
+    "passwordResetSuccess": "Password reset successful — you can now sign in.",
+    "sessionExpired": "Your session has expired. Please sign in again.",
+    "unauthorized": "You are not authorized to access this page.",
+    "sessionExpiredShort": "Session Expired",
+    "pleaseSignInAgain": "Please sign in again to continue.",
+    "fillAllFields": "Please fill in all fields.",
+    "somethingWentWrong": "Something went wrong. Please try again.",
+    "resetTokenTesting": "Reset token (testing): {{token}}",
+    "resetFailed": "Reset failed",
+    "oauthInProgress": "Signing in with {{provider}}…",
+    "oauthCancelled": "OAuth sign-in was cancelled.",
+    "oauthFailed": "OAuth sign-in failed. Please try again.",
+    "pageTitle": "Messages",
+    "newMessage": "New Message",
+    "searchPlaceholder": "Search…",
+    "noConversations": "No conversations yet",
+    "noResults": "No results",
+    "yourMessages": "Your Messages",
+    "pickConversation": "Pick a conversation or start a new one.",
+    "newMessageBtn": "+ New Message",
+    "sayHello": "Say hello 👋",
+    "groupConversation": "Group conversation",
+    "shiftEnterHint": "Shift+Enter for new line · Enter to send",
+    "messagePlaceholder": "Message {{name}}…",
+    "directTab": "💬 Direct",
+    "groupTab": "👥 Group",
+    "newMessageTitle": "New Message",
+    "studentEmailLabel": "Student Email or User ID",
+    "startChatBtn": "Start Chat →",
+    "lookingUp": "Looking up…",
+    "cancelBtn": "Cancel",
+    "groupNameLabel": "Group Name",
+    "groupNamePlaceholder": "e.g. CS Study Squad",
+    "memberEmailsLabel": "Member Emails (comma-separated)",
+    "memberEmailsPlaceholder": "alice@uni.edu, bob@uni.edu",
+    "groupOwnerHint": "You will be added as the group owner automatically.",
+    "createGroupBtn": "Create Group Chat →",
+    "creatingGroup": "Creating…",
+    "replyingTo": "Replying to {{name}}",
+    "messageDeleted": "Message deleted",
+    "noUserFound": "No user found with that email.",
+    "couldNotStart": "Could not start conversation.",
+    "couldNotCreate": "Could not create group."
+  },
   "feed": {
     "discover": "Discover",
     "following": "Following",
@@ -40,13 +177,12 @@
     "writeComment": "Write a comment…",
     "replyingTo": "Replying to {{name}}",
     "justNow": "just now",
-    "suggestedTitle": "✦ Suggested",
+    "suggestedTitle": "Suggested",
     "seeAll": "See all",
     "discoverHint": "Discover students by searching or exploring posts.",
     "followBtn": "Follow",
     "followingBtn": "Following"
   },
-
   "notifications": {
     "title": "Notifications",
     "unreadCount": "{{count}} unread",
@@ -59,21 +195,20 @@
     "empty": "Notifications will appear here.",
     "loadMore": "Load more",
     "markedAllDone": "✓ All notifications marked as read",
-    "reactedToPost": "{{actor}} reacted to your post",
-    "lovedPost": "{{actor}} loved your post",
-    "commentedPost": "{{actor}} commented on your post",
-    "mentionedYou": "{{actor}} mentioned you in a {{type}}",
-    "startedFollowing": "{{actor}} started following you",
-    "sentMessage": "{{actor}} sent you a message",
-    "groupInvite": "{{actor}} invited you to a group",
-    "groupJoinRequest": "{{actor}} requested to join your group",
-    "friendRequest": "{{actor}} sent you a connection request",
-    "sharedPost": "{{actor}} shared your post",
+    "reactedToPost": "<strong>{{actor}}</strong> reacted to your post",
+    "lovedPost": "<strong>{{actor}}</strong> loved your post",
+    "commentedPost": "<strong>{{actor}}</strong> commented on your post",
+    "mentionedYou": "<strong>{{actor}}</strong> mentioned you in a {{type}}",
+    "startedFollowing": "<strong>{{actor}}</strong> started following you",
+    "sentMessage": "<strong>{{actor}}</strong> sent you a message",
+    "groupInvite": "<strong>{{actor}}</strong> invited you to a group",
+    "groupJoinRequest": "<strong>{{actor}}</strong> requested to join your group",
+    "friendRequest": "<strong>{{actor}}</strong> sent you a connection request",
+    "sharedPost": "<strong>{{actor}}</strong> shared your post",
     "pollEnded": "A poll you voted in has ended",
     "didSomething": "{{actor}} did something"
   },
-
-  "messages": {
+  "dm": {
     "pageTitle": "Messages",
     "newMessage": "New Message",
     "searchPlaceholder": "Search…",
@@ -106,7 +241,6 @@
     "couldNotStart": "Could not start conversation.",
     "couldNotCreate": "Could not create group."
   },
-
   "profile": {
     "editProfile": "✏ Edit Profile",
     "followBtn": "+ Follow",
@@ -122,7 +256,6 @@
     "noFollowersHint": "Be the first to follow.",
     "notFollowingAnyone": "Not Following Anyone",
     "notFollowingHint": "Discover students from the feed.",
-    "signOut": "Sign Out",
     "editModalTitle": "Edit Profile",
     "avatarLabel": "Avatar",
     "uploadPhoto": "📷 Upload photo",
@@ -144,7 +277,6 @@
     "saving": "Saving…",
     "failedLoad": "Failed to load profile."
   },
-
   "groups": {
     "title": "Groups",
     "createBtn": "+ Create Group",
@@ -189,7 +321,6 @@
     "groupDeleted": "Group deleted.",
     "noDescription": "No description provided."
   },
-
   "groupDetail": {
     "backBtn": "← Groups",
     "privateLabel": "🔒 Private",
@@ -218,14 +349,12 @@
     "leaveConfirm": "Leave {{name}}? You can rejoin later if it's public.",
     "cancelBtn": "Cancel"
   },
-
   "courses": {
     "title": "Courses",
     "requestBtn": "+ Request Course",
     "allTab": "All Courses",
     "starredTab": "⭐ Starred",
     "requestModalTitle": "Request Course",
-    "courseNameLabel": "Course Name",
     "courseNameRequired": "Course Name *",
     "courseNamePlaceholder": "e.g. Advanced Machine Learning",
     "reasonLabel": "Why should this course be added?",
@@ -247,7 +376,6 @@
     "starTitle": "Star this course",
     "unstarTitle": "Unstar"
   },
-
   "courseDetail": {
     "backBtn": "← Courses",
     "enrolled": "🎓 {{count}} enrolled",
@@ -260,7 +388,6 @@
     "courseNotFound": "Course not found",
     "failedLoad": "Failed to load course details"
   },
-
   "coursePost": {
     "backBtn": "← Back to {{name}}",
     "title": "Start a Discussion",
@@ -276,7 +403,6 @@
     "courseNotFound": "Course not found",
     "failedPost": "Failed to post discussion"
   },
-
   "postDetail": {
     "backBtn": "← Back",
     "commentsTitle": "💬 Comments",
@@ -295,31 +421,28 @@
     "replyBtn": "↩ Reply",
     "writeReply": "Write a reply…"
   },
-
   "saved": {
     "title": "Saved",
-    "postCount": "{{count}} post",
-    "postCountPlural": "{{count}} posts",
+    "postCount_one": "{{count}} post",
+    "postCount_other": "{{count}} posts",
     "emptyTitle": "Nothing Saved",
     "emptyHint": "Tap the save button on any post to bookmark it here for later.",
     "removeTooltip": "Remove from saved"
   },
-
   "hashtag": {
     "backBtn": "← Back",
     "label": "Hashtag",
-    "postCount": "{{count}} post",
-    "postCountPlural": "{{count}} posts",
+    "postCount_one": "{{count}} post",
+    "postCount_other": "{{count}} posts",
     "sortLatest": "🕐 Latest",
     "sortTop": "🔥 Top",
     "emptyTitle": "No Posts Yet",
     "emptyHint": "No one has used #{{tag}} yet. Be the first to post with this hashtag!",
     "loadMore": "Load more"
   },
-
   "forgotPassword": {
-    "title": "Reset Password",
     "eyebrow": "Account Recovery",
+    "title": "Reset Password",
     "subtitle": "Enter your email and we'll send you a link to get back in.",
     "emailLabel": "Email Address",
     "emailPlaceholder": "you@university.edu",
@@ -345,7 +468,6 @@
     "tryAgain": "try again",
     "backToSignIn": "Back to Sign In"
   },
-
   "resetPassword": {
     "title": "Set new password",
     "subtitle": "Choose something strong — at least 8 characters with a mix of letters and numbers.",

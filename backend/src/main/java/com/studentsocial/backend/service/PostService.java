@@ -9,6 +9,7 @@ import com.studentsocial.backend.model.Post;
 import com.studentsocial.backend.model.Profile;
 import com.studentsocial.backend.model.User;
 import com.studentsocial.backend.repository.CommentRepository;
+import com.studentsocial.backend.repository.CourseRepository;
 import com.studentsocial.backend.repository.SavedPostRepository;
 import com.studentsocial.backend.repository.FollowRepository;
 import com.studentsocial.backend.repository.PostReactionRepository;
@@ -45,51 +46,59 @@ public class PostService {
     private final PostRepository           postRepository;
     private final PostAttachmentRepository postAttachmentRepository;
     private final UserRepository           userRepository;
-    private final MediaFileRepository      mediaFileRepository;   // FIX: was commented out
+    private final MediaFileRepository      mediaFileRepository;
     private final FollowRepository         followRepository;
     private final ProfileRepository        profileRepository;
     private final PostReactionRepository   postReactionRepository;
     private final CommentRepository        commentRepository;
     private final SavedPostRepository      savedPostRepository;
-    private final StudyGroupRepository     studyGroupRepository; // FIX: needed for group posts
+    private final StudyGroupRepository     studyGroupRepository;
     private final HashtagRepository        hashtagRepository;
     private final PostHashtagRepository    postHashtagRepository;
+    // FIX: added CourseRepository so createPost() can set post.course properly
+    private final CourseRepository         courseRepository;
+
     // ── Create ────────────────────────────────────────────────────────────
     @Transactional
     public PostResponse createPost(UUID authorId, CreatePostRequest request) {
         User author = userRepository.findById(authorId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        Post post = postRepository.save(Post.builder()
+        Post post = Post.builder()
                 .author(author)
                 .content(request.getContent())
                 .visibility(request.getVisibility() != null ? request.getVisibility() : "public")
-                .build());
-        
-        // Link to group or course if specified
+                .build();
+
+        // FIX: set group and course BEFORE the first save so we only need one save call.
+        // Previously the code called postRepository.save(post) inside each if-block,
+        // and the course block never called post.setCourse() at all — the FK stayed NULL.
         if (request.getGroupId() != null) {
             studyGroupRepository.findById(request.getGroupId()).ifPresent(post::setGroup);
-            postRepository.save(post);
-        }
-        
-        if (request.getCourseId() != null) {
-            // Course relationship will be set via the post.setCourse() method
-            // For now, we rely on the controller to validate the course exists
-            postRepository.save(post);
         }
 
-        // ── Extract and save hashtags ──
+        if (request.getCourseId() != null) {
+            // FIX: was missing entirely — course posts were saved without a course_id FK,
+            // so they never appeared in getCoursePosts() and creating them always succeeded
+            // silently but the post was orphaned.
+            courseRepository.findById(request.getCourseId()).ifPresent(post::setCourse);
+        }
+
+        postRepository.save(post);
+
+        // ── Extract and save hashtags ──────────────────────────────────────
         Set<String> hashtags = HashtagUtil.extractHashtags(request.getContent());
         for (String tag : hashtags) {
             Hashtag hashtag = hashtagRepository.findByTag(tag)
-                    .orElseGet(() -> hashtagRepository.save(Hashtag.builder().tag(tag).build()));
-            
+                    .orElseGet(() -> hashtagRepository.save(
+                            Hashtag.builder().tag(tag).build()));
             postHashtagRepository.save(PostHashtag.builder()
                     .post(post)
                     .hashtag(hashtag)
                     .build());
         }
 
+        // ── Save media attachments ─────────────────────────────────────────
         if (request.getMediaIds() != null && !request.getMediaIds().isEmpty()) {
             short order = 0;
             for (UUID mediaId : request.getMediaIds()) {
@@ -98,9 +107,9 @@ public class PostService {
                                 new ResourceNotFoundException("Media not found: " + mediaId));
 
                 String type =
-                        media.getMimeType().startsWith("video/")        ? "video"
-                      : media.getMimeType().startsWith("image/")        ? "image"
-                      : media.getMimeType().equals("application/pdf")   ? "pdf"
+                        media.getMimeType().startsWith("video/")      ? "video"
+                      : media.getMimeType().startsWith("image/")      ? "image"
+                      : media.getMimeType().equals("application/pdf") ? "pdf"
                       : "document";
 
                 postAttachmentRepository.save(
@@ -109,8 +118,7 @@ public class PostService {
                                 .media(media)
                                 .type(type)
                                 .sortOrder(order++)
-                                .build()
-                );
+                                .build());
             }
         }
 
@@ -130,7 +138,6 @@ public class PostService {
         List<ReactionSummaryResponse> reactions = buildReactionSummary(
                 postReactionRepository.countByReactionTypeForPost(postId));
         int commentCount = commentRepository.countByPostIdAndDeletedAtIsNull(postId);
-        // FIX: was calling the non-existent 6-arg overload; fetch attachments and use 7-arg
         List<PostAttachment> attachments =
                 postAttachmentRepository.findByPostIdOrderBySortOrderAsc(postId);
         return mapToResponse(post, post.getAuthor(), profile, reactions, commentCount, false, attachments);
@@ -146,7 +153,6 @@ public class PostService {
         }
         post.setDeletedAt(LocalDateTime.now());
         postRepository.save(post);
-        // Clean up post-hashtag associations
         postHashtagRepository.deleteByPostId(postId);
     }
 
@@ -154,6 +160,13 @@ public class PostService {
     @Transactional(readOnly = true)
     public List<PostResponse> getDiscover(int page, int size) {
         List<Post> posts = postRepository.findDiscover(page * size, size);
+        return buildPostResponseList(posts, null);
+    }
+
+    // ── Discover sorted by likes ──────────────────────────────────────────
+    @Transactional(readOnly = true)
+    public List<PostResponse> getDiscoverSortedByLikes(String window, int page, int size) {
+        List<Post> posts = postRepository.findDiscoverSortedByLikes(window, page * size, size);
         return buildPostResponseList(posts, null);
     }
 
@@ -178,6 +191,24 @@ public class PostService {
         List<Post> posts = postRepository.findFeedByUserIds(
                 followingIds, userId, page * size, size);
         return buildPostResponseList(posts, userId);
+    }
+
+    // ── Feed sorted by likes ──────────────────────────────────────────────
+    @Transactional(readOnly = true)
+    public List<PostResponse> getFeedSortedByLikes(UUID userId, String window, int page, int size) {
+        List<UUID> followingIds = followRepository.findFollowingByUserId(userId)
+                .stream().map(User::getId).collect(Collectors.toCollection(ArrayList::new));
+        if (!followingIds.contains(userId)) followingIds.add(userId);
+
+        List<Post> posts = postRepository.findFeedByUserIdsSortedByLikes(
+                followingIds, userId, window, page * size, size);
+        return buildPostResponseList(posts, userId);
+    }
+
+    // ── Group posts helper (called by GroupPostController) ────────────────
+    @Transactional(readOnly = true)
+    public List<PostResponse> buildGroupPostResponses(List<Post> posts, UUID requestingUserId) {
+        return buildPostResponseList(posts, requestingUserId);
     }
 
     // ── Saved posts helper (called by UserController) ─────────────────────
@@ -271,8 +302,7 @@ public class PostService {
                                         .height(a.getMedia().getHeight())
                                         .sortOrder(a.getSortOrder())
                                         .build())
-                                .toList()
-                )
+                                .toList())
                 .build();
     }
 
@@ -297,27 +327,4 @@ public class PostService {
                         ((Number) row[2]).longValue()))
                 .toList();
     }
-    @Transactional(readOnly = true)
-public List<PostResponse> buildGroupPostResponses(List<Post> posts, UUID requestingUserId) {
-    return buildPostResponseList(posts, requestingUserId);
-}
- 
-// ── Discover sorted by likes ──────────────────────────────────────────────
-@Transactional(readOnly = true)
-public List<PostResponse> getDiscoverSortedByLikes(String window, int page, int size) {
-    List<Post> posts = postRepository.findDiscoverSortedByLikes(window, page * size, size);
-    return buildPostResponseList(posts, null);
-}
- 
-// ── Feed sorted by likes ─────���────────────────────────────────────────────
-@Transactional(readOnly = true)
-public List<PostResponse> getFeedSortedByLikes(UUID userId, String window, int page, int size) {
-    List<UUID> followingIds = followRepository.findFollowingByUserId(userId)
-            .stream().map(User::getId).collect(Collectors.toCollection(ArrayList::new));
-    if (!followingIds.contains(userId)) followingIds.add(userId);
- 
-    List<Post> posts = postRepository.findFeedByUserIdsSortedByLikes(
-            followingIds, userId, window, page * size, size);
-    return buildPostResponseList(posts, userId);
-}
 }

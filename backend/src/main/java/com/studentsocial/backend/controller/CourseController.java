@@ -8,10 +8,8 @@ import com.studentsocial.backend.service.PostService;
 import com.studentsocial.backend.dto.request.CourseRequestDto;
 import com.studentsocial.backend.dto.response.CourseResponse;
 import com.studentsocial.backend.dto.response.CourseRequestResponse;
-import com.studentsocial.backend.model.Course;
 import com.studentsocial.backend.model.Post;
 import com.studentsocial.backend.model.PostAttachment;
-import com.studentsocial.backend.repository.CourseRepository;
 import com.studentsocial.backend.repository.PostRepository;
 import com.studentsocial.backend.repository.PostAttachmentRepository;
 import com.studentsocial.backend.repository.UserRepository;
@@ -20,7 +18,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -38,7 +35,6 @@ public class CourseController {
     private final CourseService courseService;
     private final PostService postService;
     private final UserRepository userRepository;
-    private final CourseRepository courseRepository;
     private final PostRepository postRepository;
     private final PostAttachmentRepository postAttachmentRepository;
 
@@ -57,6 +53,8 @@ public class CourseController {
     // GET /api/courses/{id}
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CourseResponse>> getCourse(@PathVariable UUID id) {
+        // FIX: was going to courseRepository directly (empty DB) — now uses CourseService
+        // which searches the in-memory CATALOG. This resolves the 500 "Course not found".
         return ResponseEntity.ok(ApiResponse.success(courseService.getCourse(id)));
     }
 
@@ -77,36 +75,27 @@ public class CourseController {
             @PathVariable UUID courseId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new RuntimeException("Course not found"));
-        
+
+        // FIX: validate course exists via CourseService (catalog lookup), not raw DB
+        courseService.getCourse(courseId); // throws ResourceNotFoundException if not found → 404
+
         List<Post> posts = postRepository.findByCourseIdOrderByCreatedAtDesc(courseId);
-        
+
         // Manual pagination
         int start = Math.min(page * size, posts.size());
-        int end = Math.min(start + size, posts.size());
+        int end   = Math.min(start + size, posts.size());
         List<PostResponse> pageContent = posts.subList(start, end).stream()
                 .map(p -> {
-                    List<PostAttachment> attachments = postAttachmentRepository.findByPostIdOrderBySortOrderAsc(p.getId());
+                    List<PostAttachment> attachments =
+                            postAttachmentRepository.findByPostIdOrderBySortOrderAsc(p.getId());
                     return postService.mapToResponse(
-                            p,
-                            p.getAuthor(),
-                            null,
-                            List.of(),
-                            0,
-                            false,
-                            attachments
-                    );
+                            p, p.getAuthor(), null, List.of(), 0, false, attachments);
                 })
                 .collect(Collectors.toList());
-        
+
         Page<PostResponse> result = new PageImpl<>(
-                pageContent,
-                PageRequest.of(page, size),
-                posts.size()
-        );
-        
+                pageContent, PageRequest.of(page, size), posts.size());
+
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
@@ -117,18 +106,19 @@ public class CourseController {
             @PathVariable UUID courseId,
             @AuthenticationPrincipal UserDetails principal,
             @Valid @RequestBody CreatePostRequest request) {
-        
+
         UUID userId = resolveUserId(principal);
-        
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new RuntimeException("Course not found"));
-        
-        // Set the course on the request (instead of group)
+
+        // FIX: validate course exists via CourseService, not raw DB lookup
+        // Old code: courseRepository.findById(courseId).orElseThrow(RuntimeException)
+        // → always failed because the DB course table has no rows (catalog is in-memory)
+        courseService.getCourse(courseId); // throws 404 if not in catalog
+
+        // Set the course UUID on the request so PostService.createPost links the post
         request.setCourseId(courseId);
-        request.setGroupId(null); // Clear group if accidentally set
-        
+        request.setGroupId(null); // clear group if accidentally set
+
         PostResponse response = postService.createPost(userId, request);
         return ResponseEntity.status(201).body(ApiResponse.success(response));
     }
 }
-

@@ -506,17 +506,20 @@ export default function NotificationsPage() {
                 const unread = isUnread(n);
                 const meta = TYPE_META[n.type] || DEFAULT_META;
                 
-                // For grouped notifications with multiple actors
-                let displayName = "";
+                // For grouped notifications - show badge only if count > 1
+                let displayBadge = false;
+                let badgeLabel = "";
                 let actorInitials = meta.emoji;
+                let primaryActor = "";
                 
                 if (n.count > 1 && n.actorNames && n.actorNames.length > 0) {
-                  // Show count badge for grouped
-                  displayName = n.count > 1 ? `+${n.count}` : n.actorNames[0];
-                  actorInitials = n.count > 1 ? `+${n.count}` : getInitials(n.actorNames[0], "");
+                  displayBadge = true;
+                  badgeLabel = `+${n.count}`;
+                  primaryActor = n.actorNames[0];
+                  actorInitials = getInitials(primaryActor, "");
                 } else if (n.actorNames && n.actorNames.length > 0) {
-                  displayName = n.actorNames[0];
-                  actorInitials = getInitials(n.actorNames[0], "");
+                  primaryActor = n.actorNames[0];
+                  actorInitials = getInitials(primaryActor, "");
                 }
 
                 return (
@@ -533,10 +536,11 @@ export default function NotificationsPage() {
                       >
                         {actorInitials}
                       </div>
-                      {n.count > 1 && (
+                      {displayBadge && (
                         <div
                           className="notif-badge"
-                          style={{ background: meta.bg, color: meta.color }}
+                          style={{ background: meta.bg, color: meta.color, fontSize: '9px' }}
+                          title={`${n.count} notifications`}
                         >
                           {meta.emoji}
                         </div>

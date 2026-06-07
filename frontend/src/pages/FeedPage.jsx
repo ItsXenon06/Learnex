@@ -1555,7 +1555,7 @@ export default function FeedPage() {
   const userIni = getInitials(user?.displayName, user?.email);
   const userName = user?.displayName || user?.email?.split("@")[0] || "Student";
 
-  const [tab, setTab] = useState("following");
+  const [tab, setTab] = useState("discover");
   const [sortKey, setSortKey] = useState("latest");
   const [sortOpen, setSortOpen] = useState(false);
   const [posts, setPosts] = useState([]);

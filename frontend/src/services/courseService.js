@@ -10,9 +10,11 @@ const requestCourse = (courseName, reason, courseCode = "", schoolName = "") =>
     schoolName: schoolName || undefined,
   });
 
-// Course forum endpoints
-const getCoursePosts = (courseId, page = 0, size = 20) =>
-  api.get(`/courses/${courseId}/posts`, { params: { page, size } });
+// Course forum endpoints - uses backend baseURL automatically
+const getCoursePosts = (courseId, page = 0, size = 20) => {
+  console.log("[v0] getCoursePosts called:", { courseId, page, size });
+  return api.get(`/courses/${courseId}/posts`, { params: { page, size } });
+};
 
 const createCoursePost = (courseId, content, visibility = "public", mediaIds = []) =>
   api.post(`/courses/${courseId}/posts`, { 

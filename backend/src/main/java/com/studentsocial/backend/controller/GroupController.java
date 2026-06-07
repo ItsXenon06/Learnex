@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -165,7 +166,7 @@ public class GroupController {
                 .body(ApiResponse.success(toDto(refreshed, userId)));
     }
 
-    // ── POST /api/groups/{id}/join ────────────────────────────────────────
+    // ── POST /api/groups/{id}/join ────────────────���───────────────────────
     @PostMapping("/{id}/join")
     public ResponseEntity<ApiResponse<StudyGroupResponse>> joinGroup(
             @PathVariable UUID id,
@@ -203,6 +204,7 @@ public class GroupController {
     //   1. Earliest admin (by joinedAt) → promoted to owner
     //   2. If no admins, earliest plain member → promoted to owner
     //   3. If no other members at all → soft-delete the group (no one left)
+    @Transactional
     @DeleteMapping("/{id}/leave")
     public ResponseEntity<ApiResponse<Void>> leaveGroup(
             @PathVariable UUID id,

@@ -858,6 +858,7 @@ function PostCard({
   onDelete,
   showCopyToast,
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const longPressTimer = useRef(null);
   const [post, setPost] = useState(initPost);
@@ -1474,6 +1475,7 @@ function PostSkeleton() {
 
 /* ─── RightPanel ─────────────────────────────────────────────────────────── */
 function RightPanel({ followed, onToggleFollow }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const uid = user?.userId ?? user?.id;

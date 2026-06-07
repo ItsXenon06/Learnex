@@ -123,8 +123,8 @@ export default function CoursePage() {
         const data = res?.data ?? res;
         setCourses(Array.isArray(data) ? data : []);
       })
-      .catch(() => {
-        setApiError(t("courses.loadFailed"));
+        .catch(() => {
+        setApiError(t("courses.loadingCourses"));
       })
       .finally(() => {
         setLoading(false);
@@ -175,7 +175,7 @@ export default function CoursePage() {
       <Layout active="courses">
         <main className="courses-main">
           <div className="ph">
-            <span className="ph-title">Courses</span>
+            <span className="ph-title">{t("courses.title")}</span>
             <button
               className="btn-fire"
               onClick={() => {
@@ -189,7 +189,7 @@ export default function CoursePage() {
                 });
               }}
             >
-              + Request Course
+              {t("courses.requestBtn")}
             </button>
           </div>
 
@@ -198,13 +198,13 @@ export default function CoursePage() {
               className={`ctab ${tab === "all" ? "on" : ""}`}
               onClick={() => setTab("all")}
             >
-              All Courses
+              {t("courses.allTab")}
             </button>
             <button
               className={`ctab ${tab === "starred" ? "on" : ""}`}
               onClick={() => setTab("starred")}
             >
-              Starred {starred.size > 0 && `(${starred.size})`}
+              {t("courses.starredTab")} {starred.size > 0 && `(${starred.size})`}
             </button>
           </div>
           {apiError && (
@@ -265,10 +265,9 @@ export default function CoursePage() {
           ) : displayed.length === 0 ? (
             <div className="cs-banner">
               <div className="cs-ic">⭐</div>
-              <div className="cs-t">No Starred Courses</div>
+              <div className="cs-t">{t("courses.noStarredTitle")}</div>
               <p className="cs-s">
-                Star courses from the All tab to bookmark them here for quick
-                access.
+                {t("courses.noStarredHint")}
               </p>
             </div>
           ) : (
@@ -309,9 +308,7 @@ export default function CoursePage() {
                       <button
                         className={`cc-star ${starred.has(c.id) ? "starred" : ""}`}
                         onClick={(e) => toggleStar(e, c.id)}
-                        title={
-                          starred.has(c.id) ? t("courses.unstar") : t("courses.star")
-                        }
+                        title={starred.has(c.id) ? t("courses.unstarTitle") : t("courses.starTitle")}
                       >
                         {starred.has(c.id) ? "⭐" : "☆"}
                         {/* Show star count — reads aggregate from a shared key across users */}
@@ -367,7 +364,7 @@ export default function CoursePage() {
         >
           <div className="modal">
             <div className="modal-head">
-              <span className="modal-title">Request Course</span>
+              <span className="modal-title">{t("courses.requestModalTitle")}</span>
               <button className="modal-close" onClick={() => setReqOpen(false)}>
                 ✕
               </button>
@@ -375,10 +372,9 @@ export default function CoursePage() {
             {reqSent ? (
               <div className="modal-success">
                 <div className="ms-ic">✅</div>
-                <div className="ms-t">Request Sent!</div>
+                <div className="ms-t">{t("courses.requestSentTitle")}</div>
                 <p className="ms-s">
-                  Your course request has been submitted. An admin will review
-                  it and add the course to the platform.
+                  {t("courses.requestSentBody")}
                 </p>
                 <br />
                 <button
@@ -386,7 +382,7 @@ export default function CoursePage() {
                   style={{ margin: "0 auto" }}
                   onClick={() => setReqOpen(false)}
                 >
-                  Done
+                  {t("courses.doneBtn")}
                 </button>
               </div>
             ) : (
@@ -394,7 +390,7 @@ export default function CoursePage() {
                 <div className="modal-body">
                   <div className="mfield">
                     <label>
-                      Course Name <span style={{ color: "var(--red)" }}>*</span>
+                      {t("courses.courseNameRequired")}
                     </label>
                     <input
                       autoFocus
@@ -410,8 +406,7 @@ export default function CoursePage() {
                   </div>
                   <div className="mfield">
                     <label>
-                      Why should this course be added?{" "}
-                      <span style={{ color: "var(--red)" }}>*</span>
+                      {t("courses.reasonLabel")} <span style={{ color: "var(--red)" }}>*</span>
                     </label>
                     <textarea
                       rows={3}
@@ -419,11 +414,11 @@ export default function CoursePage() {
                       onChange={(e) =>
                         setReqForm((f) => ({ ...f, reason: e.target.value }))
                       }
-                      placeholder={t("courses.description")}
+                      placeholder={t("courses.reasonPlaceholder")}
                     />
                   </div>
                   <div className="mfield">
-                    <label>Course Code (Optional)</label>
+                    <label>{t("courses.codeLabel")}</label>
                     <input
                       value={reqForm.courseCode}
                       onChange={(e) =>
@@ -436,7 +431,7 @@ export default function CoursePage() {
                     />
                   </div>
                   <div className="mfield">
-                    <label>School/University (Optional)</label>
+                    <label>{t("courses.schoolLabel")}</label>
                     <input
                       value={reqForm.schoolName}
                       onChange={(e) =>
@@ -454,7 +449,7 @@ export default function CoursePage() {
                     className="btn-outline"
                     onClick={() => setReqOpen(false)}
                   >
-                    Cancel
+                    {t("courses.cancelBtn")}
                   </button>
                   <button
                     className="btn-fire"
@@ -465,7 +460,7 @@ export default function CoursePage() {
                       sending
                     }
                   >
-                    {sending ? t("common.sending") : t("courses.sendRequest")}
+                    {sending ? t("courses.sendingRequest") : t("courses.sendRequestBtn")}
                   </button>
                 </div>
               </>

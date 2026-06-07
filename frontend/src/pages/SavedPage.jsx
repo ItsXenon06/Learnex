@@ -156,10 +156,10 @@ export default function SavedPage() {
         <main className="saved-main">
           <div className="ph">
             <div className="ph-left">
-              <span className="ph-title">Saved</span>
+              <span className="ph-title">{t("saved.title")}</span>
               {posts.length > 0 && (
                 <span className="ph-count">
-                  {posts.length} post{posts.length !== 1 ? "s" : ""}
+                  {t(posts.length === 1 ? "saved.postCount_one" : "saved.postCount_other", { count: posts.length })}
                 </span>
               )}
             </div>
@@ -170,9 +170,9 @@ export default function SavedPage() {
           ) : posts.length === 0 ? (
             <div className="lx-empty">
               <div className="lx-empty-ic">🔖</div>
-              <div className="lx-empty-t">Nothing Saved</div>
+              <div className="lx-empty-t">{t("saved.emptyTitle")}</div>
               <p className="lx-empty-s">
-                Tap the save button on any post to bookmark it here for later.
+                {t("saved.emptyHint")}
               </p>
             </div>
           ) : (
@@ -258,7 +258,7 @@ export default function SavedPage() {
                     <div className="unsave-col">
                       <button
                         className="unsave-btn"
-                        title={t("posts.removeFromSaved")}
+                        title={t("saved.removeTooltip")}
                         onClick={(e) => unsave(e, p.id)}
                         disabled={unsaving === p.id}
                       >

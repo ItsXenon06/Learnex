@@ -569,7 +569,7 @@ export default function PostDetailPage() {
         setPost(data);
         setMyRx(data?.myReaction ?? null);
       })
-      .catch(() => setError(t("posts.notFound")))
+          .catch(() => setError(t("postDetail.notFoundTitle")))
       .finally(() => setLoading(false));
   }, [postId]);
 
@@ -825,7 +825,7 @@ export default function PostDetailPage() {
           {/* Comments */}
           <div className="pd-comments">
             <div className="pd-cm-head">
-              💬 Comments {comments.length > 0 && `· ${comments.length}`}
+              {t("postDetail.commentsTitle")} {comments.length > 0 && `· ${comments.length}`}
             </div>
 
             {cmLoading ? (

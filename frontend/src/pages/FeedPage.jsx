@@ -427,7 +427,7 @@ function extractTags(content) {
 }
 
 /* ─── Lightbox ───────────────────────────────────────────────────────────── */
-function Lightbox({ images, startIndex, onClose }) {
+function Lightbox({ images, startIndex, onClose, getImageUrl }) {
   const [idx, setIdx] = useState(startIndex);
   useEffect(() => {
     const h = (e) => {
@@ -439,6 +439,7 @@ function Lightbox({ images, startIndex, onClose }) {
     document.addEventListener("keydown", h);
     return () => document.removeEventListener("keydown", h);
   }, [images.length, onClose]);
+  const imageUrl = getImageUrl ? getImageUrl(images[idx]?.url) : images[idx]?.url;
   return (
     <div
       onClick={onClose}
@@ -517,7 +518,7 @@ function Lightbox({ images, startIndex, onClose }) {
         </>
       )}
       <img
-        src={images[idx].url}
+        src={imageUrl}
         alt=""
         onClick={(e) => e.stopPropagation()}
         style={{
@@ -768,6 +769,14 @@ function CommentReactions({
 }
 
 /* ─── CardAttachmentGrid ─────────────────────────────────────────────────── */
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:1008/Learnex';
+
+function getImageUrl(url) {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return BACKEND_URL + url;
+}
+
 function CardAttachmentGrid({ attachments }) {
   const [lightbox, setLightbox] = useState(null);
   const images = attachments.filter(
@@ -783,7 +792,7 @@ function CardAttachmentGrid({ attachments }) {
             <img
               key={img.id ?? i}
               className="cm-att"
-              src={img.url}
+              src={getImageUrl(img.url)}
               alt=""
               onClick={(e) => {
                 e.stopPropagation();
@@ -798,6 +807,7 @@ function CardAttachmentGrid({ attachments }) {
           images={images}
           startIndex={lightbox}
           onClose={() => setLightbox(null)}
+          getImageUrl={getImageUrl}
         />
       )}
     </>
@@ -1745,16 +1755,16 @@ export default function FeedPage() {
           {/* Tabs + Sort */}
           <div className="feed-header">
             <button
-              className={`ftab ${tab === "following" ? "on" : ""}`}
-              onClick={() => setTab("following")}
-            >
-              Following
-            </button>
-            <button
               className={`ftab ${tab === "discover" ? "on" : ""}`}
               onClick={() => setTab("discover")}
             >
               Discover
+            </button>
+            <button
+              className={`ftab ${tab === "following" ? "on" : ""}`}
+              onClick={() => setTab("following")}
+            >
+              Following
             </button>
             <div className="fh-gap" />
             <div className="sort-wrap" ref={sortRef}>

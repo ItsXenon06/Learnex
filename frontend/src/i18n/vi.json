@@ -336,7 +336,6 @@
   "courseDetail": {
     "backBtn": "← Khoá học",
     "enrolled": "🎓 {{count}} đã đăng ký",
-    "starCount": "⭐ {{count}} yêu thích",
     "discussionsTitle": "📋 Thảo luận",
     "startDiscussionBtn": "✎ Bắt đầu thảo luận",
     "noDiscussionsTitle": "Chưa có thảo luận",

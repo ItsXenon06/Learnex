@@ -93,8 +93,6 @@ const TrendingHashtagWidget = () => {
     }
   `;
 
-  if (loading) return null;
-  if (error) return null;
   if (!trendingTags || trendingTags.length === 0) return null;
 
   return (
@@ -107,17 +105,27 @@ const TrendingHashtagWidget = () => {
         </div>
 
         <div>
-          {trendingTags.map((tag, index) => (
-            <div
-              key={tag}
-              onClick={() => handleHashtagClick(tag)}
-              className="tr-item"
-            >
-              <span className="tr-idx">#{index + 1}</span>
-              <div className="tr-tag">#{tag}</div>
-              <span style={{ fontSize: '12px', color: 'var(--t2)' }}>→</span>
+          {loading ? (
+            <div style={{ padding: '8px', fontSize: '13px', color: 'var(--t3)' }}>
+              Loading trends...
             </div>
-          ))}
+          ) : error ? (
+            <div style={{ padding: '8px', fontSize: '13px', color: 'var(--t3)' }}>
+              Failed to load trending hashtags
+            </div>
+          ) : (
+            trendingTags.map((tag, index) => (
+              <div
+                key={tag}
+                onClick={() => handleHashtagClick(tag)}
+                className="tr-item"
+              >
+                <span className="tr-idx">#{index + 1}</span>
+                <div className="tr-tag">#{tag}</div>
+                <span style={{ fontSize: '12px', color: 'var(--t2)' }}>→</span>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </>

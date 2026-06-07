@@ -124,7 +124,7 @@ export default function HashtagPage() {
       let items = [];
       let next  = false;
       try {
-        const res  = await hashtagService.getHashtagPosts(tag, null, p, 20);
+        const res  = await hashtagService.getHashtagPosts(tag, p, 20);
         const data = res?.data ?? res;
         items = data?.content ?? (Array.isArray(data) ? data : []);
         next  = data?.hasNext ?? false;

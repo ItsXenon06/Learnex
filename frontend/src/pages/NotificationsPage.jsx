@@ -216,7 +216,7 @@ function buildText(n) {
 }
 
 function handleNav(n, navigate) {
-  const p = n.payload || {};
+  const p = n.payloadJson || n.payload || {};
   switch (n.type) {
     case "like":
     case "love":
@@ -315,10 +315,10 @@ export default function NotificationsPage() {
     pageRef.current = 0;
     setLoading(true);
     notificationService
-      .getNotifications(0, 20, filter === "unread")
+      .getNotifications(0, 20, filter === "unread", true)
       .then((res) => {
         const data = res?.data ?? res;
-        const fetched = data.notifications ?? [];
+        const fetched = data.content ?? data.notifications ?? [];
         setNotifs(fetched);
         // Recalculate unread count accounting for locally-read IDs
         const localReadSet = getLocalRead();
@@ -341,9 +341,10 @@ export default function NotificationsPage() {
         pageRef.current,
         20,
         filter === "unread",
+        true,
       );
       const data = res?.data ?? res;
-      setNotifs((prev) => [...prev, ...(data.notifications ?? [])]);
+      setNotifs((prev) => [...prev, ...(data.content ?? data.notifications ?? [])]);
       setHasNext(data.hasNext ?? false);
       pageRef.current += 1;
     } catch {
@@ -451,10 +452,19 @@ export default function NotificationsPage() {
               {displayed.map((n, i) => {
                 const unread = isUnread(n);
                 const meta = TYPE_META[n.type] || DEFAULT_META;
-                const actorName = n.payload?.actorName || "";
-                const actorIni = actorName
-                  ? getInitials(actorName, "")
-                  : meta.emoji;
+                
+                // For grouped notifications with multiple actors
+                let displayName = "";
+                let actorInitials = meta.emoji;
+                
+                if (n.count > 1 && n.actorNames && n.actorNames.length > 0) {
+                  // Show count badge for grouped
+                  displayName = n.count > 1 ? `+${n.count}` : n.actorNames[0];
+                  actorInitials = n.count > 1 ? `+${n.count}` : getInitials(n.actorNames[0], "");
+                } else if (n.actorNames && n.actorNames.length > 0) {
+                  displayName = n.actorNames[0];
+                  actorInitials = getInitials(n.actorNames[0], "");
+                }
 
                 return (
                   <div
@@ -468,9 +478,9 @@ export default function NotificationsPage() {
                         className="notif-av"
                         style={{ background: meta.bg, color: meta.color }}
                       >
-                        {actorName ? actorIni : meta.emoji}
+                        {actorInitials}
                       </div>
-                      {actorName && (
+                      {n.count > 1 && (
                         <div
                           className="notif-badge"
                           style={{ background: meta.bg, color: meta.color }}
@@ -481,8 +491,8 @@ export default function NotificationsPage() {
                     </div>
 
                     <div className="notif-body">
-                      <div className="notif-text">{buildText(n)}</div>
-                      <div className="notif-time">{timeAgo(n.createdAt)}</div>
+                      <div className="notif-text">{buildGroupedText(n)}</div>
+                      <div className="notif-time">{timeAgo(n.latestCreatedAt || n.createdAt)}</div>
                     </div>
 
                     {unread && <div className="unread-dot" />}

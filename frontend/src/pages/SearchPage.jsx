@@ -5,6 +5,9 @@ import { useAuth, getInitials } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
 import userService from '../services/userService';
 import postService from '../services/postService';
+import hashtagService from '../services/hashtagService';
+import groupService from '../services/groupService';
+import courseService from '../services/courseService';
 
 const css = `
 .search-main{min-width:0;padding:24px 28px 90px;}
@@ -139,6 +142,9 @@ export default function SearchPage() {
   const [tab,      setTab]      = useState('people');
   const [users,    setUsers]    = useState([]);
   const [posts,    setPosts]    = useState([]);
+  const [hashtags, setHashtags] = useState([]);
+  const [groups,   setGroups]   = useState([]);
+  const [courses,  setCourses]  = useState([]);
   const [loading,  setLoading]  = useState(false);
   const [searched, setSearched] = useState(false);
 
@@ -146,7 +152,11 @@ export default function SearchPage() {
   useEffect(() => {
     const q = searchParams.get('q') || '';
     setQuery(q);
-    if (!q.trim()) { setUsers([]); setPosts([]); setSearched(false); return; }
+    if (!q.trim()) { 
+      setUsers([]); setPosts([]); setHashtags([]); setGroups([]); setCourses([]);
+      setSearched(false); 
+      return; 
+    }
     runSearch(q);
   }, [searchParams]);
 
@@ -155,25 +165,56 @@ export default function SearchPage() {
     setLoading(true);
     setSearched(true);
     try {
-      const [usersRes, postsRes] = await Promise.allSettled([
+      const [usersRes, postsRes, hashtagsRes, groupsRes, coursesRes] = await Promise.allSettled([
         userService.search(q),
-        postService.getDiscover(0, 50), // filter client-side until backend supports search
+        postService.getDiscover(0, 50),
+        hashtagService.getTrendingHashtags(100),
+        groupService.getGroups(0, 100),
+        courseService.getCourses(),
       ]);
 
+      // Users search
       if (usersRes.status === 'fulfilled') {
         const data = usersRes.value?.data ?? usersRes.value;
         setUsers(Array.isArray(data) ? data : []);
       }
 
+      // Posts search - client-side filter
       if (postsRes.status === 'fulfilled') {
         const data = postsRes.value?.data ?? postsRes.value;
         const items = data?.content ?? (Array.isArray(data) ? data : []);
-        // Client-side filter by query term
         const lower = q.toLowerCase();
         setPosts(items.filter(p =>
           p.content?.toLowerCase().includes(lower) ||
           p.authorDisplayName?.toLowerCase().includes(lower) ||
           p.authorEmail?.toLowerCase().includes(lower)
+        ));
+      }
+
+      // Hashtags search - client-side filter
+      if (hashtagsRes.status === 'fulfilled') {
+        const data = hashtagsRes.value?.data ?? hashtagsRes.value;
+        const items = Array.isArray(data) ? data : [];
+        const lower = q.toLowerCase();
+        setHashtags(items.filter(h => h.toLowerCase().includes(lower)));
+      }
+
+      // Groups search - client-side filter
+      if (groupsRes.status === 'fulfilled') {
+        const data = groupsRes.value?.data ?? groupsRes.value;
+        const items = data?.content ?? (Array.isArray(data) ? data : []);
+        const lower = q.toLowerCase();
+        setGroups(items.filter(g => g.name?.toLowerCase().includes(lower)));
+      }
+
+      // Courses search - client-side filter by course code or name
+      if (coursesRes.status === 'fulfilled') {
+        const data = coursesRes.value?.data ?? coursesRes.value;
+        const items = Array.isArray(data) ? data : [];
+        const lower = q.toLowerCase();
+        setCourses(items.filter(c => 
+          c.courseCode?.toLowerCase().includes(lower) ||
+          c.courseName?.toLowerCase().includes(lower)
         ));
       }
     } catch { /* no-op */ }
@@ -189,7 +230,8 @@ export default function SearchPage() {
   const handleClear = () => {
     setQuery('');
     setSearchParams({});
-    setUsers([]); setPosts([]); setSearched(false);
+    setUsers([]); setPosts([]); setHashtags([]); setGroups([]); setCourses([]);
+    setSearched(false);
     inputRef.current?.focus();
   };
 
@@ -232,6 +274,15 @@ export default function SearchPage() {
                 </button>
                 <button className={`stab ${tab === 'posts' ? 'on' : ''}`} onClick={() => setTab('posts')}>
                   {t('search.tabs.posts')} <span className="stab-cnt">{posts.length}</span>
+                </button>
+                <button className={`stab ${tab === 'hashtags' ? 'on' : ''}`} onClick={() => setTab('hashtags')}>
+                  Hashtags <span className="stab-cnt">{hashtags.length}</span>
+                </button>
+                <button className={`stab ${tab === 'groups' ? 'on' : ''}`} onClick={() => setTab('groups')}>
+                  Groups <span className="stab-cnt">{groups.length}</span>
+                </button>
+                <button className={`stab ${tab === 'courses' ? 'on' : ''}`} onClick={() => setTab('courses')}>
+                  Courses <span className="stab-cnt">{courses.length}</span>
                 </button>
               </div>
 
@@ -309,6 +360,93 @@ export default function SearchPage() {
                         </div>
                       );
                     })}
+                  </div>
+                )
+              )}
+
+              {tab === 'hashtags' && (
+                loading ? <UserSkeleton /> :
+                hashtags.length === 0 ? (
+                  <div className="search-empty">
+                    <div className="se-ic">#️⃣</div>
+                    <div className="se-t">No Hashtags</div>
+                    <p className="se-s">No hashtags matching "{q}"</p>
+                  </div>
+                ) : (
+                  <div className="user-list">
+                    {hashtags.map((h, i) => (
+                      <div
+                        key={h}
+                        className="user-card"
+                        style={{ animationDelay: `${i * 40}ms` }}
+                        onClick={() => navigate(`/hashtag/${encodeURIComponent(h)}`)}
+                      >
+                        <div className="user-av" style={{background:'var(--blue)',fontSize:'20px'}}>#{h.charAt(0).toUpperCase()}</div>
+                        <div className="user-info">
+                          <div className="user-name">{highlight(h, q)}</div>
+                          <div className="user-email">Hashtag</div>
+                        </div>
+                        <span className="user-arrow">→</span>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+
+              {tab === 'groups' && (
+                loading ? <UserSkeleton /> :
+                groups.length === 0 ? (
+                  <div className="search-empty">
+                    <div className="se-ic">👥</div>
+                    <div className="se-t">No Groups</div>
+                    <p className="se-s">No groups matching "{q}"</p>
+                  </div>
+                ) : (
+                  <div className="user-list">
+                    {groups.map((g, i) => (
+                      <div
+                        key={g.id}
+                        className="user-card"
+                        style={{ animationDelay: `${i * 40}ms` }}
+                        onClick={() => navigate(`/groups/${g.id}`)}
+                      >
+                        <div className="user-av" style={{background:'var(--purple)',fontSize:'20px'}}>👥</div>
+                        <div className="user-info">
+                          <div className="user-name">{highlight(g.name, q)}</div>
+                          <div className="user-email">{g.memberCount ?? 0} members</div>
+                        </div>
+                        <span className="user-arrow">→</span>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+
+              {tab === 'courses' && (
+                loading ? <UserSkeleton /> :
+                courses.length === 0 ? (
+                  <div className="search-empty">
+                    <div className="se-ic">📚</div>
+                    <div className="se-t">No Courses</div>
+                    <p className="se-s">No courses matching "{q}"</p>
+                  </div>
+                ) : (
+                  <div className="user-list">
+                    {courses.map((c, i) => (
+                      <div
+                        key={c.id}
+                        className="user-card"
+                        style={{ animationDelay: `${i * 40}ms` }}
+                        onClick={() => navigate(`/courses/${c.id}`)}
+                      >
+                        <div className="user-av" style={{background:'var(--gold)',fontSize:'20px'}}>📚</div>
+                        <div className="user-info">
+                          <div className="user-name">{highlight(c.courseCode ?? c.courseName, q)}</div>
+                          <div className="user-email">{c.courseName}</div>
+                        </div>
+                        <span className="user-arrow">→</span>
+                      </div>
+                    ))}
                   </div>
                 )
               )}

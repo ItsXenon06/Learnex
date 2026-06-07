@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth, getInitials } from "../contexts/AuthContext";
 import Layout from "../components/Layout";
 import groupService from "../services/groupService";
@@ -121,10 +122,11 @@ const css = `
 `;
 
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
-const AV_BG = ["#0d1f35","#0d2918","#2a0d1e","#1e1a0d","#1a0d2e"];
-const AV_C  = ["#4a9eff","#4adf8a","#df4a8a","#dfb84a","#af4adf"];
+const AV_BG = ["#0d1f35", "#0d2918", "#2a0d1e", "#1e1a0d", "#1a0d2e"];
+const AV_C = ["#4a9eff", "#4adf8a", "#df4a8a", "#dfb84a", "#af4adf"];
 function avStyle(seed) {
-  const i = (typeof seed === "string" ? seed.charCodeAt(0) : seed || 0) % AV_BG.length;
+  const i =
+    (typeof seed === "string" ? seed.charCodeAt(0) : seed || 0) % AV_BG.length;
   return { background: `linear-gradient(135deg,${AV_BG[i]},${AV_C[i]})` };
 }
 
@@ -137,27 +139,48 @@ function roleLabel(role) {
 }
 
 const TYPE_STYLE = {
-  class:   { label:"Class",   cls:"gc-type-class",   banner:"linear-gradient(135deg,rgba(74,158,255,.2),rgba(74,158,255,.05))" },
-  club:    { label:"Club",    cls:"gc-type-club",    banner:"linear-gradient(135deg,rgba(34,197,94,.2),rgba(34,197,94,.05))" },
-  society: { label:"Society", cls:"gc-type-society", banner:"linear-gradient(135deg,rgba(155,89,245,.2),rgba(155,89,245,.05))" },
+  class: {
+    label: "Class",
+    cls: "gc-type-class",
+    banner: "linear-gradient(135deg,rgba(74,158,255,.2),rgba(74,158,255,.05))",
+  },
+  club: {
+    label: "Club",
+    cls: "gc-type-club",
+    banner: "linear-gradient(135deg,rgba(34,197,94,.2),rgba(34,197,94,.05))",
+  },
+  society: {
+    label: "Society",
+    cls: "gc-type-society",
+    banner: "linear-gradient(135deg,rgba(155,89,245,.2),rgba(155,89,245,.05))",
+  },
 };
 const DEFAULT_TYPE = TYPE_STYLE.club;
 
 /* ─── ConfirmLeaveModal ───────────────────────────────────────────────────── */
 function ConfirmLeaveModal({ groupName, onConfirm, onCancel, loading }) {
   return (
-    <div className="modal-bg" onClick={e => e.target === e.currentTarget && onCancel()}>
+    <div
+      className="modal-bg"
+      onClick={(e) => e.target === e.currentTarget && onCancel()}
+    >
       <div className="modal sm">
         <div className="modal-head">
           <span className="modal-title">Leave Group</span>
-          <button className="modal-close" onClick={onCancel}>✕</button>
+          <button className="modal-close" onClick={onCancel}>
+            ✕
+          </button>
         </div>
         <div className="confirm-body">
           You are about to leave <strong>{groupName}</strong>.
-          <div className="confirm-warn">You can rejoin later if the group is public.</div>
+          <div className="confirm-warn">
+            You can rejoin later if the group is public.
+          </div>
         </div>
         <div className="modal-foot">
-          <button className="btn-outline" onClick={onCancel}>Cancel</button>
+          <button className="btn-outline" onClick={onCancel}>
+            Cancel
+          </button>
           <button className="btn-danger" onClick={onConfirm} disabled={loading}>
             {loading ? "Leaving…" : "Leave Group"}
           </button>
@@ -169,38 +192,67 @@ function ConfirmLeaveModal({ groupName, onConfirm, onCancel, loading }) {
 
 /* ─── ConfirmDeleteModal ──────────────────────────────────────────────────── */
 function ConfirmDeleteModal({ groupName, onConfirm, onCancel, loading }) {
+  const { t } = useTranslation();
   const [typed, setTyped] = useState("");
   const confirmed = typed.trim().toLowerCase() === groupName?.toLowerCase();
   return (
-    <div className="modal-bg" onClick={e => e.target === e.currentTarget && onCancel()}>
+    <div
+      className="modal-bg"
+      onClick={(e) => e.target === e.currentTarget && onCancel()}
+    >
       <div className="modal sm">
-        <div className="modal-head" style={{ background:"linear-gradient(90deg,rgba(232,25,44,.1),transparent 70%)" }}>
+        <div
+          className="modal-head"
+          style={{
+            background:
+              "linear-gradient(90deg,rgba(232,25,44,.1),transparent 70%)",
+          }}
+        >
           <span className="modal-title">Delete Group</span>
-          <button className="modal-close" onClick={onCancel}>✕</button>
+          <button className="modal-close" onClick={onCancel}>
+            ✕
+          </button>
         </div>
         <div className="confirm-body">
-          This will <strong style={{ color:"var(--red)" }}>permanently delete</strong>{" "}
+          This will{" "}
+          <strong style={{ color: "var(--red)" }}>permanently delete</strong>{" "}
           <strong>{groupName}</strong> and all its posts. This cannot be undone.
-          <div className="confirm-warn" style={{ marginTop:14 }}>
-            <div style={{ marginBottom:6, color:"var(--t2)", fontSize:12 }}>
-              Type <strong style={{ color:"var(--t1)", fontFamily:"var(--fm)" }}>{groupName}</strong> to confirm:
+          <div className="confirm-warn" style={{ marginTop: 14 }}>
+            <div style={{ marginBottom: 6, color: "var(--t2)", fontSize: 12 }}>
+              Type{" "}
+              <strong style={{ color: "var(--t1)", fontFamily: "var(--fm)" }}>
+                {groupName}
+              </strong>{" "}
+              to confirm:
             </div>
             <input
               value={typed}
-              onChange={e => setTyped(e.target.value)}
+              onChange={(e) => setTyped(e.target.value)}
               placeholder={groupName}
               style={{
-                width:"100%", background:"var(--s2)", border:"1px solid var(--red-border)",
-                borderRadius:7, padding:"8px 12px", color:"var(--t1)",
-                fontFamily:"var(--fm)", fontSize:13, outline:"none",
+                width: "100%",
+                background: "var(--s2)",
+                border: "1px solid var(--red-border)",
+                borderRadius: 7,
+                padding: "8px 12px",
+                color: "var(--t1)",
+                fontFamily: "var(--fm)",
+                fontSize: 13,
+                outline: "none",
               }}
             />
           </div>
         </div>
         <div className="modal-foot">
-          <button className="btn-outline" onClick={onCancel}>Cancel</button>
-          <button className="btn-danger" onClick={onConfirm} disabled={loading || !confirmed}>
-            {loading ? "Deleting…" : "Delete Group"}
+          <button className="btn-outline" onClick={onCancel}>
+            Cancel
+          </button>
+          <button
+            className="btn-danger"
+            onClick={onConfirm}
+            disabled={loading || !confirmed}
+          >
+            {loading ? t("common.deleting") : t("groups.deleteGroup")}
           </button>
         </div>
       </div>
@@ -209,26 +261,36 @@ function ConfirmDeleteModal({ groupName, onConfirm, onCancel, loading }) {
 }
 
 /* ─── ManageModal ─────────────────────────────────────────────────────────── */
-function ManageModal({ group, uid, onClose, onGroupDeleted, onGroupUpdated, showToast }) {
-  const [members, setMembers]       = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [busy, setBusy]             = useState(null);
+function ManageModal({
+  group,
+  uid,
+  onClose,
+  onGroupDeleted,
+  onGroupUpdated,
+  showToast,
+}) {
+  const { t } = useTranslation();
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleting, setDeleting]     = useState(false);
-  const [err, setErr]               = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [err, setErr] = useState("");
 
   useEffect(() => {
-    groupService.getMembers(group.id)
-      .then(res => {
+    groupService
+      .getMembers(group.id)
+      .then((res) => {
         const data = res?.data ?? res;
         setMembers(Array.isArray(data) ? data : []);
       })
-      .catch(() => setErr("Could not load members."))
+      .catch(() => setErr(t("groups.loadMembersFailed")))
       .finally(() => setLoading(false));
   }, [group.id]);
 
   // String() guards against UUID vs string type mismatch from server
-  const myRole  = members.find(m => String(m.userId) === String(uid))?.roleName ?? "member";
+  const myRole =
+    members.find((m) => String(m.userId) === String(uid))?.roleName ?? "member";
   const isOwner = myRole === "owner";
 
   const updateMemberRole = async (targetUserId, newRole) => {
@@ -237,18 +299,28 @@ function ManageModal({ group, uid, onClose, onGroupDeleted, onGroupUpdated, show
     try {
       await groupService.updateMemberRole(group.id, targetUserId, newRole);
       // String() coercion required — server userId may be string, local may be UUID object
-      setMembers(prev => prev.map(m =>
-        String(m.userId) === String(targetUserId) ? { ...m, roleName: newRole } : m
-      ));
+      setMembers((prev) =>
+        prev.map((m) =>
+          String(m.userId) === String(targetUserId)
+            ? { ...m, roleName: newRole }
+            : m,
+        ),
+      );
       if (newRole === "owner") {
         // Current user steps down to admin after transferring ownership
-        setMembers(prev => prev.map(m =>
-          String(m.userId) === String(uid) ? { ...m, roleName: "admin" } : m
-        ));
+        setMembers((prev) =>
+          prev.map((m) =>
+            String(m.userId) === String(uid) ? { ...m, roleName: "admin" } : m,
+          ),
+        );
       }
-      showToast(newRole === "owner" ? "Ownership transferred." : `Role updated to ${newRole}.`);
+      showToast(
+        newRole === "owner"
+          ? "Ownership transferred."
+          : `Role updated to ${newRole}.`,
+      );
     } catch (e) {
-      setErr(e?.response?.data?.message || "Could not update role.");
+      setErr(e?.response?.data?.message || t("groups.updateRoleFailed"));
     } finally {
       setBusy(null);
     }
@@ -265,7 +337,7 @@ function ManageModal({ group, uid, onClose, onGroupDeleted, onGroupUpdated, show
       onClose();
     } catch (e) {
       console.error("[v0] Delete failed:", e?.response?.data);
-      setErr(e?.response?.data?.message || "Could not delete group.");
+      setErr(e?.response?.data?.message || t("groups.deleteFailed"));
       setDeleting(false);
     }
   };
@@ -273,41 +345,73 @@ function ManageModal({ group, uid, onClose, onGroupDeleted, onGroupUpdated, show
   const sorted = [...members].sort((a, b) => {
     const rd = (ROLE_RANK[b.roleName] ?? 1) - (ROLE_RANK[a.roleName] ?? 1);
     if (rd !== 0) return rd;
-    return (a.displayName || a.email || "").localeCompare(b.displayName || b.email || "");
+    return (a.displayName || a.email || "").localeCompare(
+      b.displayName || b.email || "",
+    );
   });
 
   return (
     <>
-      <div className="modal-bg" onClick={e => e.target === e.currentTarget && onClose()}>
-        <div className="modal" style={{ maxWidth:500 }}>
+      <div
+        className="modal-bg"
+        onClick={(e) => e.target === e.currentTarget && onClose()}
+      >
+        <div className="modal" style={{ maxWidth: 500 }}>
           <div className="modal-head">
             <span className="modal-title">Manage — {group.name}</span>
-            <button className="modal-close" onClick={onClose}>✕</button>
+            <button className="modal-close" onClick={onClose}>
+              ✕
+            </button>
           </div>
-          <div className="modal-body" style={{ maxHeight:"70vh", overflowY:"auto" }}>
+          <div
+            className="modal-body"
+            style={{ maxHeight: "70vh", overflowY: "auto" }}
+          >
             {err && <div className="modal-err">⚠ {err}</div>}
 
-            <div style={{ fontSize:10, fontWeight:800, textTransform:"uppercase", letterSpacing:2, color:"var(--t3)", marginBottom:4 }}>
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 800,
+                textTransform: "uppercase",
+                letterSpacing: 2,
+                color: "var(--t3)",
+                marginBottom: 4,
+              }}
+            >
               Members · {members.length}
             </div>
 
             {loading ? (
-              <div style={{ color:"var(--t3)", fontSize:13, fontFamily:"var(--fm)", padding:"12px 0" }}>
+              <div
+                style={{
+                  color: "var(--t3)",
+                  fontSize: 13,
+                  fontFamily: "var(--fm)",
+                  padding: "12px 0",
+                }}
+              >
                 Loading members…
               </div>
             ) : (
-              sorted.map(m => {
-                const rl            = roleLabel(m.roleName);
-                const ini           = getInitials(m.displayName, m.email);
-                const isMe          = String(m.userId) === String(uid);
+              sorted.map((m) => {
+                const rl = roleLabel(m.roleName);
+                const ini = getInitials(m.displayName, m.email);
+                const isMe = String(m.userId) === String(uid);
                 const isOwnerTarget = m.roleName === "owner";
 
                 return (
                   <div key={m.userId} className="member-row">
-                    <div className="member-av" style={avStyle(m.userId)}>{ini}</div>
+                    <div className="member-av" style={avStyle(m.userId)}>
+                      {ini}
+                    </div>
                     <div className="member-info">
-                      <div className="member-name">{m.displayName || m.email}</div>
-                      <div className={`member-role-label ${rl.cls}`}>{rl.text}</div>
+                      <div className="member-name">
+                        {m.displayName || m.email}
+                      </div>
+                      <div className={`member-role-label ${rl.cls}`}>
+                        {rl.text}
+                      </div>
                     </div>
                     {!isMe && isOwner && !isOwnerTarget && (
                       <div className="member-actions">
@@ -326,7 +430,7 @@ function ManageModal({ group, uid, onClose, onGroupDeleted, onGroupUpdated, show
                             className="mem-act-btn demote"
                             disabled={!!busy}
                             onClick={() => updateMemberRole(m.userId, "member")}
-                            title="Demote to Member"
+                            title={t("groups.demoteToMember")}
                           >
                             {busy === m.userId ? "…" : "↓ Member"}
                           </button>
@@ -336,7 +440,11 @@ function ManageModal({ group, uid, onClose, onGroupDeleted, onGroupUpdated, show
                             className="mem-act-btn transfer"
                             disabled={!!busy}
                             onClick={() => {
-                              if (window.confirm(`Transfer ownership to ${m.displayName || m.email}? You will become an Admin.`))
+                              if (
+                                window.confirm(
+                                  `Transfer ownership to ${m.displayName || m.email}? You will become an Admin.`,
+                                )
+                              )
                                 updateMemberRole(m.userId, "owner");
                             }}
                             title="Transfer Ownership"
@@ -347,7 +455,15 @@ function ManageModal({ group, uid, onClose, onGroupDeleted, onGroupUpdated, show
                       </div>
                     )}
                     {isMe && (
-                      <span style={{ fontSize:10, color:"var(--t4)", fontFamily:"var(--fm)" }}>You</span>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          color: "var(--t4)",
+                          fontFamily: "var(--fm)",
+                        }}
+                      >
+                        You
+                      </span>
                     )}
                   </div>
                 );
@@ -357,17 +473,31 @@ function ManageModal({ group, uid, onClose, onGroupDeleted, onGroupUpdated, show
             {isOwner && (
               <div className="danger-zone">
                 <div className="danger-zone-title">⚠ Danger Zone</div>
-                <div style={{ fontSize:12, color:"var(--t3)", marginBottom:12, lineHeight:1.7 }}>
-                  Deleting this group will remove all posts, members, and chat history. This is permanent.
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "var(--t3)",
+                    marginBottom: 12,
+                    lineHeight: 1.7,
+                  }}
+                >
+                  Deleting this group will remove all posts, members, and chat
+                  history. This is permanent.
                 </div>
-                <button className="btn-danger" style={{ height:32, fontSize:11 }} onClick={() => setDeleteOpen(true)}>
+                <button
+                  className="btn-danger"
+                  style={{ height: 32, fontSize: 11 }}
+                  onClick={() => setDeleteOpen(true)}
+                >
                   🗑 Delete Group
                 </button>
               </div>
             )}
           </div>
           <div className="modal-foot">
-            <button className="btn-outline" onClick={onClose}>Close</button>
+            <button className="btn-outline" onClick={onClose}>
+              Close
+            </button>
           </div>
         </div>
       </div>
@@ -385,26 +515,40 @@ function ManageModal({ group, uid, onClose, onGroupDeleted, onGroupUpdated, show
 }
 
 /* ─── GroupCard ───────────────────────────────────────────────────────────── */
-function GroupCard({ group, isMember, myRole, onJoin, onLeaveRequest, onManage, onChat, joining }) {
-  const navigate   = useNavigate();
-  const ts         = TYPE_STYLE[group.type] || DEFAULT_TYPE;
+function GroupCard({
+  group,
+  isMember,
+  myRole,
+  onJoin,
+  onLeaveRequest,
+  onManage,
+  onChat,
+  joining,
+}) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const ts = TYPE_STYLE[group.type] || DEFAULT_TYPE;
   const [chatBusy, setChatBusy] = useState(false);
   const isAdmin = myRole === "owner" || myRole === "admin";
 
-  const handleJoinLeave = e => {
+  const handleJoinLeave = (e) => {
     e.stopPropagation();
     if (isMember) onLeaveRequest(group);
     else onJoin(group.id);
   };
 
-  const handleChat = async e => {
+  const handleChat = async (e) => {
     e.stopPropagation();
     setChatBusy(true);
-    try { await onChat(group); } finally { setChatBusy(false); }
+    try {
+      await onChat(group);
+    } finally {
+      setChatBusy(false);
+    }
   };
 
   // Extracted to avoid inline stopPropagation noise
-  const handleManage = e => {
+  const handleManage = (e) => {
     e.stopPropagation();
     onManage(group);
   };
@@ -414,30 +558,52 @@ function GroupCard({ group, isMember, myRole, onJoin, onLeaveRequest, onManage, 
       <div className="gc-banner" style={{ background: ts.banner }}>
         <span className={`gc-type-badge ${ts.cls}`}>{ts.label}</span>
         {(group.isPrivate || group.type === "class") && (
-          <span style={{ marginLeft:6, fontSize:10, color:"var(--t4)" }}>🔒</span>
+          <span style={{ marginLeft: 6, fontSize: 10, color: "var(--t4)" }}>
+            🔒
+          </span>
         )}
-        {isMember && myRole === "owner" && <span className="gc-admin-badge">👑 Owner</span>}
-        {isMember && myRole === "admin"  && (
-          <span className="gc-admin-badge" style={{ color:"#4a9eff", background:"rgba(74,158,255,.2)", borderColor:"rgba(74,158,255,.3)" }}>
+        {isMember && myRole === "owner" && (
+          <span className="gc-admin-badge">👑 Owner</span>
+        )}
+        {isMember && myRole === "admin" && (
+          <span
+            className="gc-admin-badge"
+            style={{
+              color: "#4a9eff",
+              background: "rgba(74,158,255,.2)",
+              borderColor: "rgba(74,158,255,.3)",
+            }}
+          >
             🛡 Admin
           </span>
         )}
       </div>
       <div className="gc-body">
         <div className="gc-name">{group.name}</div>
-        <div className="gc-desc">{group.description || "No description provided."}</div>
+        <div className="gc-desc">
+          {group.description || "No description provided."}
+        </div>
         <div className="gc-foot">
           <span className="gc-members">
-            👥 {group.memberCount ?? 0} member{group.memberCount !== 1 ? "s" : ""}
+            👥 {group.memberCount ?? 0} member
+            {group.memberCount !== 1 ? "s" : ""}
           </span>
-          <div style={{ display:"flex", gap:5, alignItems:"center" }}>
+          <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
             {isMember && (
-              <button className="join-btn chat" onClick={handleChat} disabled={chatBusy}>
+              <button
+                className="join-btn chat"
+                onClick={handleChat}
+                disabled={chatBusy}
+              >
                 {chatBusy ? "…" : "💬"}
               </button>
             )}
             {isMember && isAdmin && (
-              <button className="join-btn manage" onClick={handleManage} title="Manage group">
+              <button
+                className="join-btn manage"
+                onClick={handleManage}
+                title={t("groups.manageGroup")}
+              >
                 ⚙
               </button>
             )}
@@ -449,8 +615,10 @@ function GroupCard({ group, isMember, myRole, onJoin, onLeaveRequest, onManage, 
               {joining === group.id
                 ? "…"
                 : isMember
-                  ? "Leave"
-                  : (group.isPrivate || group.type === "class") ? "🔒 Request" : "+ Join"}
+                  ? t("common.leave")
+                  : group.isPrivate || group.type === "class"
+                    ? "🔒 Request"
+                    : "+ Join"}
             </button>
           </div>
         </div>
@@ -463,16 +631,52 @@ function GroupCard({ group, isMember, myRole, onJoin, onLeaveRequest, onManage, 
 function GroupSkeleton() {
   return (
     <div className="group-grid">
-      {[1,2,3,4,5,6].map(i => (
+      {[1, 2, 3, 4, 5, 6].map((i) => (
         <div key={i} className="gskel">
-          <div style={{ height:72, background:"var(--s2)" }} />
-          <div style={{ padding:14 }}>
-            <div className="sk" style={{ height:16, width:"65%", marginBottom:8, borderRadius:5 }} />
-            <div className="sk" style={{ height:11, width:"100%", marginBottom:5, borderRadius:4 }} />
-            <div className="sk" style={{ height:11, width:"80%", marginBottom:14, borderRadius:4 }} />
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <div className="sk" style={{ height:10, width:"35%", borderRadius:4 }} />
-              <div className="sk" style={{ height:30, width:70, borderRadius:7 }} />
+          <div style={{ height: 72, background: "var(--s2)" }} />
+          <div style={{ padding: 14 }}>
+            <div
+              className="sk"
+              style={{
+                height: 16,
+                width: "65%",
+                marginBottom: 8,
+                borderRadius: 5,
+              }}
+            />
+            <div
+              className="sk"
+              style={{
+                height: 11,
+                width: "100%",
+                marginBottom: 5,
+                borderRadius: 4,
+              }}
+            />
+            <div
+              className="sk"
+              style={{
+                height: 11,
+                width: "80%",
+                marginBottom: 14,
+                borderRadius: 4,
+              }}
+            />
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <div
+                className="sk"
+                style={{ height: 10, width: "35%", borderRadius: 4 }}
+              />
+              <div
+                className="sk"
+                style={{ height: 30, width: 70, borderRadius: 7 }}
+              />
             </div>
           </div>
         </div>
@@ -483,42 +687,69 @@ function GroupSkeleton() {
 
 /* ─── CreateModal ─────────────────────────────────────────────────────────── */
 function CreateModal({ onClose, onCreate, creating }) {
-  const [form, setForm] = useState({ name:"", description:"", type:"club", isPrivate:false });
-  const [err, setErr]   = useState("");
-  const set = (k, v) => setForm(f => ({ ...f, [k]:v }));
+  const { t } = useTranslation();
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+    type: "club",
+    isPrivate: false,
+  });
+  const [err, setErr] = useState("");
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const effectivePrivate = form.type === "class" ? true : form.isPrivate;
 
   const submit = async () => {
-    if (!form.name.trim()) { setErr("Group name is required."); return; }
+    if (!form.name.trim()) {
+      setErr(t("groups.nameRequired"));
+      return;
+    }
     setErr("");
     try {
       await onCreate({ ...form, isPrivate: effectivePrivate });
     } catch (e) {
-      setErr(e?.response?.data?.message || "Failed to create group.");
+      setErr(e?.response?.data?.message || t("groups.createFailed"));
     }
   };
 
   return (
-    <div className="modal-bg" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div
+      className="modal-bg"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="modal">
         <div className="modal-head">
           <span className="modal-title">Create Group</span>
-          <button className="modal-close" onClick={onClose}>✕</button>
+          <button className="modal-close" onClick={onClose}>
+            ✕
+          </button>
         </div>
         <div className="modal-body">
           {err && <div className="modal-err">⚠ {err}</div>}
           <div className="mfield">
             <label>Group Name *</label>
-            <input autoFocus value={form.name} onChange={e => set("name", e.target.value)} placeholder="e.g. CS Algorithm Study Group" />
+            <input
+              autoFocus
+              value={form.name}
+              onChange={(e) => set("name", e.target.value)}
+              placeholder="e.g. CS Algorithm Study Group"
+            />
           </div>
           <div className="mfield">
             <label>Description</label>
-            <textarea rows={3} value={form.description} onChange={e => set("description", e.target.value)} placeholder="What is this group about?" />
+            <textarea
+              rows={3}
+              value={form.description}
+              onChange={(e) => set("description", e.target.value)}
+              placeholder="What is this group about?"
+            />
           </div>
           <div className="mfield-row">
             <div className="mfield">
               <label>Type</label>
-              <select value={form.type} onChange={e => set("type", e.target.value)}>
+              <select
+                value={form.type}
+                onChange={(e) => set("type", e.target.value)}
+              >
                 <option value="club">Club</option>
                 <option value="class">Class (invite-only)</option>
                 <option value="society">Society</option>
@@ -532,21 +763,35 @@ function CreateModal({ onClose, onCreate, creating }) {
                 <div className="toggle-sub">Members must request to join</div>
               </div>
               <label className="toggle">
-                <input type="checkbox" checked={form.isPrivate} onChange={e => set("isPrivate", e.target.checked)} />
+                <input
+                  type="checkbox"
+                  checked={form.isPrivate}
+                  onChange={(e) => set("isPrivate", e.target.checked)}
+                />
                 <span className="toggle-slider" />
               </label>
             </div>
           )}
           {form.type === "class" && (
-            <div style={{ fontSize:12, color:"var(--t3)", fontFamily:"var(--fm)", padding:"4px 0" }}>
-              🔒 Class groups are always private — only invited members can view content.
+            <div
+              style={{
+                fontSize: 12,
+                color: "var(--t3)",
+                fontFamily: "var(--fm)",
+                padding: "4px 0",
+              }}
+            >
+              🔒 Class groups are always private — only invited members can view
+              content.
             </div>
           )}
         </div>
         <div className="modal-foot">
-          <button className="btn-outline" onClick={onClose}>Cancel</button>
+          <button className="btn-outline" onClick={onClose}>
+            Cancel
+          </button>
           <button className="btn-fire" onClick={submit} disabled={creating}>
-            {creating ? "Creating…" : "Create Group"}
+            {creating ? t("common.creating") : t("groups.createGroup")}
           </button>
         </div>
       </div>
@@ -556,65 +801,92 @@ function CreateModal({ onClose, onCreate, creating }) {
 
 /* ─── GroupsPage ──────────────────────────────────────────────────────────── */
 export default function GroupsPage() {
-  const { user }   = useAuth();
-  const navigate   = useNavigate();
-  const uid        = user?.userId ?? user?.id;
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const uid = user?.userId ?? user?.id;
 
-  const [tab, setTab]               = useState("discover");
-  const [groups, setGroups]         = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [joining, setJoining]       = useState(null);
+  const [tab, setTab] = useState("discover");
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [joining, setJoining] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
-  const [creating, setCreating]     = useState(false);
-  const [error, setError]           = useState("");
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState("");
   const [leaveTarget, setLeaveTarget] = useState(null);
-  const [leavingId, setLeavingId]   = useState(null);
+  const [leavingId, setLeavingId] = useState(null);
   const [manageTarget, setManageTarget] = useState(null);
-  const [toast, setToast]           = useState("");
+  const [toast, setToast] = useState("");
 
-  const showToast = msg => { setToast(msg); setTimeout(() => setToast(""), 2500); };
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), 2500);
+  };
 
   useEffect(() => {
     let active = true;
     setLoading(true);
     setError("");
-    groupService.getGroups()
-      .then(res => {
+    groupService
+      .getGroups()
+      .then((res) => {
         const data = res?.data ?? res;
         if (!active) return;
         setGroups(Array.isArray(data) ? data : []);
       })
-      .catch(() => { if (!active) return; setError("Failed to load groups."); })
-      .finally(() => { if (!active) return; setLoading(false); });
-    return () => { active = false; };
+      .catch(() => {
+        if (!active) return;
+        setError(t("groups.loadFailed"));
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleJoin = async (groupId) => {
     setJoining(groupId);
     // Optimistic update — show as member immediately
-    setGroups(prev => prev.map(g => g.id === groupId ? { ...g, isMember: true, myRole: "member" } : g));
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.id === groupId ? { ...g, isMember: true, myRole: "member" } : g,
+      ),
+    );
     try {
-      const res     = await groupService.joinGroup(groupId);
+      const res = await groupService.joinGroup(groupId);
       const updated = res?.data ?? res;
       // Sync all three fields from server response
-      setGroups(prev => prev.map(g => g.id === groupId ? {
-        ...g,
-        isMember:    updated?.isMember    ?? true,
-        myRole:      updated?.myRole      ?? "member",
-        memberCount: updated?.memberCount ?? (g.memberCount ?? 0) + 1,
-      } : g));
-      const name = groups.find(g => g.id === groupId)?.name ?? "group";
+      setGroups((prev) =>
+        prev.map((g) =>
+          g.id === groupId
+            ? {
+                ...g,
+                isMember: updated?.isMember ?? true,
+                myRole: updated?.myRole ?? "member",
+                memberCount: updated?.memberCount ?? (g.memberCount ?? 0) + 1,
+              }
+            : g,
+        ),
+      );
+      const name = groups.find((g) => g.id === groupId)?.name ?? "group";
       showToast(`Joined "${name}"!`);
     } catch (e) {
       // Rollback optimistic update on failure
-      setGroups(prev => prev.map(g => g.id === groupId ? { ...g, isMember: false, myRole: null } : g));
-      setError(e?.response?.data?.message || "Could not join group.");
+      setGroups((prev) =>
+        prev.map((g) =>
+          g.id === groupId ? { ...g, isMember: false, myRole: null } : g,
+        ),
+      );
+      setError(e?.response?.data?.message || t("groups.joinFailed"));
     } finally {
       setJoining(null);
     }
   };
 
-  const handleLeaveRequest = group => setLeaveTarget(group);
+  const handleLeaveRequest = (group) => setLeaveTarget(group);
 
   const handleLeaveConfirm = async () => {
     if (!leaveTarget) return;
@@ -623,39 +895,53 @@ export default function GroupsPage() {
       await groupService.leaveGroup(leaveTarget.id);
       // Keep card visible on Discover — clear membership state and decrement count.
       // My Groups tab hides it automatically via the isMember filter.
-      setGroups(prev => prev.map(g => g.id === leaveTarget.id
-        ? { ...g, isMember: false, myRole: null, memberCount: Math.max(0, (g.memberCount ?? 1) - 1) }
-        : g
-      ));
+      setGroups((prev) =>
+        prev.map((g) =>
+          g.id === leaveTarget.id
+            ? {
+                ...g,
+                isMember: false,
+                myRole: null,
+                memberCount: Math.max(0, (g.memberCount ?? 1) - 1),
+              }
+            : g,
+        ),
+      );
       setLeaveTarget(null);
-      showToast("Left group.");
+      showToast(t("groups.leftGroup"));
     } catch (e) {
-      setError(e?.response?.data?.message || "Could not leave group.");
+      setError(e?.response?.data?.message || t("groups.leaveFailed"));
       setLeaveTarget(null);
     } finally {
       setLeavingId(null);
     }
   };
 
-  const handleGroupDeleted = groupId => {
-    setGroups(prev => prev.filter(g => g.id !== groupId));
-    showToast("Group deleted.");
+  const handleGroupDeleted = (groupId) => {
+    setGroups((prev) => prev.filter((g) => g.id !== groupId));
+    showToast(t("groups.groupDeleted"));
   };
 
   // Extracted so both tab buttons share one handler
-  const handleTabChange = newTab => { setError(""); setTab(newTab); };
+  const handleTabChange = (newTab) => {
+    setError("");
+    setTab(newTab);
+  };
 
   const handleCreate = async (form) => {
     setCreating(true);
     try {
-      const res     = await groupService.createGroup(form);
+      const res = await groupService.createGroup(form);
       const created = res?.data ?? res;
-      setGroups(prev => [{
-        ...created,
-        isMember: created.isMember ?? true,
-        myRole:   created.myRole   ?? "owner",
-        memberCount: created.memberCount ?? 1, // Ensure memberCount is at least 1 (the creator)
-      }, ...prev]);
+      setGroups((prev) => [
+        {
+          ...created,
+          isMember: created.isMember ?? true,
+          myRole: created.myRole ?? "owner",
+          memberCount: created.memberCount ?? 1, // Ensure memberCount is at least 1 (the creator)
+        },
+        ...prev,
+      ]);
       setCreateOpen(false);
       showToast(`"${created.name}" created!`);
     } catch (e) {
@@ -667,13 +953,17 @@ export default function GroupsPage() {
 
   const openGroupChat = async (group) => {
     try {
-      const groupTag   = `grp:${group.id}`;
+      const groupTag = `grp:${group.id}`;
       const membersRes = await groupService.getMembers(group.id);
-      const members    = membersRes?.data ?? membersRes;
-      const memberIds  = (Array.isArray(members) ? members : [])
-        .map(m => m.userId)
-        .filter(id => id !== uid);
-      const res  = await conversationService.startGroupConversation(group.name, memberIds, groupTag);
+      const members = membersRes?.data ?? membersRes;
+      const memberIds = (Array.isArray(members) ? members : [])
+        .map((m) => m.userId)
+        .filter((id) => id !== uid);
+      const res = await conversationService.startGroupConversation(
+        group.name,
+        memberIds,
+        groupTag,
+      );
       const conv = res?.data ?? res;
       navigate(`/messages/${conv.id}`);
     } catch {
@@ -681,7 +971,7 @@ export default function GroupsPage() {
     }
   };
 
-  const displayed = tab === "mine" ? groups.filter(g => g.isMember) : groups;
+  const displayed = tab === "mine" ? groups.filter((g) => g.isMember) : groups;
 
   return (
     <>
@@ -690,22 +980,57 @@ export default function GroupsPage() {
         <main className="groups-main">
           <div className="ph">
             <span className="ph-title">Groups</span>
-            <button className="btn-fire" onClick={() => setCreateOpen(true)}>+ Create Group</button>
+            <button className="btn-fire" onClick={() => setCreateOpen(true)}>
+              + Create Group
+            </button>
           </div>
 
           {error && (
-            <div style={{ background:"rgba(232,25,44,.1)", border:"1px solid var(--red-border)", borderRadius:8, padding:"10px 14px", marginBottom:14, color:"var(--red)", fontSize:13, display:"flex", alignItems:"center", gap:8 }}>
+            <div
+              style={{
+                background: "rgba(232,25,44,.1)",
+                border: "1px solid var(--red-border)",
+                borderRadius: 8,
+                padding: "10px 14px",
+                marginBottom: 14,
+                color: "var(--red)",
+                fontSize: 13,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
               ⚠ {error}
-              <button onClick={() => setError("")} style={{ marginLeft:"auto", background:"none", border:"none", color:"var(--red)", cursor:"pointer", fontSize:14 }}>✕</button>
+              <button
+                onClick={() => setError("")}
+                style={{
+                  marginLeft: "auto",
+                  background: "none",
+                  border: "none",
+                  color: "var(--red)",
+                  cursor: "pointer",
+                  fontSize: 14,
+                }}
+              >
+                ✕
+              </button>
             </div>
           )}
 
           <div className="gtabs">
-            <button className={`gtab ${tab === "discover" ? "on" : ""}`} onClick={() => handleTabChange("discover")}>
+            <button
+              className={`gtab ${tab === "discover" ? "on" : ""}`}
+              onClick={() => handleTabChange("discover")}
+            >
               Discover
             </button>
-            <button className={`gtab ${tab === "mine" ? "on" : ""}`} onClick={() => handleTabChange("mine")}>
-              My Groups{" "}{groups.filter(g => g.isMember).length > 0 && `(${groups.filter(g => g.isMember).length})`}
+            <button
+              className={`gtab ${tab === "mine" ? "on" : ""}`}
+              onClick={() => handleTabChange("mine")}
+            >
+              My Groups{" "}
+              {groups.filter((g) => g.isMember).length > 0 &&
+                `(${groups.filter((g) => g.isMember).length})`}
             </button>
           </div>
 
@@ -714,17 +1039,24 @@ export default function GroupsPage() {
           ) : displayed.length === 0 ? (
             <div className="lx-empty">
               <div className="lx-empty-ic">{tab === "mine" ? "👥" : "🔍"}</div>
-              <div className="lx-empty-t">{tab === "mine" ? "No Groups Yet" : "No Groups Found"}</div>
+              <div className="lx-empty-t">
+                {tab === "mine"
+                  ? t("groups.noGroupsYet")
+                  : t("groups.noGroupsFound")}
+              </div>
               <p className="lx-empty-s">
                 {tab === "mine"
-                  ? "Join a group from the Discover tab or create your own."
+                  ? t("groups.noGroupsDesc")
                   : "No groups have been created yet. Be the first!"}
               </p>
             </div>
           ) : (
             <div className="group-grid">
               {displayed.map((g, i) => (
-                <div key={g.id} style={{ animationDelay:`${Math.min(i,8)*40}ms` }}>
+                <div
+                  key={g.id}
+                  style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
+                >
                   <GroupCard
                     group={g}
                     isMember={g.isMember}
@@ -745,7 +1077,11 @@ export default function GroupsPage() {
       </Layout>
 
       {createOpen && (
-        <CreateModal onClose={() => setCreateOpen(false)} onCreate={handleCreate} creating={creating} />
+        <CreateModal
+          onClose={() => setCreateOpen(false)}
+          onCreate={handleCreate}
+          creating={creating}
+        />
       )}
 
       {leaveTarget && (
@@ -763,7 +1099,11 @@ export default function GroupsPage() {
           uid={uid}
           onClose={() => setManageTarget(null)}
           onGroupDeleted={handleGroupDeleted}
-          onGroupUpdated={updated => setGroups(prev => prev.map(g => g.id === updated.id ? { ...g, ...updated } : g))}
+          onGroupUpdated={(updated) =>
+            setGroups((prev) =>
+              prev.map((g) => (g.id === updated.id ? { ...g, ...updated } : g)),
+            )
+          }
           showToast={showToast}
         />
       )}

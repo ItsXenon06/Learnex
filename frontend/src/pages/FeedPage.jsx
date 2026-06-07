@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth, getInitials } from "../contexts/AuthContext";
 import Layout from "../components/Layout";
 import TrendingHashtagWidget from "../components/TrendingHashtagWidget";
@@ -360,12 +361,12 @@ position:relative;cursor:pointer;
 `;
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
-const RX_TYPES = [
-  { emoji: "👍", type: "like", label: "Like" },
-  { emoji: "❤️", type: "love", label: "Love" },
-  { emoji: "💡", type: "insightful", label: "Insightful" },
-  { emoji: "🎉", type: "celebrate", label: "Celebrate" },
-  { emoji: "🤝", type: "support", label: "Support" },
+const RX_TYPES_BASE = [
+  { emoji: "👍", type: "like", labelKey: "feed.likeBtn" },
+  { emoji: "❤️", type: "love", labelKey: "feed.loveBtn" },
+  { emoji: "💡", type: "insightful", labelKey: "feed.insightfulBtn" },
+  { emoji: "🎉", type: "celebrate", labelKey: "feed.celebrateBtn" },
+  { emoji: "🤝", type: "support", labelKey: "feed.supportBtn" },
 ];
 const RX_EMOJI = {
   like: "👍",
@@ -375,11 +376,11 @@ const RX_EMOJI = {
   support: "🤝",
 };
 
-const SORT_OPTIONS = [
-  { key: "latest", label: "🕐 Latest", sort: "latest" },
-  { key: "likes_day", label: "🔥 Top — 24h", sort: "likes", window: "24h" },
-  { key: "likes_month", label: "📅 Top — Month", sort: "likes", window: "30d" },
-  { key: "likes_year", label: "🗓 Top — Year", sort: "likes", window: "365d" },
+const SORT_OPTIONS_BASE = [
+  { key: "latest", labelKey: "feed.sortLatest", sort: "latest" },
+  { key: "likes_day", labelKey: "feed.sortTop24h", sort: "likes", window: "24h" },
+  { key: "likes_month", labelKey: "feed.sortTopMonth", sort: "likes", window: "30d" },
+  { key: "likes_year", labelKey: "feed.sortTopYear", sort: "likes", window: "365d" },
 ];
 
 const TRENDS = [
@@ -1033,12 +1034,12 @@ function PostCard({
 
   const handleDelete = async () => {
     setMenuOpen(false);
-    if (!window.confirm("Delete this post? This cannot be undone.")) return;
+    if (!window.confirm(t('feed.deleteConfirm'))) return;
     try {
       await postService.deletePost(post.id);
       onDelete(post.id);
     } catch (e) {
-      alert(e?.response?.data?.message || "Could not delete post.");
+      alert(e?.response?.data?.message || t('feed.couldNotDelete'));
     }
   };
 
@@ -1137,7 +1138,7 @@ function PostCard({
               <div className="c-more-menu">
                 {isOwn ? (
                   <button className="c-menu-item danger" onClick={handleDelete}>
-                    🗑 Delete Post
+                    🗑 {t('feed.deletePost')}
                   </button>
                 ) : (
                   <>
@@ -1145,17 +1146,17 @@ function PostCard({
                       className="c-menu-item"
                       onClick={() => setMenuOpen(false)}
                     >
-                      🚫 Not Interested
+                      🚫 {t('feed.notInterested')}
                     </button>
                     <div className="c-menu-divider" />
                     <button
                       className="c-menu-item danger"
                       onClick={() => {
                         setMenuOpen(false);
-                        alert("Report submitted.");
+                        alert(t('feed.reportSubmitted'));
                       }}
                     >
-                      ⚑ Report Post
+                      ⚑ {t('feed.reportPost')}
                     </button>
                   </>
                 )}
@@ -1267,11 +1268,11 @@ function PostCard({
           </div>
 
           <button className="ca" onClick={(e) => toggleComments(e)}>
-            <span className="ca-i">💬</span>Comment
+            <span className="ca-i">💬</span>{t('feed.commentBtn')}
           </button>
 
           <button className="ca" onClick={handleShare}>
-            <span className="ca-i">🔗</span>Share
+            <span className="ca-i">🔗</span>{t('feed.shareBtn')}
           </button>
 
           <button
@@ -1292,7 +1293,7 @@ function PostCard({
             }}
           >
             <span className="ca-i">{post.saved ? "🔖" : "🏷"}</span>
-            {post.saved ? "Saved" : "Save"}
+            {post.saved ? t('feed.savedBtn') : t('feed.saveBtn')}
           </button>
         </div>
 
@@ -1563,7 +1564,7 @@ function RightPanel({ followed, onToggleFollow }) {
                   className={`fw-btn ${followed[id] ? "ing" : ""}`}
                   onClick={() => onToggleFollow(id)}
                 >
-                  {followed[id] ? "Following" : "Follow"}
+                  {followed[id] ? t('feed.followingBtn') : t('feed.followBtn')}
                 </button>
               </div>
             );
@@ -1589,8 +1590,13 @@ function RightPanel({ followed, onToggleFollow }) {
 
 /* ─── FeedPage ───────────────────────────────────────────────────────────── */
 export default function FeedPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Localized constants
+  const RX_TYPES = RX_TYPES_BASE.map(rx => ({ ...rx, label: t(rx.labelKey) }));
+  const SORT_OPTIONS = SORT_OPTIONS_BASE.map(opt => ({ ...opt, label: `${opt.key === "latest" ? "🕐" : opt.key.includes("day") ? "🔥" : opt.key.includes("month") ? "📅" : "🗓"} ${t(opt.labelKey)}`, sort: opt.sort, window: opt.window }));
 
   const uid = user?.userId ?? user?.id;
   const userIni = getInitials(user?.displayName, user?.email);
@@ -1778,9 +1784,9 @@ export default function FeedPage() {
     setVisibility((v) => opts[(opts.indexOf(v) + 1) % opts.length]);
   };
   const visLabel = {
-    public: "🌍 Public",
-    connections: "🔗 Connections",
-    private: "🔒 Only me",
+    public: `🌍 ${t('feed.visPublic')}`,
+    connections: `🔗 ${t('feed.visConnections')}`,
+    private: `🔒 ${t('feed.visPrivate')}`,
   };
 
   return (
@@ -1841,7 +1847,7 @@ export default function FeedPage() {
               <div className="c-av">{userIni}</div>
               <textarea
                 className="c-input"
-                placeholder={`What's on your mind, ${userName.split(" ")[0]}?`}
+                placeholder={t('feed.whatsOnMind', { name: userName.split(" ")[0] })}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 rows={draft.length > 80 ? 3 : 1}
@@ -1911,7 +1917,7 @@ export default function FeedPage() {
                 onClick={() => fileInputRef.current?.click()}
                 disabled={mediaFiles.length >= 4}
               >
-                📷 {mediaFiles.length > 0 ? `${mediaFiles.length}/4` : "Photo"}
+                📷 {mediaFiles.length > 0 ? `${mediaFiles.length}/4` : t('feed.photo')}
               </button>
               <button className="c-vis" onClick={cycleVisibility}>
                 {visLabel[visibility]}
@@ -1948,7 +1954,7 @@ export default function FeedPage() {
                     (!draft.trim() && !mediaFiles.some((m) => m.id))
                   }
                 >
-                  {posting ? "Posting…" : "Post"}
+                  {posting ? t('feed.posting') : t('feed.postBtn')}
                 </button>
               )}
             </div>
@@ -1965,12 +1971,12 @@ export default function FeedPage() {
                 {tab === "following" ? "👥" : "📭"}
               </div>
               <div className="lx-empty-t">
-                {tab === "following" ? "No Posts Yet" : "Nothing Here"}
+                {tab === "following" ? t('feed.noPostsFollowing') : t('feed.noPostsDiscover')}
               </div>
               <p className="lx-empty-s">
                 {tab === "following"
-                  ? "Follow students to see their posts, or explore what's trending."
-                  : "No public posts right now. Check back soon."}
+                  ? t('feed.noPostsFollowingDesc')
+                  : t('feed.noPostsDiscoverDesc')}
               </p>
               {tab === "following" && (
                 <button

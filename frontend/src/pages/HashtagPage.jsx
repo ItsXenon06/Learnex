@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth, getInitials } from '../contexts/AuthContext';
 import Layout from '../components/Layout';
 import hashtagService from '../services/hashtagService';
@@ -101,6 +102,7 @@ function PostSkeleton() {
 }
 
 export default function HashtagPage() {
+  const { t } = useTranslation();
   const { tag }  = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();

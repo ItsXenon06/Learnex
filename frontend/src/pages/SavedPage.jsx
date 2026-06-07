@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth, getInitials } from '../contexts/AuthContext';
-import Layout, { sharedCss } from '../components/Layout';
-import postService from '../services/postService';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { useAuth, getInitials } from "../contexts/AuthContext";
+import Layout, { sharedCss } from "../components/Layout";
+import postService from "../services/postService";
 
 /* ─── CSS ────────────────────────────────────────────────────────────────── */
 const css = `
@@ -54,17 +55,17 @@ const css = `
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 function timeAgo(iso) {
-  if (!iso) return '';
+  if (!iso) return "";
   const m = Math.floor((Date.now() - new Date(iso)) / 60000);
-  if (m < 1) return 'just now';
+  if (m < 1) return "just now";
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
 }
 
-const AV_BG = ['#0d1f35','#0d2918','#2a0d1e','#1e1a0d','#1a0d2e'];
-const AV_C  = ['#4a9eff','#4adf8a','#df4a8a','#dfb84a','#af4adf'];
+const AV_BG = ["#0d1f35", "#0d2918", "#2a0d1e", "#1e1a0d", "#1a0d2e"];
+const AV_C = ["#4a9eff", "#4adf8a", "#df4a8a", "#dfb84a", "#af4adf"];
 function avStyle(id) {
   const i = id ? String(id).charCodeAt(0) % AV_BG.length : 0;
   return { background: `linear-gradient(135deg,${AV_BG[i]},${AV_C[i]})` };
@@ -74,13 +75,35 @@ function avStyle(id) {
 function Skeleton() {
   return (
     <div className="saved-skel">
-      {[1, 2, 3, 4].map(i => (
+      {[1, 2, 3, 4].map((i) => (
         <div key={i} className="sskel">
-          <div className="sk" style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0 }} />
+          <div
+            className="sk"
+            style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0 }}
+          />
           <div style={{ flex: 1 }}>
-            <div className="sk" style={{ height: 12, width: '35%', marginBottom: 10, borderRadius: 5 }} />
-            <div className="sk" style={{ height: 12, width: '100%', marginBottom: 6, borderRadius: 5 }} />
-            <div className="sk" style={{ height: 12, width: '75%', borderRadius: 5 }} />
+            <div
+              className="sk"
+              style={{
+                height: 12,
+                width: "35%",
+                marginBottom: 10,
+                borderRadius: 5,
+              }}
+            />
+            <div
+              className="sk"
+              style={{
+                height: 12,
+                width: "100%",
+                marginBottom: 6,
+                borderRadius: 5,
+              }}
+            />
+            <div
+              className="sk"
+              style={{ height: 12, width: "75%", borderRadius: 5 }}
+            />
           </div>
         </div>
       ))}
@@ -90,19 +113,21 @@ function Skeleton() {
 
 /* ─── SavedPage ───────────────────────────────────────────────────────────── */
 export default function SavedPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const uid = user?.userId ?? user?.id;
 
-  const [posts,   setPosts]   = useState([]);
+  const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [unsaving, setUnsaving] = useState(null);
 
   useEffect(() => {
     if (!uid) return;
     setLoading(true);
-    postService.getSavedPosts()
-      .then(res => {
+    postService
+      .getSavedPosts()
+      .then((res) => {
         const data = res?.data ?? res;
         const items = data?.content ?? (Array.isArray(data) ? data : []);
         setPosts(items);
@@ -111,15 +136,17 @@ export default function SavedPage() {
       .finally(() => setLoading(false));
   }, [uid]);
 
-
   const unsave = async (e, postId) => {
     e.stopPropagation();
     setUnsaving(postId);
     try {
       await postService.unsavePost(postId);
-      setPosts(prev => prev.filter(p => p.id !== postId));
-    } catch { /* no-op */ }
-    finally { setUnsaving(null); }
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+    } catch {
+      /* no-op */
+    } finally {
+      setUnsaving(null);
+    }
   };
 
   return (
@@ -131,12 +158,16 @@ export default function SavedPage() {
             <div className="ph-left">
               <span className="ph-title">Saved</span>
               {posts.length > 0 && (
-                <span className="ph-count">{posts.length} post{posts.length !== 1 ? 's' : ''}</span>
+                <span className="ph-count">
+                  {posts.length} post{posts.length !== 1 ? "s" : ""}
+                </span>
               )}
             </div>
           </div>
 
-          {loading ? <Skeleton /> : posts.length === 0 ? (
+          {loading ? (
+            <Skeleton />
+          ) : posts.length === 0 ? (
             <div className="lx-empty">
               <div className="lx-empty-ic">🔖</div>
               <div className="lx-empty-t">Nothing Saved</div>
@@ -147,8 +178,11 @@ export default function SavedPage() {
           ) : (
             <div className="saved-list">
               {posts.map((p, i) => {
-                const authorIni = getInitials(p.authorDisplayName, p.authorEmail);
-                const tags = p.hashtags?.map(h => `#${h}`) ?? [];
+                const authorIni = getInitials(
+                  p.authorDisplayName,
+                  p.authorEmail,
+                );
+                const tags = p.hashtags?.map((h) => `#${h}`) ?? [];
 
                 return (
                   <div
@@ -157,25 +191,43 @@ export default function SavedPage() {
                     style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
                   >
                     <div className="saved-stripe" />
-                    <div className="saved-body" onClick={() => navigate(`/post/${p.id}`)}>
+                    <div
+                      className="saved-body"
+                      onClick={() => navigate(`/post/${p.id}`)}
+                    >
                       <div className="saved-author">
                         <div
-  className="saved-av"
-  style={{...avStyle(p.authorId), cursor: 'pointer'}}
-  onClick={e => { e.stopPropagation(); navigate(`/profile/${p.authorId}`); }}
->
-  {authorIni}
-</div>
+                          className="saved-av"
+                          style={{ ...avStyle(p.authorId), cursor: "pointer" }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/profile/${p.authorId}`);
+                          }}
+                        >
+                          {authorIni}
+                        </div>
                         <span
                           className="saved-name"
-                          onClick={e => { e.stopPropagation(); navigate(`/profile/${p.authorId}`); }}
-                          style={{ cursor: 'pointer', transition: 'color .15s' }}
-                          onMouseEnter={e => e.currentTarget.style.color = 'var(--red)'}
-                          onMouseLeave={e => e.currentTarget.style.color = ''}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/profile/${p.authorId}`);
+                          }}
+                          style={{
+                            cursor: "pointer",
+                            transition: "color .15s",
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.color = "var(--red)")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.color = "")
+                          }
                         >
-                          {p.authorDisplayName || p.authorEmail || 'Unknown'}
+                          {p.authorDisplayName || p.authorEmail || "Unknown"}
                         </span>
-                        <span className="saved-time">{timeAgo(p.createdAt)}</span>
+                        <span className="saved-time">
+                          {timeAgo(p.createdAt)}
+                        </span>
                       </div>
 
                       {p.content && (
@@ -183,14 +235,21 @@ export default function SavedPage() {
                       )}
 
                       <div className="saved-meta">
-                        {tags.slice(0, 3).map(t => (
-                          <span key={t} className="saved-tag">{t}</span>
+                        {tags.slice(0, 3).map((t) => (
+                          <span key={t} className="saved-tag">
+                            {t}
+                          </span>
                         ))}
-                        {p.commentCount > 0 && (
-                          <span>💬 {p.commentCount}</span>
-                        )}
-                        {p.reactions?.reduce((s, r) => s + (r.count ?? 0), 0) > 0 && (
-                          <span>👍 {p.reactions.reduce((s, r) => s + (r.count ?? 0), 0)}</span>
+                        {p.commentCount > 0 && <span>💬 {p.commentCount}</span>}
+                        {p.reactions?.reduce((s, r) => s + (r.count ?? 0), 0) >
+                          0 && (
+                          <span>
+                            👍{" "}
+                            {p.reactions.reduce(
+                              (s, r) => s + (r.count ?? 0),
+                              0,
+                            )}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -199,11 +258,11 @@ export default function SavedPage() {
                     <div className="unsave-col">
                       <button
                         className="unsave-btn"
-                        title="Remove from saved"
-                        onClick={e => unsave(e, p.id)}
+                        title={t("posts.removeFromSaved")}
+                        onClick={(e) => unsave(e, p.id)}
                         disabled={unsaving === p.id}
                       >
-                        {unsaving === p.id ? '…' : '✕'}
+                        {unsaving === p.id ? "…" : "✕"}
                       </button>
                     </div>
                   </div>

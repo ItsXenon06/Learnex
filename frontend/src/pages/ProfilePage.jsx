@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth, getInitials } from "../contexts/AuthContext";
 import Layout, { sharedCss } from "../components/Layout";
 import userService from "../services/userService";
@@ -230,6 +231,7 @@ function HeroSkeleton() {
 
 /* ─── EditModal ───────────────────────────────────────────────────────────── */
 function EditModal({ profile, onClose, onSave, saving }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState({
     displayName: profile.displayName || "",
     headline: profile.headline || "",
@@ -262,7 +264,7 @@ function EditModal({ profile, onClose, onSave, saving }) {
     try {
       await onSave(payload);
     } catch (e) {
-      setErr(e?.response?.data?.message || "Save failed.");
+      setErr(e?.response?.data?.message || t("profile.saveFailed"));
     }
   };
 
@@ -417,7 +419,9 @@ function EditModal({ profile, onClose, onSave, saving }) {
                     }}
                     onClick={() => setShowUrlInput((v) => !v)}
                   >
-                    {showUrlInput ? "Hide URL" : "Use URL instead"}
+                    {showUrlInput
+                      ? t("profile.hideUrl")
+                      : t("profile.useUrlInstead")}
                   </button>
                 </div>
                 {showUrlInput && (
@@ -436,7 +440,7 @@ function EditModal({ profile, onClose, onSave, saving }) {
             <input
               value={form.displayName}
               onChange={(e) => set("displayName", e.target.value)}
-              placeholder="Your name"
+              placeholder={t("profile.yourName")}
             />
           </div>
           <div className="mfield">
@@ -455,7 +459,7 @@ function EditModal({ profile, onClose, onSave, saving }) {
             <input
               value={form.headline}
               onChange={(e) => set("headline", e.target.value)}
-              placeholder="CS · Year 3 · Full-stack Dev"
+              placeholder={t("profile.exampleBio")}
             />
           </div>
           <div className="mfield">
@@ -464,7 +468,7 @@ function EditModal({ profile, onClose, onSave, saving }) {
               rows={4}
               value={form.bio}
               onChange={(e) => set("bio", e.target.value)}
-              placeholder="Tell people about yourself…"
+              placeholder={t("profile.bio")}
             />
           </div>
           <div className="mfield">
@@ -481,7 +485,7 @@ function EditModal({ profile, onClose, onSave, saving }) {
             Cancel
           </button>
           <button className="btn btn-fire" onClick={submit} disabled={saving}>
-            {saving ? "Saving…" : "Save Changes"}
+            {saving ? t("common.saving") : t("profile.saveChanges")}
           </button>
         </div>
       </div>
@@ -491,6 +495,7 @@ function EditModal({ profile, onClose, onSave, saving }) {
 
 /* ─── ProfilePage ─────────────────────────────────────────────────────────── */
 export default function ProfilePage({ initialTab, editOnOpen }) {
+  const { t } = useTranslation();
   const { userId: paramId } = useParams();
   const { user, logout, updateUserCache } = useAuth();
   const navigate = useNavigate();
@@ -540,7 +545,7 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
           );
         }
       })
-      .catch(() => setError("Failed to load profile."))
+      .catch(() => setError(t("profile.failedLoad")))
       .finally(() => setLoading(false));
   }, [targetId]);
 
@@ -691,7 +696,7 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
                   <div className="hero-name">
                     {profile.displayName ||
                       profile.email?.split("@")[0] ||
-                      "Student"}
+                      t("common.student")}
                   </div>
                   {profile.headline && (
                     <div className="hero-headline">{profile.headline}</div>
@@ -796,8 +801,8 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
                     <div className="lx-empty-t">No Posts Yet</div>
                     <p className="lx-empty-s">
                       {isOwn
-                        ? "Share something from the feed."
-                        : `${profile.displayName || "This student"} hasn't posted yet.`}
+                        ? t("profile.noPostsYet")
+                        : `${profile.displayName || t("profile.thisStudent")} hasn't posted yet.`}
                     </p>
                   </div>
                 ) : (

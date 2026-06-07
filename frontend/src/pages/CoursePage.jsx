@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth, getInitials } from "../contexts/AuthContext";
 import Layout from "../components/Layout";
 import courseService from "../services/courseService";
@@ -89,6 +90,7 @@ const css = `
 // Placeholder course data — swap out when CourseService is implemented
 
 export default function CoursePage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -122,7 +124,7 @@ export default function CoursePage() {
         setCourses(Array.isArray(data) ? data : []);
       })
       .catch(() => {
-        setApiError("Failed to load courses.");
+        setApiError(t("courses.loadFailed"));
       })
       .finally(() => {
         setLoading(false);
@@ -161,7 +163,7 @@ export default function CoursePage() {
     } catch (e) {
       setSending(false);
 
-      alert(e?.response?.data?.message || "Failed to submit request.");
+      alert(e?.response?.data?.message || t("courses.requestFailed"));
     }
   };
   const displayed =
@@ -308,7 +310,7 @@ export default function CoursePage() {
                         className={`cc-star ${starred.has(c.id) ? "starred" : ""}`}
                         onClick={(e) => toggleStar(e, c.id)}
                         title={
-                          starred.has(c.id) ? "Unstar" : "Star this course"
+                          starred.has(c.id) ? t("courses.unstar") : t("courses.star")
                         }
                       >
                         {starred.has(c.id) ? "⭐" : "☆"}
@@ -417,7 +419,7 @@ export default function CoursePage() {
                       onChange={(e) =>
                         setReqForm((f) => ({ ...f, reason: e.target.value }))
                       }
-                      placeholder="Describe the course and why the community would benefit…"
+                      placeholder={t("courses.description")}
                     />
                   </div>
                   <div className="mfield">
@@ -463,7 +465,7 @@ export default function CoursePage() {
                       sending
                     }
                   >
-                    {sending ? "Sending…" : "Send Request →"}
+                    {sending ? t("common.sending") : t("courses.sendRequest")}
                   </button>
                 </div>
               </>

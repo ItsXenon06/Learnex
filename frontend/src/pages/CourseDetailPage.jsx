@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth, getInitials } from "../contexts/AuthContext";
 import Layout from "../components/Layout";
 import courseService from "../services/courseService";
@@ -94,6 +95,7 @@ function timeAgo(iso) {
 }
 
 export default function CourseDetailPage() {
+  const { t } = useTranslation();
   const { courseId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -115,7 +117,7 @@ export default function CourseDetailPage() {
         setError("");
       } catch (err) {
         console.error("[v0] Error loading course:", err);
-        setError("Failed to load course details");
+        setError(t("courses.loadDetailsFailed"));
       } finally {
         setLoading(false);
       }
@@ -166,7 +168,7 @@ export default function CourseDetailPage() {
         <style>{css}</style>
         <Layout active="courses">
           <main className="course-detail-main">
-            <div className="error-msg">{error || "Course not found"}</div>
+            <div className="error-msg">{error || t("courses.notFound")}</div>
           </main>
         </Layout>
       </>

@@ -382,6 +382,7 @@ public class GroupController {
     // Remove a member from the group
     // Owner can remove anyone
     // Admin can remove plain members and moderators (not owner or other admin)
+    @Transactional
     @DeleteMapping("/{id}/members/{targetUserId}")
     public ResponseEntity<ApiResponse<Void>> removeMember(
             @PathVariable UUID id,

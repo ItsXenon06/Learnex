@@ -89,6 +89,8 @@ public class CourseService {
                         .user(user)
                         .courseName(dto.getCourseName())
                         .reason(dto.getReason())
+                        .courseCode(dto.getCourseCode())
+                        .schoolName(dto.getSchoolName())
                         .build()
         );
 
@@ -97,8 +99,18 @@ public class CourseService {
     try {
         String subject = "[Learnex] Course Request: " + dto.getCourseName();
         String body = String.format(
-            "Course request from: %s\nCourse: %s\nReason: %s",
-            user.getEmail(), dto.getCourseName(),
+            "New Course Request\n\n" +
+            "User ID: %s\n" +
+            "User Email: %s\n" +
+            "Course Name: %s\n" +
+            "Course Code: %s\n" +
+            "School Name: %s\n" +
+            "Reason: %s",
+            user.getId(),
+            user.getEmail(),
+            dto.getCourseName(),
+            dto.getCourseCode() != null ? dto.getCourseCode() : "(not specified)",
+            dto.getSchoolName() != null ? dto.getSchoolName() : "(not specified)",
             dto.getReason() != null ? dto.getReason() : "(none)"
         );
         emailService.sendEmail(adminEmail, subject, body);

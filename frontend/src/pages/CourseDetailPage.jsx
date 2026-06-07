@@ -126,7 +126,7 @@ export default function CourseDetailPage() {
               <h1 className="cd-title">{course.title}</h1>
               <div className="cd-code">{course.code}</div>
               <div className="cd-meta">
-                <span>🎓 {course.enrolled} enrolled</span>
+                <span>⭐ {course.enrolled} stars</span>
                 <span>·</span>
                 <span>{course.dept}</span>
               </div>

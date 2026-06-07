@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { forgotPassword } from '../services/authService.js';
 
 /* ─── Styles matching LoginPage aesthetic ─────────────────────────────── */
@@ -253,6 +254,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 `;
 
 export default function ForgotPasswordPage() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);

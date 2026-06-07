@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth, getInitials } from "../contexts/AuthContext";
 import Layout from "../components/Layout";
 import TrendingHashtagWidget from "../components/TrendingHashtagWidget";
@@ -1589,6 +1590,7 @@ function RightPanel({ followed, onToggleFollow }) {
 
 /* ─── FeedPage ───────────────────────────────────────────────────────────── */
 export default function FeedPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
 

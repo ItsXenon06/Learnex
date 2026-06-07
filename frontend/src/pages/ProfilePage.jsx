@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth, getInitials } from "../contexts/AuthContext";
 import Layout, { sharedCss } from "../components/Layout";
 import userService from "../services/userService";
@@ -491,6 +492,7 @@ function EditModal({ profile, onClose, onSave, saving }) {
 
 /* ─── ProfilePage ─────────────────────────────────────────────────────────── */
 export default function ProfilePage({ initialTab, editOnOpen }) {
+  const { t } = useTranslation();
   const { userId: paramId } = useParams();
   const { user, logout, updateUserCache } = useAuth();
   const navigate = useNavigate();

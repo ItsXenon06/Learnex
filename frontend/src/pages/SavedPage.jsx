@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth, getInitials } from '../contexts/AuthContext';
 import Layout, { sharedCss } from '../components/Layout';
 import postService from '../services/postService';
@@ -90,6 +91,7 @@ function Skeleton() {
 
 /* ─── SavedPage ───────────────────────────────────────────────────────────── */
 export default function SavedPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const uid = user?.userId ?? user?.id;

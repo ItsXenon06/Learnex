@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth, getInitials } from "../contexts/AuthContext";
 import Layout from "../components/Layout";
 import notificationService from "../services/notificationService";
@@ -286,6 +287,7 @@ function Skeleton() {
 
 /* ─── NotificationsPage ───────────────────────────────────────────────────── */
 export default function NotificationsPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [markAllDone, setMarkAllDone] = useState(false);

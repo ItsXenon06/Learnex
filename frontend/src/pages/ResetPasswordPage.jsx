@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@600;700;800&display=swap');
@@ -234,6 +235,7 @@ const STRENGTH_LABELS = ['', 'Weak', 'Medium', 'Strong'];
 const STRENGTH_CLASS  = ['', 'active-weak', 'active-medium', 'active-strong'];
 
 export default function ResetPasswordPage() {
+  const { t } = useTranslation();
   const [searchParams]  = useSearchParams();
   const tokenFromUrl    = searchParams.get('token') || '';
   const navigate        = useNavigate();

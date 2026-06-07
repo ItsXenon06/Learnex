@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth, getInitials } from "../contexts/AuthContext";
 import Layout from "../components/Layout";
 import postService from "../services/postService";
@@ -538,6 +539,7 @@ function DetailCommentItem({ comment, postId, currentUserIni, depth = 0 }) {
 
 /* ─── PostDetailPage ──────────────────────────────────────────────────────── */
 export default function PostDetailPage() {
+  const { t } = useTranslation();
   const { postId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth, getInitials } from "../contexts/AuthContext";
 import Layout from "../components/Layout";
 import courseService from "../services/courseService";
@@ -74,6 +75,7 @@ const css = `
 `;
 
 export default function CoursePostCreatePage() {
+  const { t } = useTranslation();
   const { courseId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();

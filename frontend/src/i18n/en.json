@@ -1,6 +1,5 @@
 {
   "nav": {
-    "...existing...",
     "search": "Search"
   },
 
@@ -75,7 +74,6 @@
   },
 
   "messages": {
-    "...existing...",
     "pageTitle": "Messages",
     "newMessage": "New Message",
     "searchPlaceholder": "Search…",

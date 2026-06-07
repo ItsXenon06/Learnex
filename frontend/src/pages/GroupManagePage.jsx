@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth, getInitials } from "../contexts/AuthContext";
 import Layout from "../components/Layout";
 import groupService from "../services/groupService";
@@ -240,6 +241,7 @@ function avStyle(seed) {
 }
 
 export default function GroupManagePage() {
+  const { t } = useTranslation();
   const { groupId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();

@@ -30,6 +30,10 @@ const TrendingHashtagWidget = () => {
     navigate(`/hashtags/${encodeURIComponent(tag)}`);
   };
 
+  const handleSeeAll = () => {
+    navigate('/hashtags');
+  };
+
   // CSS styling to match the rest of the widgets
   const css = `
     .tr-wg {
@@ -132,7 +136,7 @@ const TrendingHashtagWidget = () => {
           <div className="tr-wg">
             <div className="tr-head">
               <div className="tr-title">✦ Trending</div>
-              <button className="tr-more" onClick={() => navigate('/hashtags')}>See all</button>
+              <button className="tr-more" onClick={handleSeeAll}>See all</button>
             </div>
             <div style={{ padding: '16px', fontSize: '13px', color: 'var(--t3)', textAlign: 'center' }}>
               {loading ? 'Loading trends...' : 'No trending hashtags'}
@@ -150,7 +154,7 @@ const TrendingHashtagWidget = () => {
       <div className="tr-wg">
         <div className="tr-head">
           <div className="tr-title">✦ Trending</div>
-          <button className="tr-more" onClick={() => navigate('/hashtags')}>See all</button>
+          <button className="tr-more" onClick={handleSeeAll}>See all</button>
         </div>
 
         <div>

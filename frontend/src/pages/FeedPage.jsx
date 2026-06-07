@@ -780,7 +780,7 @@ function CommentReactions({
   );
 }
 
-/* ─── CardAttachmentGrid ─────────────────────────────────────────────────── */
+/* ─── URL Helpers ─────────────────────────────────────────────────────────────── */
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:1008/Learnex';
 
 function getImageUrl(url) {
@@ -789,13 +789,30 @@ function getImageUrl(url) {
   return BACKEND_URL + url;
 }
 
+/* ─── Default Anonymous Avatar ───────────────────────────────────────────────── */
+const DEFAULT_AVATAR_URL = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23d1d5db" width="100" height="100"/%3E%3Ccircle cx="50" cy="30" r="15" fill="%239ca3af"/%3E%3Cellipse cx="50" cy="65" rx="20" ry="25" fill="%239ca3af"/%3E%3C/svg%3E';
+
+function getAvatarUrl(avatarUrl) {
+  if (!avatarUrl) return DEFAULT_AVATAR_URL;
+  if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) return avatarUrl;
+  return BACKEND_URL + avatarUrl;
+}
+
 function CardAttachmentGrid({ attachments }) {
   const [lightbox, setLightbox] = useState(null);
+  const [failedImages, setFailedImages] = useState(new Set());
+  
   const images = attachments.filter(
     (a) => a.type === "image" || a.mimeType?.startsWith("image/"),
-  );
+  ).filter(img => !failedImages.has(img.id || img.url));
+  
   if (images.length === 0) return null;
   const n = Math.min(images.length, 4);
+  
+  const handleImageError = (imgId) => {
+    setFailedImages(prev => new Set([...prev, imgId]));
+  };
+  
   return (
     <>
       <div className="card-media">
@@ -806,6 +823,7 @@ function CardAttachmentGrid({ attachments }) {
               className="cm-att"
               src={getImageUrl(img.url)}
               alt=""
+              onError={() => handleImageError(img.id || img.url)}
               onClick={(e) => {
                 e.stopPropagation();
                 setLightbox(i);

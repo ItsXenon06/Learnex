@@ -4,6 +4,7 @@ import { useAuth, getInitials } from "../contexts/AuthContext";
 import Layout from "../components/Layout";
 import courseService from "../services/courseService";
 
+
 const css = `
 .course-detail-main{min-width:0;padding:24px 28px 90px;}
 

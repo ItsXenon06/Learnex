@@ -8,14 +8,14 @@ import commentService from "../services/commentService";
 
 /* ─── Utility Functions ───────────────────────────────────────────────────── */
 function truncateEmail(email, maxLength = 24) {
-  if (!email) return '';
+  if (!email) return "";
   if (email.length <= maxLength) return email;
-  const atIndex = email.indexOf('@');
-  if (atIndex === -1) return email.slice(0, maxLength) + '...';
+  const atIndex = email.indexOf("@");
+  if (atIndex === -1) return email.slice(0, maxLength) + "...";
   const namePart = email.slice(0, atIndex);
   const domainPart = email.slice(atIndex);
   const availableForName = Math.max(3, maxLength - domainPart.length - 2);
-  return namePart.slice(0, availableForName) + '...' + domainPart;
+  return namePart.slice(0, availableForName) + "..." + domainPart;
 }
 
 /* ─── Page-specific CSS ───────────────────────────────────────────────────── */
@@ -340,7 +340,7 @@ position:relative;cursor:pointer;
 .wf-av{width:38px;height:38px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;font-family:'Bebas Neue',sans-serif;overflow:hidden;}
 .wf-info{flex:1;min-width:0;}
 .wf-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.wf-role{font-size:11px;color:var(--t3);font-family:var(--fm);margin-top:2px;}
+.wf-role{font-size:11px;color:var(--t3);font-family:var(--fm);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;}
 .fw-btn{padding:6px 14px;border:1px solid var(--red);border-radius:6px;background:transparent;color:var(--red);font-size:11px;font-weight:800;cursor:pointer;transition:all .15s;font-family:var(--fb);letter-spacing:.5px;flex-shrink:0;white-space:nowrap;}
 .fw-btn:hover{background:var(--red);color:#fff;}
 .fw-btn.ing{background:var(--red-sub);border-color:transparent;color:var(--red);}
@@ -451,7 +451,9 @@ function Lightbox({ images, startIndex, onClose, getImageUrl }) {
     document.addEventListener("keydown", h);
     return () => document.removeEventListener("keydown", h);
   }, [images.length, onClose]);
-  const imageUrl = getImageUrl ? getImageUrl(images[idx]?.url) : images[idx]?.url;
+  const imageUrl = getImageUrl
+    ? getImageUrl(images[idx]?.url)
+    : images[idx]?.url;
   return (
     <div
       onClick={onClose}
@@ -781,38 +783,41 @@ function CommentReactions({
 }
 
 /* ─── URL Helpers ─────────────────────────────────────────────────────────────── */
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:1008/Learnex';
+const BACKEND_URL =
+  import.meta.env.VITE_BACKEND_URL || "http://localhost:1008/Learnex";
 
 function getImageUrl(url) {
-  if (!url) return '';
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
   return BACKEND_URL + url;
 }
 
 /* ─── Default Anonymous Avatar ───────────────────────────────────────────────── */
-const DEFAULT_AVATAR_URL = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23d1d5db" width="100" height="100"/%3E%3Ccircle cx="50" cy="30" r="15" fill="%239ca3af"/%3E%3Cellipse cx="50" cy="65" rx="20" ry="25" fill="%239ca3af"/%3E%3C/svg%3E';
+const DEFAULT_AVATAR_URL =
+  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23d1d5db" width="100" height="100"/%3E%3Ccircle cx="50" cy="30" r="15" fill="%239ca3af"/%3E%3Cellipse cx="50" cy="65" rx="20" ry="25" fill="%239ca3af"/%3E%3C/svg%3E';
 
 function getAvatarUrl(avatarUrl) {
   if (!avatarUrl) return DEFAULT_AVATAR_URL;
-  if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) return avatarUrl;
+  if (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://"))
+    return avatarUrl;
   return BACKEND_URL + avatarUrl;
 }
 
 function CardAttachmentGrid({ attachments }) {
   const [lightbox, setLightbox] = useState(null);
   const [failedImages, setFailedImages] = useState(new Set());
-  
-  const images = attachments.filter(
-    (a) => a.type === "image" || a.mimeType?.startsWith("image/"),
-  ).filter(img => !failedImages.has(img.id || img.url));
-  
+
+  const images = attachments
+    .filter((a) => a.type === "image" || a.mimeType?.startsWith("image/"))
+    .filter((img) => !failedImages.has(img.id || img.url));
+
   if (images.length === 0) return null;
   const n = Math.min(images.length, 4);
-  
+
   const handleImageError = (imgId) => {
-    setFailedImages(prev => new Set([...prev, imgId]));
+    setFailedImages((prev) => new Set([...prev, imgId]));
   };
-  
+
   return (
     <>
       <div className="card-media">
@@ -1039,7 +1044,8 @@ function PostCard({
 
   const handleShare = async (e) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/Learnex/post/${post.id}`;
+    const base = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "/Learnex";
+    const url = `${window.location.origin}${base}/post/${post.id}`;
     try {
       await navigator.clipboard.writeText(url);
     } catch {
@@ -1549,7 +1555,9 @@ function RightPanel({ followed, onToggleFollow }) {
                   <div className="wf-name">
                     {s.displayName || s.email?.split("@")[0]}
                   </div>
-                  <div className="wf-role" title={s.email}>{truncateEmail(s.email)}</div>
+                  <div className="wf-role" title={s.email}>
+                    {truncateEmail(s.email)}
+                  </div>
                 </div>
                 <button
                   className={`fw-btn ${followed[id] ? "ing" : ""}`}
@@ -1905,7 +1913,6 @@ export default function FeedPage() {
               >
                 📷 {mediaFiles.length > 0 ? `${mediaFiles.length}/4` : "Photo"}
               </button>
-              <button className="c-tool">#️⃣ Tag</button>
               <button className="c-vis" onClick={cycleVisibility}>
                 {visLabel[visibility]}
               </button>

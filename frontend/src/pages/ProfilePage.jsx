@@ -27,6 +27,7 @@ const css = `
   display:flex;align-items:center;justify-content:center;
   font-family:var(--fd);font-size:30px;color:#fff;
   border:3px solid var(--s1);box-shadow:0 8px 32px var(--red-glow);flex-shrink:0;
+  overflow:hidden;
 }
 .hero-actions{display:flex;gap:8px;padding-bottom:4px;}
 
@@ -631,7 +632,8 @@ export default function ProfilePage({ initialTab, editOnOpen }) {
                             width: "100%",
                             height: "100%",
                             objectFit: "cover",
-                            borderRadius: 14,
+                            borderRadius: "inherit",
+                            display: "block",
                           }}
                           onError={(e) => {
                             e.currentTarget.style.display = "none";

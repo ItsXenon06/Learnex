@@ -44,7 +44,7 @@ const css = `
   box-shadow:0 2px 8px rgba(180,0,20,.3);flex-shrink:0;
 }
 
-.cv-info{flex:1;min-width:0;}
+.cv-info{flex:1;min-width:0;max-width:calc(100% - 80px);}
 .cv-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;color:var(--t2);}
 .cv-preview{font-size:11px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--fm);}
 .cv-row.has-unread .cv-preview{color:var(--t2);font-weight:600;}

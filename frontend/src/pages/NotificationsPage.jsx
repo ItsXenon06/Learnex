@@ -145,7 +145,7 @@ const DEFAULT_META = { bg: "var(--s3)", color: "var(--t2)", emoji: "🔔" };
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 function buildText(n) {
-  const actor = n.payload?.actorName || "Someone";
+  const actor = (n.payloadJson ?? n.payload)?.actorName || "Someone";
   switch (n.type) {
     case "like":
       return (

@@ -1,13 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth, getInitials } from '../contexts/AuthContext';
-import Layout from '../components/Layout';
-import userService from '../services/userService';
-import postService from '../services/postService';
-import hashtagService from '../services/hashtagService';
-import groupService from '../services/groupService';
-import courseService from '../services/courseService';
+import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth, getInitials } from "../contexts/AuthContext";
+import Layout from "../components/Layout";
+import userService from "../services/userService";
+import postService from "../services/postService";
+import hashtagService from "../services/hashtagService";
+import groupService from "../services/groupService";
+import courseService from "../services/courseService";
 
 const css = `
 .search-main{min-width:0;padding:24px 28px 90px;}
@@ -88,16 +88,24 @@ const css = `
 .skel-row{display:flex;gap:14px;align-items:center;background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:14px 18px;margin-bottom:6px;}
 `;
 
-const AV_BG = ['#0d1f35','#0d2918','#2a0d1e','#1e1a0d','#1a0d2e','#1a1a0d'];
-const AV_C  = ['#4a9eff','#4adf8a','#df4a8a','#dfb84a','#af4adf','#df9a4a'];
+const AV_BG = [
+  "#0d1f35",
+  "#0d2918",
+  "#2a0d1e",
+  "#1e1a0d",
+  "#1a0d2e",
+  "#1a1a0d",
+];
+const AV_C = ["#4a9eff", "#4adf8a", "#df4a8a", "#dfb84a", "#af4adf", "#df9a4a"];
 function avStyle(seed) {
-  const i = (typeof seed === 'string' ? seed.charCodeAt(0) : seed || 0) % AV_BG.length;
+  const i =
+    (typeof seed === "string" ? seed.charCodeAt(0) : seed || 0) % AV_BG.length;
   return { background: `linear-gradient(135deg,${AV_BG[i]},${AV_C[i]})` };
 }
 function timeAgo(iso) {
-  if (!iso) return '';
+  if (!iso) return "";
   const m = Math.floor((Date.now() - new Date(iso)) / 60000);
-  if (m < 1) return 'just now';
+  if (m < 1) return "just now";
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
@@ -107,23 +115,43 @@ function timeAgo(iso) {
 // Highlight the query term inside text
 function highlight(text, q) {
   if (!text || !q) return text;
-  const parts = text.split(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
+  const parts = text.split(
+    new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"),
+  );
   return parts.map((p, i) =>
-    p.toLowerCase() === q.toLowerCase()
-      ? <mark key={i} className="pr-highlight">{p}</mark>
-      : p
+    p.toLowerCase() === q.toLowerCase() ? (
+      <mark key={i} className="pr-highlight">
+        {p}
+      </mark>
+    ) : (
+      p
+    ),
   );
 }
 
 function UserSkeleton() {
   return (
     <>
-      {[1,2,3].map(i => (
+      {[1, 2, 3].map((i) => (
         <div key={i} className="skel-row">
-          <div className="sk" style={{width:48,height:48,borderRadius:12,flexShrink:0}}/>
-          <div style={{flex:1}}>
-            <div className="sk" style={{height:13,width:'40%',marginBottom:8,borderRadius:5}}/>
-            <div className="sk" style={{height:10,width:'60%',borderRadius:4}}/>
+          <div
+            className="sk"
+            style={{ width: 48, height: 48, borderRadius: 12, flexShrink: 0 }}
+          />
+          <div style={{ flex: 1 }}>
+            <div
+              className="sk"
+              style={{
+                height: 13,
+                width: "40%",
+                marginBottom: 8,
+                borderRadius: 5,
+              }}
+            />
+            <div
+              className="sk"
+              style={{ height: 10, width: "60%", borderRadius: 4 }}
+            />
           </div>
         </div>
       ))}
@@ -137,25 +165,29 @@ export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const inputRef = useRef(null);
 
-  const initialQ = searchParams.get('q') || '';
-  const [query,    setQuery]    = useState(initialQ);
-  const [tab,      setTab]      = useState('people');
-  const [users,    setUsers]    = useState([]);
-  const [posts,    setPosts]    = useState([]);
+  const initialQ = searchParams.get("q") || "";
+  const [query, setQuery] = useState(initialQ);
+  const [tab, setTab] = useState("people");
+  const [users, setUsers] = useState([]);
+  const [posts, setPosts] = useState([]);
   const [hashtags, setHashtags] = useState([]);
-  const [groups,   setGroups]   = useState([]);
-  const [courses,  setCourses]  = useState([]);
-  const [loading,  setLoading]  = useState(false);
+  const [groups, setGroups] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
   // Run search when q param changes
   useEffect(() => {
-    const q = searchParams.get('q') || '';
+    const q = searchParams.get("q") || "";
     setQuery(q);
-    if (!q.trim()) { 
-      setUsers([]); setPosts([]); setHashtags([]); setGroups([]); setCourses([]);
-      setSearched(false); 
-      return; 
+    if (!q.trim()) {
+      setUsers([]);
+      setPosts([]);
+      setHashtags([]);
+      setGroups([]);
+      setCourses([]);
+      setSearched(false);
+      return;
     }
     runSearch(q);
   }, [searchParams]);
@@ -165,60 +197,91 @@ export default function SearchPage() {
     setLoading(true);
     setSearched(true);
     try {
-      const [usersRes, postsRes, hashtagsRes, groupsRes, coursesRes] = await Promise.allSettled([
-        userService.search(q),
-        postService.getDiscover(0, 50),
-        hashtagService.getTrendingHashtags(100),
-        groupService.getGroups(0, 100),
-        courseService.getCourses(),
-      ]);
+      // Try dedicated search endpoints; fall back to list+filter
+      const searchPost =
+        typeof postService.searchPosts === "function"
+          ? postService.searchPosts(q, 0, 30)
+          : postService.getDiscover(0, 50);
+
+      const [usersRes, postsRes, hashtagsRes, groupsRes, coursesRes] =
+        await Promise.allSettled([
+          userService.search(q),
+          searchPost,
+          hashtagService.getTrendingHashtags(100),
+          groupService.getGroups(0, 100),
+          courseService.getCourses(),
+        ]);
 
       // Users search
-      if (usersRes.status === 'fulfilled') {
+      if (usersRes.status === "fulfilled") {
         const data = usersRes.value?.data ?? usersRes.value;
-        setUsers(Array.isArray(data) ? data : []);
+        // Handle Page<> wrapper or plain array
+        const items =
+          data?.content ?? data?.users ?? (Array.isArray(data) ? data : []);
+        setUsers(items);
       }
 
       // Posts search - client-side filter
-      if (postsRes.status === 'fulfilled') {
+      if (postsRes.status === "fulfilled") {
         const data = postsRes.value?.data ?? postsRes.value;
         const items = data?.content ?? (Array.isArray(data) ? data : []);
         const lower = q.toLowerCase();
-        setPosts(items.filter(p =>
-          p.content?.toLowerCase().includes(lower) ||
-          p.authorDisplayName?.toLowerCase().includes(lower) ||
-          p.authorEmail?.toLowerCase().includes(lower)
-        ));
+        // If backend returns search results directly, use them; else filter
+        const filtered =
+          items.length > 0 && items[0]?._searchResult
+            ? items
+            : items.filter(
+                (p) =>
+                  p.content?.toLowerCase().includes(lower) ||
+                  p.authorDisplayName?.toLowerCase().includes(lower) ||
+                  p.authorEmail?.toLowerCase().includes(lower),
+              );
+        setPosts(filtered);
       }
 
       // Hashtags search - client-side filter
-      if (hashtagsRes.status === 'fulfilled') {
+      if (hashtagsRes.status === "fulfilled") {
         const data = hashtagsRes.value?.data ?? hashtagsRes.value;
         const items = Array.isArray(data) ? data : [];
         const lower = q.toLowerCase();
-        setHashtags(items.filter(h => h.toLowerCase().includes(lower)));
+        setHashtags(items.filter((h) => h.toLowerCase().includes(lower)));
       }
 
       // Groups search - client-side filter
-      if (groupsRes.status === 'fulfilled') {
+      if (groupsRes.status === "fulfilled") {
         const data = groupsRes.value?.data ?? groupsRes.value;
-        const items = data?.content ?? (Array.isArray(data) ? data : []);
+        const items =
+          data?.content ?? data?.groups ?? (Array.isArray(data) ? data : []);
         const lower = q.toLowerCase();
-        setGroups(items.filter(g => g.name?.toLowerCase().includes(lower)));
+        setGroups(
+          items.filter(
+            (g) =>
+              g.name?.toLowerCase().includes(lower) ||
+              g.description?.toLowerCase().includes(lower),
+          ),
+        );
       }
 
       // Courses search - client-side filter by course code or name
-      if (coursesRes.status === 'fulfilled') {
+      if (coursesRes.status === "fulfilled") {
         const data = coursesRes.value?.data ?? coursesRes.value;
         const items = Array.isArray(data) ? data : [];
         const lower = q.toLowerCase();
-        setCourses(items.filter(c => 
-          c.courseCode?.toLowerCase().includes(lower) ||
-          c.courseName?.toLowerCase().includes(lower)
-        ));
+        setCourses(
+          items.filter(
+            (c) =>
+              c.code?.toLowerCase().includes(lower) ||
+              c.name?.toLowerCase().includes(lower) ||
+              c.courseCode?.toLowerCase().includes(lower) ||
+              c.courseName?.toLowerCase().includes(lower),
+          ),
+        );
       }
-    } catch { /* no-op */ }
-    finally { setLoading(false); }
+    } catch {
+      /* no-op */
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = (e) => {
@@ -228,14 +291,18 @@ export default function SearchPage() {
   };
 
   const handleClear = () => {
-    setQuery('');
+    setQuery("");
     setSearchParams({});
-    setUsers([]); setPosts([]); setHashtags([]); setGroups([]); setCourses([]);
+    setUsers([]);
+    setPosts([]);
+    setHashtags([]);
+    setGroups([]);
+    setCourses([]);
     setSearched(false);
     inputRef.current?.focus();
   };
 
-  const q = searchParams.get('q') || '';
+  const q = searchParams.get("q") || "";
 
   return (
     <>
@@ -243,19 +310,25 @@ export default function SearchPage() {
       <Layout active="search">
         <main className="search-main">
           <div className="search-hero">
-            <div className="search-title">{t('search.title')}</div>
+            <div className="search-title">{t("search.title")}</div>
             <form onSubmit={handleSubmit} className="search-bar-wrap">
               <span className="search-icon">🔍</span>
               <input
                 ref={inputRef}
                 className="search-bar"
-                placeholder={t('search.placeholder')}
+                placeholder={t("search.placeholder")}
                 value={query}
-                onChange={e => setQuery(e.target.value)}
+                onChange={(e) => setQuery(e.target.value)}
                 autoFocus
               />
               {query && (
-                <button type="button" className="search-clear" onClick={handleClear}>✕</button>
+                <button
+                  type="button"
+                  className="search-clear"
+                  onClick={handleClear}
+                >
+                  ✕
+                </button>
               )}
             </form>
           </div>
@@ -263,41 +336,61 @@ export default function SearchPage() {
           {!searched ? (
             <div className="search-empty">
               <div className="se-ic">🔍</div>
-              <div className="se-t">{t('search.emptyHeading')}</div>
-              <p className="se-s">{t('search.emptyDescription')}</p>
+              <div className="se-t">{t("search.emptyHeading")}</div>
+              <p className="se-s">{t("search.emptyDescription")}</p>
             </div>
           ) : (
             <>
               <div className="search-tabs">
-                <button className={`stab ${tab === 'people' ? 'on' : ''}`} onClick={() => setTab('people')}>
-                  {t('search.tabs.people')} <span className="stab-cnt">{users.length}</span>
+                <button
+                  className={`stab ${tab === "people" ? "on" : ""}`}
+                  onClick={() => setTab("people")}
+                >
+                  {t("search.tabs.people")}{" "}
+                  <span className="stab-cnt">{users.length}</span>
                 </button>
-                <button className={`stab ${tab === 'posts' ? 'on' : ''}`} onClick={() => setTab('posts')}>
-                  {t('search.tabs.posts')} <span className="stab-cnt">{posts.length}</span>
+                <button
+                  className={`stab ${tab === "posts" ? "on" : ""}`}
+                  onClick={() => setTab("posts")}
+                >
+                  {t("search.tabs.posts")}{" "}
+                  <span className="stab-cnt">{posts.length}</span>
                 </button>
-                <button className={`stab ${tab === 'hashtags' ? 'on' : ''}`} onClick={() => setTab('hashtags')}>
+                <button
+                  className={`stab ${tab === "hashtags" ? "on" : ""}`}
+                  onClick={() => setTab("hashtags")}
+                >
                   Hashtags <span className="stab-cnt">{hashtags.length}</span>
                 </button>
-                <button className={`stab ${tab === 'groups' ? 'on' : ''}`} onClick={() => setTab('groups')}>
+                <button
+                  className={`stab ${tab === "groups" ? "on" : ""}`}
+                  onClick={() => setTab("groups")}
+                >
                   Groups <span className="stab-cnt">{groups.length}</span>
                 </button>
-                <button className={`stab ${tab === 'courses' ? 'on' : ''}`} onClick={() => setTab('courses')}>
+                <button
+                  className={`stab ${tab === "courses" ? "on" : ""}`}
+                  onClick={() => setTab("courses")}
+                >
                   Courses <span className="stab-cnt">{courses.length}</span>
                 </button>
               </div>
 
-              {tab === 'people' && (
-                loading ? <UserSkeleton /> :
-                users.length === 0 ? (
+              {tab === "people" &&
+                (loading ? (
+                  <UserSkeleton />
+                ) : users.length === 0 ? (
                   <div className="search-empty">
                     <div className="se-ic">👤</div>
-                    <div className="se-t">{t('search.noPeopleTitle')}</div>
-                    <p className="se-s">{t('search.noPeopleDescription', { query: q })}</p>
+                    <div className="se-t">{t("search.noPeopleTitle")}</div>
+                    <p className="se-s">
+                      {t("search.noPeopleDescription", { query: q })}
+                    </p>
                   </div>
                 ) : (
                   <div className="user-list">
                     {users.map((u, i) => {
-                      const id  = u.userId ?? u.id;
+                      const id = u.userId ?? u.id;
                       const ini = getInitials(u.displayName, u.email);
                       return (
                         <div
@@ -306,38 +399,72 @@ export default function SearchPage() {
                           style={{ animationDelay: `${i * 40}ms` }}
                           onClick={() => navigate(`/profile/${id}`)}
                         >
-                          <div className="user-av" style={u.avatarUrl ? {background:'transparent',overflow:'hidden'} : avStyle(id)}>
-                            {u.avatarUrl
-                              ? <img src={u.avatarUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
-                              : ini
+                          <div
+                            className="user-av"
+                            style={
+                              u.avatarUrl
+                                ? {
+                                    background: "transparent",
+                                    overflow: "hidden",
+                                  }
+                                : avStyle(id)
                             }
+                          >
+                            {u.avatarUrl ? (
+                              <img
+                                src={u.avatarUrl}
+                                alt=""
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                }}
+                              />
+                            ) : (
+                              ini
+                            )}
                           </div>
                           <div className="user-info">
-                            <div className="user-name">{highlight(u.displayName || u.email?.split('@')[0], q)}</div>
+                            <div className="user-name">
+                              {highlight(
+                                u.displayName || u.email?.split("@")[0],
+                                q,
+                              )}
+                            </div>
                             <div className="user-email">{u.email}</div>
-                            {u.headline && <div className="user-headline">{u.headline}</div>}
+                            {u.headline && (
+                              <div className="user-headline">{u.headline}</div>
+                            )}
                           </div>
                           <span className="user-arrow">→</span>
                         </div>
                       );
                     })}
                   </div>
-                )
-              )}
+                ))}
 
-              {tab === 'posts' && (
-                loading ? <UserSkeleton /> :
-                posts.length === 0 ? (
+              {tab === "posts" &&
+                (loading ? (
+                  <UserSkeleton />
+                ) : posts.length === 0 ? (
                   <div className="search-empty">
                     <div className="se-ic">📝</div>
-                    <div className="se-t">{t('search.noPostsTitle')}</div>
-                    <p className="se-s">{t('search.noPostsDescription', { query: q })}</p>
+                    <div className="se-t">{t("search.noPostsTitle")}</div>
+                    <p className="se-s">
+                      {t("search.noPostsDescription", { query: q })}
+                    </p>
                   </div>
                 ) : (
                   <div className="post-list">
                     {posts.map((p, i) => {
-                      const ini = getInitials(p.authorDisplayName, p.authorEmail);
-                      const totalRx = (p.reactions ?? []).reduce((s, r) => s + (r.count ?? 0), 0);
+                      const ini = getInitials(
+                        p.authorDisplayName,
+                        p.authorEmail,
+                      );
+                      const totalRx = (p.reactions ?? []).reduce(
+                        (s, r) => s + (r.count ?? 0),
+                        0,
+                      );
                       return (
                         <div
                           key={p.id}
@@ -346,27 +473,37 @@ export default function SearchPage() {
                           onClick={() => navigate(`/post/${p.id}`)}
                         >
                           <div className="pr-author">
-                            <div className="pr-av" style={avStyle(p.authorId)}>{ini}</div>
-                            <span className="pr-name">{p.authorDisplayName || p.authorEmail}</span>
-                            <span className="pr-time">{timeAgo(p.createdAt)}</span>
+                            <div className="pr-av" style={avStyle(p.authorId)}>
+                              {ini}
+                            </div>
+                            <span className="pr-name">
+                              {p.authorDisplayName || p.authorEmail}
+                            </span>
+                            <span className="pr-time">
+                              {timeAgo(p.createdAt)}
+                            </span>
                           </div>
                           {p.content && (
-                            <div className="pr-content">{highlight(p.content, q)}</div>
+                            <div className="pr-content">
+                              {highlight(p.content, q)}
+                            </div>
                           )}
                           <div className="pr-meta">
                             {totalRx > 0 && <span>👍 {totalRx}</span>}
-                            {p.commentCount > 0 && <span>💬 {p.commentCount}</span>}
+                            {p.commentCount > 0 && (
+                              <span>💬 {p.commentCount}</span>
+                            )}
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                )
-              )}
+                ))}
 
-              {tab === 'hashtags' && (
-                loading ? <UserSkeleton /> :
-                hashtags.length === 0 ? (
+              {tab === "hashtags" &&
+                (loading ? (
+                  <UserSkeleton />
+                ) : hashtags.length === 0 ? (
                   <div className="search-empty">
                     <div className="se-ic">#️⃣</div>
                     <div className="se-t">No Hashtags</div>
@@ -379,9 +516,19 @@ export default function SearchPage() {
                         key={h}
                         className="user-card"
                         style={{ animationDelay: `${i * 40}ms` }}
-                        onClick={() => navigate(`/hashtag/${encodeURIComponent(h)}`)}
+                        onClick={() =>
+                          navigate(`/hashtag/${encodeURIComponent(h)}`)
+                        }
                       >
-                        <div className="user-av" style={{background:'var(--blue)',fontSize:'20px'}}>#{h.charAt(0).toUpperCase()}</div>
+                        <div
+                          className="user-av"
+                          style={{
+                            background: "var(--blue)",
+                            fontSize: "20px",
+                          }}
+                        >
+                          #{h.charAt(0).toUpperCase()}
+                        </div>
                         <div className="user-info">
                           <div className="user-name">{highlight(h, q)}</div>
                           <div className="user-email">Hashtag</div>
@@ -390,12 +537,12 @@ export default function SearchPage() {
                       </div>
                     ))}
                   </div>
-                )
-              )}
+                ))}
 
-              {tab === 'groups' && (
-                loading ? <UserSkeleton /> :
-                groups.length === 0 ? (
+              {tab === "groups" &&
+                (loading ? (
+                  <UserSkeleton />
+                ) : groups.length === 0 ? (
                   <div className="search-empty">
                     <div className="se-ic">👥</div>
                     <div className="se-t">No Groups</div>
@@ -410,21 +557,33 @@ export default function SearchPage() {
                         style={{ animationDelay: `${i * 40}ms` }}
                         onClick={() => navigate(`/groups/${g.id}`)}
                       >
-                        <div className="user-av" style={{background:'var(--purple)',fontSize:'20px'}}>👥</div>
+                        <div
+                          className="user-av"
+                          style={{
+                            background: "var(--purple)",
+                            fontSize: "20px",
+                          }}
+                        >
+                          👥
+                        </div>
                         <div className="user-info">
-                          <div className="user-name">{highlight(g.name, q)}</div>
-                          <div className="user-email">{g.memberCount ?? 0} members</div>
+                          <div className="user-name">
+                            {highlight(g.name, q)}
+                          </div>
+                          <div className="user-email">
+                            {g.memberCount ?? 0} members
+                          </div>
                         </div>
                         <span className="user-arrow">→</span>
                       </div>
                     ))}
                   </div>
-                )
-              )}
+                ))}
 
-              {tab === 'courses' && (
-                loading ? <UserSkeleton /> :
-                courses.length === 0 ? (
+              {tab === "courses" &&
+                (loading ? (
+                  <UserSkeleton />
+                ) : courses.length === 0 ? (
                   <div className="search-empty">
                     <div className="se-ic">📚</div>
                     <div className="se-t">No Courses</div>
@@ -439,17 +598,26 @@ export default function SearchPage() {
                         style={{ animationDelay: `${i * 40}ms` }}
                         onClick={() => navigate(`/courses/${c.id}`)}
                       >
-                        <div className="user-av" style={{background:'var(--gold)',fontSize:'20px'}}>📚</div>
+                        <div
+                          className="user-av"
+                          style={{
+                            background: "var(--gold)",
+                            fontSize: "20px",
+                          }}
+                        >
+                          📚
+                        </div>
                         <div className="user-info">
-                          <div className="user-name">{highlight(c.courseCode ?? c.courseName, q)}</div>
+                          <div className="user-name">
+                            {highlight(c.courseCode ?? c.courseName, q)}
+                          </div>
                           <div className="user-email">{c.courseName}</div>
                         </div>
                         <span className="user-arrow">→</span>
                       </div>
                     ))}
                   </div>
-                )
-              )}
+                ))}
             </>
           )}
         </main>

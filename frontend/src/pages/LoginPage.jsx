@@ -65,9 +65,10 @@ const styles = `
   .logo-name span { color: var(--red); }
   .left-hero { position: relative; z-index: 1; margin-top: -8px; }
   .left-tagline {
-    font-family: var(--font-display); font-size: clamp(60px,6.5vw,88px);
-    line-height: 0.94; letter-spacing: 2px; margin-bottom: 26px;
-  }
+  font-family: var(--font-display); font-size: clamp(36px,5vw,88px);
+  line-height: 0.97; letter-spacing: 1px; margin-bottom: 26px;
+  word-break: keep-all;
+}
   .left-tagline span { color: var(--red); display: block; }
   .left-desc { font-size: 16px; color: var(--text-muted); line-height: 1.75; max-width: 380px; }
   .left-features { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 10px; }

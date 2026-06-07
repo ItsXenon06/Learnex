@@ -229,7 +229,7 @@ export default function GroupDetailPage() {
     const res = await groupService.joinGroup(groupId);
     const updated = res?.data ?? res;
     setIsMember(updated?.isMember ?? true);
-    setMyRole(updated?.myRole ?? "member");
+    setMyRole(updated?.myRole ?? (updated?.isMember ? "member" : null));
     setGroup((g) => {
       const newGroup = { ...g, memberCount: updated?.memberCount ?? (g?.memberCount ?? 0) + 1 };
       return newGroup;

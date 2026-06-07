@@ -13,7 +13,8 @@ const TrendingHashtagWidget = () => {
       try {
         setLoading(true);
         const response = await hashtagService.getTrendingHashtags(5);
-        setTrendingTags(response.data.data || []);
+        console.log('[v0] Trending hashtags response:', response);
+        setTrendingTags(response.data || []);
         setError(null);
       } catch (err) {
         console.error('[v0] Error fetching trending hashtags:', err);

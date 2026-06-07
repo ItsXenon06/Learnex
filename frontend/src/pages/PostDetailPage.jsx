@@ -75,6 +75,18 @@ const css = `
 .pda.saved{color:var(--gold);}
 .pda-i{font-size:16px;line-height:1;}
 
+/* reaction picker wrapper */
+.pda-react{position:relative;flex:1;display:flex;align-items:center;justify-content:center;
+  padding:0;border-right:1px solid var(--b1);overflow:visible;}
+.pda-react:last-child{border-right:none;}
+.pda-main{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 4px;border:none;background:transparent;
+  color:var(--t3);font-size:13px;font-family:var(--fb);font-weight:600;
+  letter-spacing:.3px;cursor:pointer;transition:all .15s;}
+.pda-main:hover{background:var(--s2);color:var(--t1);}
+.pda-react.liked .pda-main{color:var(--red);}
+.pda-main:disabled{opacity:.4;cursor:not-allowed;}
+
 /* reaction picker */
 .pd-rx-pick{
   position:absolute;bottom:calc(100% + 8px);left:50%;
@@ -85,7 +97,7 @@ const css = `
   transition:opacity .15s,transform .15s var(--ease);
   box-shadow:0 10px 40px rgba(0,0,0,.7);white-space:nowrap;
 }
-.pda:hover .pd-rx-pick,.pd-rx-pick:hover{
+.pda-react:hover .pd-rx-pick,.pd-rx-pick:hover{
   opacity:1;pointer-events:all;transform:translateX(-50%) scale(1);
 }
 .pd-rx-e{font-size:22px;cursor:pointer;border:none;background:none;
@@ -738,21 +750,24 @@ export default function PostDetailPage() {
 
             {/* Actions */}
             <div className="pd-actions">
-              <button
-                className={`pda ${myRx ? "liked" : ""}`}
-                onClick={() => handleReact(myRx || "like")}
-                disabled={rxLoading}
+              <div
+                className={`pda pda-react ${myRx ? "liked" : ""}`}
+                onMouseDown={(e) => e.stopPropagation()}
               >
-                <span className="pda-i">
-                  {myRx ? (RX_EMOJI[myRx] ?? "👍") : "👍"}
-                </span>
-                {myRx
-                  ? (RX_TYPES.find((r) => r.type === myRx)?.label ?? "Liked")
-                  : "Like"}
-                <div
-                  className="pd-rx-pick"
-                  onMouseDown={(e) => e.stopPropagation()}
+                <button
+                  className="pda-main"
+                  onClick={() => handleReact(myRx || "like")}
+                  disabled={rxLoading}
+                  title="React to post"
                 >
+                  <span className="pda-i">
+                    {myRx ? (RX_EMOJI[myRx] ?? "👍") : "👍"}
+                  </span>
+                  {myRx
+                    ? (RX_TYPES.find((r) => r.type === myRx)?.label ?? "Liked")
+                    : "Like"}
+                </button>
+                <div className="pd-rx-pick">
                   {RX_TYPES.map((r) => (
                     <button
                       key={r.type}
@@ -768,7 +783,7 @@ export default function PostDetailPage() {
                     </button>
                   ))}
                 </div>
-              </button>
+              </div>
 
               <button className="pda" onClick={() => cmRef.current?.focus()}>
                 <span className="pda-i">💬</span>Comment

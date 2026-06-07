@@ -33,67 +33,116 @@ const TrendingHashtagWidget = () => {
   // CSS styling to match the rest of the widgets
   const css = `
     .tr-wg {
-      background: var(--bg1);
+      background: var(--s1);
       border: 1px solid var(--b1);
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 16px;
+      border-radius: 12px;
+      overflow: hidden;
     }
     .tr-head {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--b1);
+      background: linear-gradient(90deg, rgba(232,25,44,.05) 0%, transparent 70%);
     }
     .tr-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--t0);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--t2);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tr-title em {
+      color: var(--red);
+      font-style: normal;
     }
     .tr-more {
       font-size: 12px;
-      color: var(--primary);
+      color: var(--t3);
       background: none;
       border: none;
       cursor: pointer;
       padding: 0;
-      font-family: var(--fm);
+      font-family: var(--fb);
+      font-weight: 600;
+      letter-spacing: .5px;
+      transition: color .15s;
     }
     .tr-more:hover {
-      text-decoration: underline;
+      color: var(--red);
     }
     .tr-item {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px;
-      border-radius: 4px;
+      gap: 13px;
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--b1);
       cursor: pointer;
-      transition: background 0.2s;
-      margin-bottom: 4px;
+      transition: background .15s;
+    }
+    .tr-item:last-child {
+      border-bottom: none;
     }
     .tr-item:hover {
-      background: var(--bg2);
+      background: var(--s2);
     }
     .tr-idx {
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
-      color: var(--t2);
-      min-width: 20px;
+      color: var(--t4);
+      width: 18px;
+      flex-shrink: 0;
     }
-    .tr-tag {
+    .tr-body {
       flex: 1;
       min-width: 0;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    }
+    .tr-tag {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--t1);
+      transition: color .15s;
+    }
+    .tr-item:hover .tr-tag {
+      color: var(--red);
+    }
+    .tr-sub {
+      font-size: 11px;
+      color: var(--t3);
+      font-family: var(--fm);
+      margin-top: 2px;
+    }
+    .tr-cnt {
+      font-size: 11px;
+      color: var(--t3);
+      font-family: var(--fm);
+      flex-shrink: 0;
     }
   `;
 
-  if (!trendingTags || trendingTags.length === 0) return null;
+  if (!trendingTags || trendingTags.length === 0) {
+    if (loading || error) {
+      return (
+        <>
+          <style>{css}</style>
+          <div className="tr-wg">
+            <div className="tr-head">
+              <div className="tr-title">✦ Trending</div>
+              <button className="tr-more" onClick={() => navigate('/hashtags')}>See all</button>
+            </div>
+            <div style={{ padding: '16px', fontSize: '13px', color: 'var(--t3)', textAlign: 'center' }}>
+              {loading ? 'Loading trends...' : 'No trending hashtags'}
+            </div>
+          </div>
+        </>
+      );
+    }
+    return null;
+  }
 
   return (
     <>
@@ -105,27 +154,17 @@ const TrendingHashtagWidget = () => {
         </div>
 
         <div>
-          {loading ? (
-            <div style={{ padding: '8px', fontSize: '13px', color: 'var(--t3)' }}>
-              Loading trends...
+          {trendingTags.map((tag, index) => (
+            <div
+              key={tag}
+              onClick={() => handleHashtagClick(tag)}
+              className="tr-item"
+            >
+              <span className="tr-idx">#{index + 1}</span>
+              <div className="tr-tag">#{tag}</div>
+              <span style={{ fontSize: '12px', color: 'var(--t2)' }}>→</span>
             </div>
-          ) : error ? (
-            <div style={{ padding: '8px', fontSize: '13px', color: 'var(--t3)' }}>
-              Failed to load trending hashtags
-            </div>
-          ) : (
-            trendingTags.map((tag, index) => (
-              <div
-                key={tag}
-                onClick={() => handleHashtagClick(tag)}
-                className="tr-item"
-              >
-                <span className="tr-idx">#{index + 1}</span>
-                <div className="tr-tag">#{tag}</div>
-                <span style={{ fontSize: '12px', color: 'var(--t2)' }}>→</span>
-              </div>
-            ))
-          )}
+          ))}
         </div>
       </div>
     </>

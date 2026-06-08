@@ -324,7 +324,7 @@
   },
   "courses": {
     "title": "Courses",
-    "requestBtn": "+ Request Course",
+    "requestBtn": "Request Course",
     "allTab": "All Courses",
     "starredTab": "⭐ Starred",
     "requestModalTitle": "Request Course",
@@ -360,11 +360,11 @@
   "description": "Describe the course and why the community would benefit…"
   },
   "courseDetail": {
-    "backBtn": "← Courses",
+    "backBtn": "Courses",
     "enrolled": "🎓 {{count}} enrolled",
     "starCount": "⭐ {{count}} starred",
     "discussionsTitle": "📋 Discussions",
-    "startDiscussionBtn": "✎ Start Discussion",
+    "startDiscussionBtn": "Start Discussion",
     "noDiscussionsTitle": "No Discussions Yet",
     "noDiscussionsHint": "Be the first to start a discussion about this course.",
     "viewArrow": "VIEW →",

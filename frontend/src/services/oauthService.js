@@ -27,9 +27,11 @@ export const getGithubAuthUrl = () => {
   const state = generateState();
   storeState('github', state);
 
+  const redirectUri = import.meta.env.VITE_GITHUB_REDIRECT_URI || 'http://localhost:5173/Learnex/auth/callback/github';
+
   const params = new URLSearchParams({
     client_id: clientId,
-    redirect_uri: import.meta.env.VITE_GITHUB_REDIRECT_URI,
+    redirect_uri: redirectUri,
     scope: 'user:email',
     state: state,
   });
@@ -45,9 +47,11 @@ export const getFacebookAuthUrl = () => {
   const state = generateState();
   storeState('facebook', state);
 
+  const redirectUri = import.meta.env.VITE_FACEBOOK_REDIRECT_URI || 'http://localhost:5173/Learnex/auth/callback/facebook';
+
   const params = new URLSearchParams({
     client_id: appId,
-    redirect_uri: import.meta.env.VITE_FACEBOOK_REDIRECT_URI,
+    redirect_uri: redirectUri,
     scope: 'email,public_profile',
     state: state,
   });

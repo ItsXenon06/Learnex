@@ -1,68 +1,114 @@
 {
+  "app": {
+    "name": "Learnex",
+    "tagline": "Học cùng nhau. Kết nối. Phát triển.",
+    "taglineLine1": "HỌC.",
+    "taglineLine2": "KẾT NỐI.",
+    "taglineLine3": "PHÁT TRIỂN.",
+    "description": "Nền tảng mạng xã hội dành cho sinh viên. Chia sẻ kiến thức, hợp tác dự án và phát triển cùng nhau.",
+    "signIn": "Đăng nhập",
+    "register": "Đăng ký",
+    "signUpFree": "Đăng ký miễn phí",
+    "welcomeBack": "Chào mừng trở lại",
+    "joinLearnex": "Tham gia Learnex",
+    "loginSubtitle": "Đăng nhập vào tài khoản sinh viên",
+    "registerSubtitle": "Tạo tài khoản sinh viên miễn phí",
+    "continueWith": "tiếp tục với",
+    "orWithEmail": "hoặc với email",
+    "forgotPassword": "Quên mật khẩu?",
+    "forgotPasswordLink": "Quên mật khẩu?",
+    "sendResetEmail": "Gửi email đặt lại",
+    "forgotPasswordDescription": "Nhập email tài khoản của bạn và chúng tôi sẽ gửi liên kết đặt lại mật khẩu.",
+    "resetPassword": "Đặt lại mật khẩu",
+    "resetPasswordDescription": "Nhập mã token đặt lại và chọn mật khẩu mới.",
+    "resetToken": "Mã token đặt lại",
+    "send": "Gửi",
+    "back": "Quay lại",
+    "submit": "Gửi",
+    "pleaseWait": "Vui lòng chờ…",
+    "signInButton": "ĐĂNG NHẬP →",
+    "createAccountButton": "TẠO TÀI KHOẢN →",
+    "dontHaveAccount": "Chưa có tài khoản? ",
+    "alreadyMember": "Đã là thành viên? ",
+    "termsAgreement": "Khi tạo tài khoản bạn đồng ý với",
+    "termsOfService": "Điều khoản dịch vụ",
+    "and": "và",
+    "privacyPolicy": "Chính sách bảo mật",
+    "emailOrUsername": "Email hoặc Tên đăng nhập",
+    "studentEmail": "Email sinh viên",
+    "emailOrUsernamePlaceholder": "ban@truong.edu.vn hoặc tên đăng nhập",
+    "studentEmailPlaceholder": "ban@truong.edu.vn",
+    "enterPassword": "Nhập mật khẩu",
+    "createPassword": "Tạo mật khẩu mạnh",
+    "firstNamePlaceholder": "Alex",
+    "lastNamePlaceholder": "Nguyễn",
+    "usernamePlaceholder": "alex.nguyen",
+    "search": "Tìm kiếm",
+    "searchPlaceholder": "Tìm sinh viên, bài viết, nhóm…",
+    "sending": "Đang gửi…",
+    "resetting": "Đang đặt lại…",
+    "signOut": "Đăng xuất",
+    "loading": "Đang tải…",
+    "google": "Google",
+    "facebook": "Facebook",
+    "emailPlaceholder": "ban@truong.edu.vn",
+    "oauthError": "Đăng nhập OAuth thất bại. Vui lòng thử lại."
+  },
+  "forms": {
+    "firstName": "Tên",
+    "lastName": "Họ",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "username": "Tên đăng nhập"
+  },
   "nav": {
+    "navigation": "Điều hướng",
+    "feed": "Bảng tin",
+    "notifications": "Thông báo",
+    "messages": "Tin nhắn",
+    "groups": "Nhóm",
+    "saved": "Đã lưu",
+    "courses": "Khoá học",
+    "profile": "Hồ sơ",
     "search": "Tìm kiếm"
   },
-  "app": {
-  "name": "Learnex",
-  "tagline": "Học cùng nhau. Kết nối. Phát triển.",
-  "taglineLine1": "HỌC.",
-  "taglineLine2": "KẾT NỐI.",
-  "taglineLine3": "PHÁT TRIỂN.",
-  "description": "Nền tảng mạng xã hội dành cho sinh viên. Chia sẻ kiến thức, hợp tác dự án và phát triển cùng nhau.",
-  "signIn": "Đăng nhập",
-  "register": "Đăng ký",
-  "signUpFree": "Đăng ký miễn phí",
-  "welcomeBack": "Chào mừng trở lại",
-  "joinLearnex": "Tham gia Learnex",
-  "loginSubtitle": "Đăng nhập vào tài khoản sinh viên",
-  "registerSubtitle": "Tạo tài khoản sinh viên miễn phí",
-  "continueWith": "tiếp tục với",
-  "orWithEmail": "hoặc với email",
-  "forgotPasswordLink": "Quên mật khẩu?",
-  "signInButton": "ĐĂNG NHẬP →",
-  "createAccountButton": "TẠO TÀI KHOẢN →",
-  "dontHaveAccount": "Chưa có tài khoản? ",
-  "alreadyMember": "Đã là thành viên? ",
-  "termsAgreement": "Khi tạo tài khoản bạn đồng ý với",
-  "termsOfService": "Điều khoản dịch vụ",
-  "and": "và",
-  "privacyPolicy": "Chính sách bảo mật",
-  "emailOrUsername": "Email hoặc Tên đăng nhập",
-  "studentEmail": "Email sinh viên",
-  "emailOrUsernamePlaceholder": "ban@truong.edu.vn hoặc tên đăng nhập",
-  "studentEmailPlaceholder": "ban@truong.edu.vn",
-  "enterPassword": "Nhập mật khẩu",
-  "createPassword": "Tạo mật khẩu mạnh",
-  "firstNamePlaceholder": "Alex",
-  "lastNamePlaceholder": "Nguyễn",
-  "usernamePlaceholder": "alex.nguyen",
-  "pleaseWait": "Vui lòng chờ…",
-  "google": "Google",
-  "facebook": "Facebook",
-  "oauthError": "Đăng nhập OAuth thất bại. Vui lòng thử lại."
-},
-"forms": {
-  "firstName": "Tên",
-  "lastName": "Họ",
-  "email": "Email",
-  "password": "Mật khẩu",
-  "username": "Tên đăng nhập"
-},
-"search": {
-  "title": "Tìm kiếm",
-  "placeholder": "Tìm sinh viên, bài viết, chủ đề…",
-  "emptyHeading": "Tìm người & bài viết",
-  "emptyDescription": "Tìm sinh viên theo tên hoặc email, hoặc khám phá bài viết theo chủ đề.",
-  "tabs": {
-    "people": "Người",
-    "posts": "Bài viết"
+  "features": {
+    "studyTogether": "Học cùng nhau",
+    "studyTogetherDesc": "Tham gia các nhóm môn học & hợp tác dự án.",
+    "realTimeMessaging": "Nhắn tin thực tế",
+    "realTimeMessagingDesc": "DM và chat nhóm với bạn học cùng lớp.",
+    "campusFeed": "Bảng tin chương trình",
+    "campusFeedDesc": "Cập nhật về sự kiện, bài viết & thông báo."
   },
-  "noPeopleTitle": "Không tìm thấy người",
-  "noPeopleDescription": "Không có sinh viên nào khớp với \"{{query}}\". Thử tên hoặc email khác.",
-  "noPostsTitle": "Không tìm thấy bài viết",
-  "noPostsDescription": "Không có bài viết nào đề cập \"{{query}}\". Thử từ khoá hoặc hashtag khác."
-},
-
+  "search": {
+    "title": "Tìm kiếm",
+    "placeholder": "Tìm sinh viên, bài viết, chủ đề…",
+    "emptyHeading": "Tìm người & bài viết",
+    "emptyDescription": "Tìm sinh viên theo tên hoặc email, hoặc khám phá bài viết theo chủ đề.",
+    "tabs": {
+      "people": "Người",
+      "posts": "Bài viết"
+    },
+    "noPeopleTitle": "Không tìm thấy người",
+    "noPeopleDescription": "Không có sinh viên nào khớp với \"{{query}}\". Thử tên hoặc email khác.",
+    "noPostsTitle": "Không tìm thấy bài viết",
+    "noPostsDescription": "Không có bài viết nào đề cập \"{{query}}\". Thử từ khoá hoặc hashtag khác."
+  },
+  "messages": {
+    "resetLinkSent": "Nếu email tồn tại, đường dẫn đặt lại đã được gửi.",
+    "passwordResetSuccess": "Đặt lại mật khẩu thành công — bạn có thể đăng nhập.",
+    "sessionExpired": "Phiên của bạn đã hết hạn. Vui lòng đăng nhập lại.",
+    "unauthorized": "Bạn không có quyền truy cập trang này.",
+    "sessionExpiredShort": "Phiên hết hạn",
+    "pleaseSignInAgain": "Vui lòng đăng nhập lại để tiếp tục.",
+    "fillAllFields": "Vui lòng điền tất cả các trường.",
+    "somethingWentWrong": "Đã xảy ra lỗi. Vui lòng thử lại.",
+    "resetTokenTesting": "Mã token đặt lại (thử nghiệm): {{token}}",
+    "resetFailed": "Đặt lại thất bại",
+    "oauthInProgress": "Đang đăng nhập với {{provider}}…",
+    "oauthCancelled": "Đăng nhập OAuth đã bị huỷ.",
+    "oauthFailed": "Đăng nhập OAuth thất bại. Vui lòng thử lại."
+  },
   "feed": {
     "discover": "Khám phá",
     "following": "Đang theo dõi",
@@ -110,7 +156,6 @@
     "followBtn": "Theo dõi",
     "followingBtn": "Đang theo dõi"
   },
-
   "notifications": {
     "title": "Thông báo",
     "unreadCount": "{{count}} chưa đọc",
@@ -123,33 +168,21 @@
     "empty": "Thông báo sẽ xuất hiện ở đây.",
     "loadMore": "Tải thêm",
     "markedAllDone": "✓ Đã đánh dấu tất cả thông báo là đã đọc",
-    "reactedToPost": "{{actor}} đã bày tỏ cảm xúc với bài viết của bạn",
-    "lovedPost": "{{actor}} đã yêu thích bài viết của bạn",
-    "commentedPost": "{{actor}} đã bình luận bài viết của bạn",
-    "mentionedYou": "{{actor}} đã nhắc đến bạn trong một {{type}}",
-    "startedFollowing": "{{actor}} đã bắt đầu theo dõi bạn",
-    "sentMessage": "{{actor}} đã gửi tin nhắn cho bạn",
-    "groupInvite": "{{actor}} đã mời bạn vào nhóm",
-    "groupJoinRequest": "{{actor}} đã yêu cầu tham gia nhóm của bạn",
-    "friendRequest": "{{actor}} đã gửi yêu cầu kết nối",
-    "sharedPost": "{{actor}} đã chia sẻ bài viết của bạn",
+    "reactedToPost": "<strong>{{actor}}</strong> đã bày tỏ cảm xúc với bài viết của bạn",
+    "lovedPost": "<strong>{{actor}}</strong> đã yêu thích bài viết của bạn",
+    "commentedPost": "<strong>{{actor}}</strong> đã bình luận bài viết của bạn",
+    "mentionedYou": "<strong>{{actor}}</strong> đã nhắc đến bạn trong một {{type}}",
+    "startedFollowing": "<strong>{{actor}}</strong> đã bắt đầu theo dõi bạn",
+    "sentMessage": "<strong>{{actor}}</strong> đã gửi tin nhắn cho bạn",
+    "groupInvite": "<strong>{{actor}}</strong> đã mời bạn vào nhóm",
+    "groupJoinRequest": "<strong>{{actor}}</strong> đã yêu cầu tham gia nhóm của bạn",
+    "friendRequest": "<strong>{{actor}}</strong> đã gửi yêu cầu kết nối",
+    "sharedPost": "<strong>{{actor}}</strong> đã chia sẻ bài viết của bạn",
     "pollEnded": "Một cuộc bình chọn bạn đã tham gia đã kết thúc",
     "didSomething": "{{actor}} đã làm gì đó"
   },
-
-  "messages": {
-  "resetLinkSent": "Nếu email tồn tại, đường dẫn đặt lại đã được gửi.",
-  "passwordResetSuccess": "Đặt lại mật khẩu thành công — bạn có thể đăng nhập.",
-  "sessionExpired": "Phiên của bạn đã hết hạn. Vui lòng đăng nhập lại.",
-  "unauthorized": "Bạn không có quyền truy cập trang này.",
-  "sessionExpiredShort": "Phiên hết hạn",
-  "pleaseSignInAgain": "Vui lòng đăng nhập lại để tiếp tục.",
-  "fillAllFields": "Vui lòng điền tất cả các trường.",
-  "somethingWentWrong": "Đã xảy ra lỗi. Vui lòng thử lại.",
-  "oauthInProgress": "Đang đăng nhập với {{provider}}…",
-  "oauthCancelled": "Đăng nhập OAuth đã bị huỷ.",
-  "oauthFailed": "Đăng nhập OAuth thất bại. Vui lòng thử lại.",
-  "pageTitle": "Tin nhắn",
+  "dm": {
+    "pageTitle": "Tin nhắn",
     "newMessage": "Tin nhắn mới",
     "searchPlaceholder": "Tìm kiếm…",
     "noConversations": "Chưa có cuộc trò chuyện",
@@ -181,7 +214,6 @@
     "couldNotStart": "Không thể bắt đầu cuộc trò chuyện.",
     "couldNotCreate": "Không thể tạo nhóm."
   },
-
   "profile": {
     "editProfile": "✏ Chỉnh sửa hồ sơ",
     "followBtn": "+ Theo dõi",
@@ -197,7 +229,6 @@
     "noFollowersHint": "Hãy là người đầu tiên theo dõi.",
     "notFollowingAnyone": "Chưa theo dõi ai",
     "notFollowingHint": "Khám phá sinh viên từ bảng tin.",
-    "signOut": "Đăng xuất",
     "editModalTitle": "Chỉnh sửa hồ sơ",
     "avatarLabel": "Ảnh đại diện",
     "uploadPhoto": "📷 Tải ảnh lên",
@@ -219,7 +250,6 @@
     "saving": "Đang lưu…",
     "failedLoad": "Không thể tải hồ sơ."
   },
-
   "groups": {
     "title": "Nhóm",
     "createBtn": "+ Tạo nhóm",
@@ -264,7 +294,6 @@
     "groupDeleted": "Đã xoá nhóm.",
     "noDescription": "Không có mô tả."
   },
-
   "groupDetail": {
     "backBtn": "← Nhóm",
     "privateLabel": "🔒 Riêng tư",
@@ -293,7 +322,6 @@
     "leaveConfirm": "Rời {{name}}? Bạn có thể tham gia lại nếu nhóm công khai.",
     "cancelBtn": "Huỷ"
   },
-
   "courses": {
     "title": "Khoá học",
     "requestBtn": "+ Yêu cầu khoá học",
@@ -316,23 +344,22 @@
     "requestSentBody": "Yêu cầu khoá học của bạn đã được gửi. Admin sẽ xem xét và thêm khoá học vào nền tảng.",
     "doneBtn": "Xong",
     "noStarredTitle": "Chưa có khoá học được đánh dấu",
-    "noStarredHint": "Đánh dấu khoá học từ tab Tất cả để lưu nhanh ��� đây.",
+    "noStarredHint": "Đánh dấu khoá học từ tab Tất cả để lưu nhanh ở đây.",
     "loadingCourses": "Đang tải khoá học...",
     "enrolled": "🎓 {{count}} đã đăng ký",
     "starTitle": "Đánh dấu khoá học này",
     "unstarTitle": "Bỏ đánh dấu",
     "notFound": "Không tìm thấy khoá học",
-  "loadDetailsFailed": "Không thể tải thông tin khoá học",
-  "loadFailed": "Không thể tải khoá học",
-  "emptyDiscussion": "Thảo luận không được trống",
-  "discussionTooLong": "Thảo luận quá dài (tối đa 2000 ký tự)",
-  "discussionPlaceholder": "Chia sẻ suy nghĩ, câu hỏi hoặc nhận xét về khoá học này…",
-  "postDiscussion": "Đăng thảo luận →",
-  "postFailed": "Không thể đăng thảo luận",
-  "requestFailed": "Không thể gửi yêu cầu. Vui lòng thử lại.",
-  "description": "Mô tả khoá học và lý do cộng đồng sẽ được lợi…"
+    "loadDetailsFailed": "Không thể tải thông tin khoá học",
+    "loadFailed": "Không thể tải khoá học",
+    "emptyDiscussion": "Thảo luận không được trống",
+    "discussionTooLong": "Thảo luận quá dài (tối đa 2000 ký tự)",
+    "discussionPlaceholder": "Chia sẻ suy nghĩ, câu hỏi hoặc nhận xét về khoá học này…",
+    "postDiscussion": "Đăng thảo luận →",
+    "postFailed": "Không thể đăng thảo luận",
+    "requestFailed": "Không thể gửi yêu cầu. Vui lòng thử lại.",
+    "description": "Mô tả khoá học và lý do cộng đồng sẽ được lợi…"
   },
-
   "courseDetail": {
     "backBtn": "← Khoá học",
     "enrolled": "🎓 {{count}} đã đăng ký",
@@ -346,7 +373,6 @@
     "courseNotFound": "Không tìm thấy khoá học",
     "failedLoad": "Không thể tải thông tin khoá học"
   },
-
   "coursePost": {
     "backBtn": "← Quay lại {{name}}",
     "title": "Bắt đầu thảo luận",
@@ -362,7 +388,6 @@
     "courseNotFound": "Không tìm thấy khoá học",
     "failedPost": "Không thể đăng thảo luận"
   },
-
   "postDetail": {
     "backBtn": "← Quay lại",
     "commentsTitle": "💬 Bình luận",
@@ -381,31 +406,28 @@
     "replyBtn": "↩ Trả lời",
     "writeReply": "Viết câu trả lời…"
   },
-
   "saved": {
-  "title": "Đã lưu",
-  "postCount_one": "{{count}} bài viết",
-  "postCount_other": "{{count}} bài viết",
-  "emptyTitle": "Chưa lưu gì",
-  "emptyHint": "Nhấn nút lưu trên bất kỳ bài viết nào để lưu lại ở đây.",
-  "removeTooltip": "Xoá khỏi đã lưu"
-},
-
+    "title": "Đã lưu",
+    "postCount_one": "{{count}} bài viết",
+    "postCount_other": "{{count}} bài viết",
+    "emptyTitle": "Chưa lưu gì",
+    "emptyHint": "Nhấn nút lưu trên bất kỳ bài viết nào để lưu lại ở đây.",
+    "removeTooltip": "Xoá khỏi đã lưu"
+  },
   "hashtag": {
-  "backBtn": "← Quay lại",
-  "label": "Hashtag",
-  "postCount_one": "{{count}} bài viết",
-  "postCount_other": "{{count}} bài viết",
-  "sortLatest": "🕐 Mới nhất",
-  "sortTop": "🔥 Nổi bật",
-  "emptyTitle": "Chưa có bài viết",
-  "emptyHint": "Chưa ai dùng #{{tag}}. Hãy là người đầu tiên!",
-  "loadMore": "Tải thêm"
-},
-
+    "backBtn": "← Quay lại",
+    "label": "Hashtag",
+    "postCount_one": "{{count}} bài viết",
+    "postCount_other": "{{count}} bài viết",
+    "sortLatest": "🕐 Mới nhất",
+    "sortTop": "🔥 Nổi bật",
+    "emptyTitle": "Chưa có bài viết",
+    "emptyHint": "Chưa ai dùng #{{tag}}. Hãy là người đầu tiên!",
+    "loadMore": "Tải thêm"
+  },
   "forgotPassword": {
-    "title": "Đặt lại mật khẩu",
     "eyebrow": "Khôi phục tài khoản",
+    "title": "Đặt lại mật khẩu",
     "subtitle": "Nhập email của bạn và chúng tôi sẽ gửi liên kết để đăng nhập lại.",
     "emailLabel": "Địa chỉ email",
     "emailPlaceholder": "you@university.edu",
@@ -431,7 +453,6 @@
     "tryAgain": "thử lại",
     "backToSignIn": "Quay lại đăng nhập"
   },
-
   "resetPassword": {
     "title": "Đặt mật khẩu mới",
     "subtitle": "Chọn mật khẩu mạnh — ít nhất 8 ký tự với chữ và số.",
@@ -450,27 +471,27 @@
     "successMsg": "Đặt lại mật khẩu thành công! Đang chuyển hướng đến trang đăng nhập…"
   },
   "common": {
-  "posting": "Đang đăng…",
-  "saving": "Đang lưu…",
-  "creating": "Đang tạo…",
-  "leaving": "Đang rời…",
-  "deleting": "Đang xoá…",
-  "loading": "Đang tải…",
-  "remove": "Xoá",
-  "delete": "Xoá",
-  "confirm": "Xác nhận",
-  "leave": "Rời",
-  "member": "Thành viên",
-  "today": "Hôm nay",
-  "yesterday": "Hôm qua",
-  "you": "Bạn",
-  "unknown": "Không rõ",
-  "student": "Sinh viên",
-  "lookingUp": "Đang tìm…",
-  "sending": "Đang gửi…",
-  "cancel": "Huỷ",
-  "done": "Xong",
-  "close": "Đóng",
-  "back": "Quay lại"
-}
+    "posting": "Đang đăng…",
+    "saving": "Đang lưu…",
+    "creating": "Đang tạo…",
+    "leaving": "Đang rời…",
+    "deleting": "Đang xoá…",
+    "loading": "Đang tải…",
+    "remove": "Xoá",
+    "delete": "Xoá",
+    "confirm": "Xác nhận",
+    "leave": "Rời",
+    "member": "Thành viên",
+    "today": "Hôm nay",
+    "yesterday": "Hôm qua",
+    "you": "Bạn",
+    "unknown": "Không rõ",
+    "student": "Sinh viên",
+    "lookingUp": "Đang tìm…",
+    "sending": "Đang gửi…",
+    "cancel": "Huỷ",
+    "done": "Xong",
+    "close": "Đóng",
+    "back": "Quay lại"
+  }
 }

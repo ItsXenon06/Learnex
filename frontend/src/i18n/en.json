@@ -132,6 +132,10 @@
     "loadingMore": "Loading…",
     "likeBtn": "Like",
     "liked": "Liked",
+    "loveBtn": "Love",
+    "insightfulBtn": "Insightful",
+    "celebrateBtn": "Celebrate",
+    "supportBtn": "Support",
     "commentBtn": "Comment",
     "shareBtn": "Share",
     "saveBtn": "Save",
@@ -358,6 +362,7 @@
   "courseDetail": {
     "backBtn": "← Courses",
     "enrolled": "🎓 {{count}} enrolled",
+    "starCount": "⭐ {{count}} starred",
     "discussionsTitle": "📋 Discussions",
     "startDiscussionBtn": "✎ Start Discussion",
     "noDiscussionsTitle": "No Discussions Yet",

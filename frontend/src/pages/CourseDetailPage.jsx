@@ -198,6 +198,8 @@ export default function CourseDetailPage() {
               <div className="cd-meta">
                 <span>{t("courseDetail.enrolled", { count: course.enrolled ?? 0 })}</span>
                 <span>·</span>
+                <span>{t("courseDetail.starCount", { count: course.starCount ?? 0 })}</span>
+                <span>·</span>
                 <span>{course.department}</span>
               </div>
               {course.description && (

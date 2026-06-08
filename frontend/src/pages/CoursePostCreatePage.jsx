@@ -98,7 +98,7 @@ export default function CoursePostCreatePage() {
         setError("");
       } catch (err) {
         console.error("[v0] Error loading course:", err);
-        setError(t("courseDetail.failedLoad"));
+        setError(t("coursePost.loadingCourse"));
       } finally {
         setLoading(false);
       }
@@ -135,7 +135,7 @@ export default function CoursePostCreatePage() {
         <style>{css}</style>
         <Layout active="courses">
           <main className="create-post-main">
-            <div className="loading">Loading…</div>
+            <div className="loading">{t("coursePost.loadingCourse")}</div>
           </main>
         </Layout>
       </>
@@ -148,7 +148,7 @@ export default function CoursePostCreatePage() {
         <style>{css}</style>
         <Layout active="courses">
           <main className="create-post-main">
-            <div className="error-msg">{error || t("courses.notFound")}</div>
+            <div className="error-msg">{error || t("coursePost.courseNotFound")}</div>
           </main>
         </Layout>
       </>
@@ -164,12 +164,12 @@ export default function CoursePostCreatePage() {
       <Layout active="courses">
         <main className="create-post-main">
           <button className="cp-back" onClick={() => navigate(`/courses/${courseId}`)}>
-            ← Back to {course.name}
+            {t("coursePost.backBtn", { name: course.name })}
           </button>
 
-          <h1 className="cp-header">Start a Discussion</h1>
+          <h1 className="cp-header">{t("coursePost.title")}</h1>
           <p className="cp-sub">
-            in <strong>{course.name}</strong>
+            {t("coursePost.inCourse")} <strong>{course.name}</strong>
             <span style={{ color: "var(--t4)", fontSize: 11, fontFamily: "var(--fm)" }}>
               · {course.code}
             </span>
@@ -182,7 +182,7 @@ export default function CoursePostCreatePage() {
               <div className="cp-av">{userIni}</div>
               <textarea
                 className="cp-textarea"
-                placeholder={t("courses.discussionPlaceholder")}
+                placeholder={t("coursePost.placeholder")}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={6}
@@ -194,7 +194,7 @@ export default function CoursePostCreatePage() {
 
             <div className="cp-toolbar">
               <span className={`cp-char ${charDanger ? "danger" : charWarn ? "warn" : ""}`}>
-                {content.length}/2000
+                {t("coursePost.charCount", { count: content.length })}
               </span>
               <div className="cp-buttons">
                 <button
@@ -202,14 +202,14 @@ export default function CoursePostCreatePage() {
                   onClick={() => navigate(`/courses/${courseId}`)}
                   disabled={submitting}
                 >
-                  Cancel
+                  {t("coursePost.cancelBtn")}
                 </button>
                 <button
                   className="btn-submit"
                   onClick={handleSubmit}
                   disabled={!content.trim() || submitting || content.length > 2000}
                 >
-                  {submitting ? t("common.posting") : t("courses.postDiscussion")}
+                  {submitting ? t("coursePost.posting") : t("coursePost.postBtn")}
                 </button>
               </div>
             </div>
